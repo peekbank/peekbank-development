@@ -4,8 +4,8 @@ format: html
 ---
 
 ```{r}
-library(here)
-source(here("helper","common.R"))
+suppressPackageStartupMessages(library(here))
+suppressPackageStartupMessages(source(here("helper","common.R")))
 d_sub <- readRDS(here("cached_intermediates","1_d_sub.Rds"))
 load(here("..", "peekbank-method", "cached_intermediates", "1_cdi_subjects.Rds"))
 ```
@@ -16,9 +16,9 @@ This is broken due to some repeated fields.
 ```{r}
 d_cdi <- cdi_data |>
   select(administration_id, native_language, measure, language, 
-         rawscore) |>
+         CDI_percent) |> # rawscore is form-dependent
   filter(language == "English (American)", native_language == "eng") |>
-  pivot_wider(names_from = "measure", values_from = "rawscore", 
+  pivot_wider(names_from = "measure", values_from = "CDI_percent", 
               values_fill = NA, values_fn = mean)
 ```
 
@@ -35,7 +35,7 @@ d_sub_cdi <- d_sub |>
 
 Take a look at correlations to select variables. 
 
-```{r}
+```{r, fig.width=9, fig.height=9}
 GGally::ggpairs(select(d_sub_cdi, age, log_age, rt, log_rt, 
                        short_window_accuracy, long_window_accuracy, 
                        short_window_elogit, long_window_elogit, prod, comp), 
@@ -45,7 +45,7 @@ GGally::ggpairs(select(d_sub_cdi, age, log_age, rt, log_rt,
 
 Let's select the best of these. 
 
-```{r}
+```{r, fig.width=9, fig.height=9}
 GGally::ggpairs(select(d_sub_cdi, log_age, rt,  
                        long_window_accuracy, prod, comp), 
         progress = FALSE, lower = list(continuous = GGally::wrap("points", alpha = 0.03)))
@@ -94,6 +94,31 @@ GGally::ggpairs(select(d_sub_cdi, log_age, rt,
 
 Let's do principal components analysis over the scaled variables. 
 
+```{r control-for-age}
+d_sub_cdi_mat <- d_sub_cdi |>
+  ungroup() |>
+  select(age, rt,  long_window_accuracy, prod) |>
+  mutate(rt = scale(rt / age)[,1],
+         long_window_accuracy = scale(long_window_accuracy / age)[,1], 
+         prod = scale(prod / age)[,1]) |>
+  select(-age)
+
+d_sub_cdi_mat <- d_sub_cdi_mat |>
+  filter(complete.cases(d_sub_cdi_mat)) |>
+  as.matrix() 
+
+acc_rt_prc <- prcomp(d_sub_cdi_mat, 2)
+
+acc_rt_prc
+summary(acc_rt_prc)
+ggbiplot::ggbiplot(acc_rt_prc, alpha = .1)
+```
+
+Controlling for age, the first component (~49% of variance) represents high production, fast RT, but low LWL accuracy.
+The second component (~31% of variance) captures slow RT, low accuracy, and moderate production, and the third component (~20%) captures fast RT, low accuracy, and low production).
+
+The claim of some of the Fernald processing corpus is that there is a second principal component here (namely, processing speed) that is meaningful and relates to later learning outcomes.
+
 ```{r}
 d_sub_cdi_mat <- d_sub_cdi |>
   ungroup() |>
@@ -112,15 +137,13 @@ acc_rt_prc <- prcomp(d_sub_cdi_mat, 2)
 acc_rt_prc
 summary(acc_rt_prc)
 ggbiplot::ggbiplot(acc_rt_prc, alpha = .1)
-
-
 ```
 
-We see that there is a first component with ~60% of variance that is "faster, more accurate, older". Then we see a second component that relates to younger, faster, slightly less accurate. And the final piece is older and less accurate.
-
-These would be interesting components to connect to CDI. In some sense, the claim of some of the Fernald processing corpus is that there is a second principal component here (namely, processing speed) that is meaningful and relates to later learning outcomes. 
+There is a first component capturing ~50% of the variance that is low accuracy, low production, slower, and younger.
+A second component capturing ~30% of the variance is higher accuracy, low production, fast RT, and slightly young.
+A third component (~16%) is older, highly accurate, low production, and somewhat slow RT.
 
 # Conclusions
 
-Probably right now we need to try and connect this to CDIs...
+The next thing to do is look at any longitudinal data we have, to see how predictive faster LWL at t0 is of higher CDIs at t1.
 
