@@ -1,0 +1,206 @@
+---
+title: "Trial-level developmental analysis"
+format:
+  html:
+    toc: true
+    toc-location: left
+---
+
+```{r}
+library(here)
+source(here("helper","common.R"))
+d_trial <- readRDS(here("cached_intermediates","1_d_trial"))
+d_sub <- readRDS(here("cached_intermediates","1_d_sub"))
+```
+
+Approaches:
+
+- measures [long/short] accuracy, [log] rt, elogit
+- across datasets vs. within
+- trial level vs. participant level data
+
+Let's not immediately elogit as that was just for models. 
+
+Let's also use only `mean(log(rt))` as that's correct if we think RTs are sampled from a log-normal distribution. 
+
+# Trial-level, across datasets
+
+Across datasets. Short window looks less wiggly, for whatever reason. 
+
+```{r}
+d_trial |>
+  pivot_longer(contains("accuracy"), 
+               values_to = "accuracy", names_to = "measure") |>
+ggplot(aes(x = age, y = accuracy)) + 
+  geom_point(alpha = .05) + 
+  geom_smooth() +
+  geom_smooth(method = "lm", col = "green") +
+  geom_hline(yintercept = .5, lty = 2) + 
+  scale_x_log10() + 
+  facet_wrap(~measure)
+```
+
+RT
+
+```{r}
+d_trial |>
+ggplot(aes(x = age, y = rt)) + 
+  geom_point(alpha = .05) + 
+  geom_smooth() +
+  geom_smooth(method = "lm", col = "green") +
+  scale_x_log10() +
+  scale_y_log10()
+```
+
+# Trial-level, for each dataset
+
+Only look at datasets with some (cross-sectional) variation. 
+
+```{r}
+datasets_with_age_variation <- d_trial |>
+  group_by(dataset_name) |>
+  summarise(age_range = max(age) - min(age)) |>
+  filter(age_range >= 4)
+
+d_trial_agevar <- d_trial |>
+  filter(dataset_name %in% datasets_with_age_variation$dataset_name)
+```
+  
+```{r}
+ggplot(d_trial_agevar, aes(x = age, y = short_window_accuracy)) + 
+  geom_point(alpha = .05) + 
+  geom_smooth(method = "lm", col = "green", alpha = .5) +
+  geom_smooth(method = "loess", alpha = .5) +
+  geom_hline(yintercept = .5, lty = 2) + 
+  scale_x_log10() + 
+  facet_wrap(~dataset_name, scales = "free_x")
+```
+
+RT
+
+```{r}
+ggplot(d_trial_agevar,
+       aes(x = age, y = rt)) + 
+  geom_point(alpha = .05) + 
+  geom_smooth(method = "lm", col = "green", alpha = .5) +
+  geom_smooth(method = "loess", alpha = .5) +
+  scale_x_log10() +
+  scale_y_log10() + 
+  facet_wrap(~dataset_name, scales = "free_x")
+```
+
+# Participant-level, across datasets
+
+Accuracy. 
+
+```{r}
+d_sub |>
+  pivot_longer(contains("accuracy"), 
+               values_to = "accuracy", names_to = "measure") |>
+ggplot(aes(x = age, y = accuracy)) + 
+  geom_point(alpha = .05) + 
+  geom_smooth() +
+  geom_smooth(method = "lm", col = "green") +
+  geom_hline(yintercept = .5, lty = 2) + 
+  scale_x_log10() + 
+  facet_wrap(~measure)
+```
+
+RT - but is it the mean of the log or the log of the mean? We choose log of the mean because this fits a log-normal distribution. 
+
+```{r}
+d_sub |>
+ggplot(aes(x = age, y = log_rt)) + 
+  geom_point(alpha = .05) + 
+  geom_smooth() +
+  geom_smooth(method = "lm", col = "green") +
+  scale_x_log10()  + 
+  ylab("mean log RT")
+```
+
+# Participant-level, for each dataset
+
+Within each dataset. 
+
+```{r}
+d_sub_agevar <- d_sub |>
+  filter(dataset_name %in% datasets_with_age_variation$dataset_name)
+```
+  
+```{r}
+ggplot(d_sub_agevar, aes(x = age, y = short_window_accuracy)) + 
+  geom_point(alpha = .05) + 
+  geom_smooth(method = "lm", col = "green", alpha = .5) +
+  geom_smooth(method = "loess", alpha = .5) +
+  geom_hline(yintercept = .5, lty = 2) + 
+  scale_x_log10() + 
+  facet_wrap(~dataset_name, scales = "free_x")
+```
+
+elogits 
+
+```{r}
+ggplot(d_sub_agevar, aes(x = age, y = short_window_elogit)) + 
+  geom_point(alpha = .05) + 
+  geom_smooth(method = "lm", col = "green", alpha = .5) +
+  geom_smooth(method = "loess", alpha = .5) +
+  geom_hline(yintercept = .5, lty = 2) + 
+  scale_x_log10() + 
+  facet_wrap(~dataset_name, scales = "free_x")
+```
+
+RT - here we look at the mean of the log RTs
+
+```{r}
+ggplot(d_sub_agevar,
+       aes(x = age, y = log_rt)) + 
+  geom_point(alpha = .05) + 
+  geom_smooth(method = "lm", col = "green", alpha = .5) +
+  geom_smooth(method = "loess", alpha = .5) +
+  scale_x_log10() +
+  scale_y_log10() + 
+  facet_wrap(~dataset_name, scales = "free_x")
+```
+
+
+# Appendix: What if we remove zoner trials?
+
+Remove floor and ceiling where there are no shifts?
+
+The answer is that things look even better. 
+
+```{r}
+d_trial |>
+  pivot_longer(contains("accuracy"), 
+               values_to = "accuracy", names_to = "measure") |>
+  filter(accuracy > 0, accuracy < 1) |> 
+ggplot(aes(x = age, y = accuracy)) + 
+  geom_point(alpha = .05) + 
+  geom_smooth() +
+  geom_smooth(method = "lm", col = "green") +
+  geom_hline(yintercept = .5, lty = 2) + 
+  scale_x_log10() + 
+  facet_wrap(~measure)
+```
+
+```{r}
+d_sub_nozoner <- d_trial |>
+  filter(short_window_accuracy > 0, short_window_accuracy < 1) |> 
+  group_by(dataset_name, administration_id, age) |>
+  summarise(across(c(contains("_window"),"rt","log_rt"), ~mean(.x, na.rm=TRUE)))
+```
+
+
+
+```{r}
+d_sub_nozoner |>
+  pivot_longer(contains("accuracy"), 
+               values_to = "accuracy", names_to = "measure") |>
+ggplot(aes(x = age, y = accuracy)) + 
+  geom_point(alpha = .05) + 
+  geom_smooth() +
+  geom_smooth(method = "lm", col = "green") +
+  geom_hline(yintercept = .5, lty = 2) + 
+  scale_x_log10() + 
+  facet_wrap(~measure)
+```

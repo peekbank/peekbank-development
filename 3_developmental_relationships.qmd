@@ -1,0 +1,127 @@
+---
+title: "Subject-level developmental relationships"
+format: html
+---
+
+```{r}
+library(here)
+source(here("helper","common.R"))
+d_sub <- readRDS(here("cached_intermediates","1_d_sub"))
+load(here("..", "peekbank-method", "cached_intermediates", "1_cdi_subjects.Rds"))
+```
+
+
+```{r}
+d_cdi <- cdi_data |>
+  select(administration_id, native_language, measure, language, 
+         rawscore, percentile) |>
+  filter(language == "English (American)", native_language == "eng") |>
+  pivot_wider(names_from = "measure", names
+```
+
+
+```{r}
+d_sub |>
+  left_join(d_cdi)
+```
+
+
+
+# Relation between RT and accuracy 
+
+OK, let's take a look at these subject and word-level measures. 
+
+
+```{r}
+
+acc_rt <- inner_join(ms_acc, ms_rt) |>
+  mutate(age_group_years = cut(age, breaks = c(12,24,36,48,60)))
+
+head(acc_rt)
+```
+
+
+Take a look at correlations to select variables. 
+
+```{r}
+GGally::ggpairs(select(ungroup(acc_rt), -dataset_name, -age_group_years, -n_accuracy, -n_rt, -administration_id), 
+        progress = FALSE, lower = list(continuous = GGally::wrap("points", alpha = 0.03)))
+
+```
+It turns out that the correlations between elogit(accuracy), log(age), and log(rt) are all stronger. So we'll adopt these. 
+
+
+```{r}
+GGally::ggpairs(select(ungroup(acc_rt), elogit, log_rt, log_age), 
+        progress = FALSE, lower = list(continuous = GGally::wrap("points", alpha = 0.03)))
+
+```
+
+So these are somewhat related to one another. Let's take a deeper look. 
+
+```{r}
+ggplot(acc_rt, aes(x = log_rt, y = elogit, col = log_age)) +
+  geom_point(alpha = .3) +
+  geom_smooth(method = "lm") +
+  geom_hline(yintercept = .5, lty = 2) + 
+  xlab("Mean log RT") + 
+  ylab("Mean elogit(accuracy)")
+```
+
+Broken out by age group. 
+
+```{r}
+ggplot(acc_rt, aes(x = log_rt, y = elogit)) +
+  geom_point(alpha = .3) +
+  geom_smooth(method = "lm") +
+  geom_hline(yintercept = .5, lty = 2) +
+  facet_wrap(~age_group_years) + 
+  xlab("Mean log RT") + 
+  ylab("Mean elogit accuracy")
+
+  
+```
+
+By dataset. 
+
+```{r}
+ggplot(acc_rt, aes(x = log_rt, y = elogit, col = log_age)) +
+  geom_point(alpha = .3) +
+  geom_smooth(method = "lm") +
+  geom_hline(yintercept = .5, lty = 2) +
+  facet_wrap(~dataset_name) + 
+  xlab("Mean log RT") + 
+  ylab("Mean elogit accuracy")
+
+```
+
+## Dimensionality reduction
+
+Let's do principal components analysis over the scaled variables. 
+
+```{r}
+acc_rt_mat <- acc_rt |>
+  ungroup() |>
+  select(log_age, elogit, log_rt) |>
+  mutate(log_age = scale(log_age)[,1], 
+         log_rt = scale(log_rt)[,1],
+         elogit = scale(elogit)[,1] )|>
+  as.matrix()
+
+acc_rt_prc <- prcomp(acc_rt_mat, 2)
+
+acc_rt_prc
+summary(acc_rt_prc)
+ggbiplot::ggbiplot(acc_rt_prc, alpha = .1)
+
+
+```
+
+We see that there is a first component with ~60% of variance that is "faster, more accurate, older". Then we see a second component that relates to younger, faster, slightly less accurate. And the final piece is older and less accurate.
+
+These would be interesting components to connect to CDI. In some sense, the claim of some of the Fernald processing corpus is that there is a second principal component here (namely, processing speed) that is meaningful and relates to later learning outcomes. 
+
+# Conclusions
+
+Probably right now we need to try and connect this to CDIs...
+
