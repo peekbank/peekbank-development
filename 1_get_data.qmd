@@ -80,7 +80,7 @@ d_trial_rt_unfiltered <- d_trial |>
 Check out age distribution.
 
 ```{r}
-ages <- d_trial_rt |>
+ages <- d_trial_rt_unfiltered |>
   group_by(administration_id) |>
   summarise(age = mean(age)) 
 
