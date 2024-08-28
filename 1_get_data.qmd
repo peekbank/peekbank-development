@@ -195,7 +195,7 @@ d_sub <- d_trial |>
 # Save data
 
 ```{r}
-saveRDS(d_trial, here("cached_intermediates","1_d_trial"))
-saveRDS(d_sub, here("cached_intermediates","1_d_sub"))
+saveRDS(d_trial, here("cached_intermediates","1_d_trial.Rds"))
+saveRDS(d_sub, here("cached_intermediates","1_d_sub.Rds"))
 ```
 

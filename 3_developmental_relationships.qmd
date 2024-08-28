@@ -6,7 +6,7 @@ format: html
 ```{r}
 library(here)
 source(here("helper","common.R"))
-d_sub <- readRDS(here("cached_intermediates","1_d_sub"))
+d_sub <- readRDS(here("cached_intermediates","1_d_sub.Rds"))
 load(here("..", "peekbank-method", "cached_intermediates", "1_cdi_subjects.Rds"))
 ```
 
