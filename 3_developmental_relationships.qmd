@@ -11,104 +11,103 @@ load(here("..", "peekbank-method", "cached_intermediates", "1_cdi_subjects.Rds")
 ```
 
 
+This is broken due to some repeated fields. 
+
 ```{r}
 d_cdi <- cdi_data |>
   select(administration_id, native_language, measure, language, 
-         rawscore, percentile) |>
+         rawscore) |>
   filter(language == "English (American)", native_language == "eng") |>
-  pivot_wider(names_from = "measure", names
+  pivot_wider(names_from = "measure", values_from = "rawscore", 
+              values_fill = NA, values_fn = mean)
 ```
 
 
 ```{r}
-d_sub |>
-  left_join(d_cdi)
+d_sub_cdi <- d_sub |>
+  left_join(d_cdi) |>
+  mutate(log_age = log(age)) |>
+  ungroup()
 ```
-
 
 
 # Relation between RT and accuracy 
 
-OK, let's take a look at these subject and word-level measures. 
-
-
-```{r}
-
-acc_rt <- inner_join(ms_acc, ms_rt) |>
-  mutate(age_group_years = cut(age, breaks = c(12,24,36,48,60)))
-
-head(acc_rt)
-```
-
-
 Take a look at correlations to select variables. 
 
 ```{r}
-GGally::ggpairs(select(ungroup(acc_rt), -dataset_name, -age_group_years, -n_accuracy, -n_rt, -administration_id), 
-        progress = FALSE, lower = list(continuous = GGally::wrap("points", alpha = 0.03)))
-
-```
-It turns out that the correlations between elogit(accuracy), log(age), and log(rt) are all stronger. So we'll adopt these. 
-
-
-```{r}
-GGally::ggpairs(select(ungroup(acc_rt), elogit, log_rt, log_age), 
+GGally::ggpairs(select(d_sub_cdi, age, log_age, rt, log_rt, 
+                       short_window_accuracy, long_window_accuracy, 
+                       short_window_elogit, long_window_elogit, prod, comp), 
         progress = FALSE, lower = list(continuous = GGally::wrap("points", alpha = 0.03)))
 
 ```
 
-So these are somewhat related to one another. Let's take a deeper look. 
+Let's select the best of these. 
 
 ```{r}
-ggplot(acc_rt, aes(x = log_rt, y = elogit, col = log_age)) +
-  geom_point(alpha = .3) +
-  geom_smooth(method = "lm") +
-  geom_hline(yintercept = .5, lty = 2) + 
-  xlab("Mean log RT") + 
-  ylab("Mean elogit(accuracy)")
-```
-
-Broken out by age group. 
-
-```{r}
-ggplot(acc_rt, aes(x = log_rt, y = elogit)) +
-  geom_point(alpha = .3) +
-  geom_smooth(method = "lm") +
-  geom_hline(yintercept = .5, lty = 2) +
-  facet_wrap(~age_group_years) + 
-  xlab("Mean log RT") + 
-  ylab("Mean elogit accuracy")
-
-  
-```
-
-By dataset. 
-
-```{r}
-ggplot(acc_rt, aes(x = log_rt, y = elogit, col = log_age)) +
-  geom_point(alpha = .3) +
-  geom_smooth(method = "lm") +
-  geom_hline(yintercept = .5, lty = 2) +
-  facet_wrap(~dataset_name) + 
-  xlab("Mean log RT") + 
-  ylab("Mean elogit accuracy")
+GGally::ggpairs(select(d_sub_cdi, log_age, rt,  
+                       long_window_accuracy, prod, comp), 
+        progress = FALSE, lower = list(continuous = GGally::wrap("points", alpha = 0.03)))
 
 ```
+
+<!-- So these are somewhat related to one another. Let's take a deeper look.  -->
+
+<!-- ```{r} -->
+<!-- ggplot(acc_rt, aes(x = log_rt, y = elogit, col = log_age)) + -->
+<!--   geom_point(alpha = .3) + -->
+<!--   geom_smooth(method = "lm") + -->
+<!--   geom_hline(yintercept = .5, lty = 2) +  -->
+<!--   xlab("Mean log RT") +  -->
+<!--   ylab("Mean elogit(accuracy)") -->
+<!-- ``` -->
+
+<!-- Broken out by age group.  -->
+
+<!-- ```{r} -->
+<!-- ggplot(acc_rt, aes(x = log_rt, y = elogit)) + -->
+<!--   geom_point(alpha = .3) + -->
+<!--   geom_smooth(method = "lm") + -->
+<!--   geom_hline(yintercept = .5, lty = 2) + -->
+<!--   facet_wrap(~age_group_years) +  -->
+<!--   xlab("Mean log RT") +  -->
+<!--   ylab("Mean elogit accuracy") -->
+
+
+<!-- ``` -->
+
+<!-- By dataset.  -->
+
+<!-- ```{r} -->
+<!-- ggplot(acc_rt, aes(x = log_rt, y = elogit, col = log_age)) + -->
+<!--   geom_point(alpha = .3) + -->
+<!--   geom_smooth(method = "lm") + -->
+<!--   geom_hline(yintercept = .5, lty = 2) + -->
+<!--   facet_wrap(~dataset_name) +  -->
+<!--   xlab("Mean log RT") +  -->
+<!--   ylab("Mean elogit accuracy") -->
+
+<!-- ``` -->
 
 ## Dimensionality reduction
 
 Let's do principal components analysis over the scaled variables. 
 
 ```{r}
-acc_rt_mat <- acc_rt |>
+d_sub_cdi_mat <- d_sub_cdi |>
   ungroup() |>
-  select(log_age, elogit, log_rt) |>
+  select(log_age, rt,  long_window_accuracy, prod) |>
   mutate(log_age = scale(log_age)[,1], 
-         log_rt = scale(log_rt)[,1],
-         elogit = scale(elogit)[,1] )|>
-  as.matrix()
+         rt = scale(rt)[,1],
+         long_window_accuracy = scale(long_window_accuracy)[,1], 
+         prod = scale(prod)[,1])
 
-acc_rt_prc <- prcomp(acc_rt_mat, 2)
+d_sub_cdi_mat <- d_sub_cdi_mat |>
+  filter(complete.cases(d_sub_cdi_mat)) |>
+  as.matrix() 
+
+acc_rt_prc <- prcomp(d_sub_cdi_mat, 2)
 
 acc_rt_prc
 summary(acc_rt_prc)
