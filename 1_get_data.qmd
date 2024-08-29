@@ -32,7 +32,7 @@ We have been worrying about windows, but let's just do two windows:
 d_trial <- d_aoi |>
   mutate(short_window = t_norm > 200 & t_norm <= 2000,
          long_window = t_norm > 500 & t_norm <= 4000) |>
-  group_by(dataset_name, dataset_id, administration_id, 
+  group_by(dataset_name, dataset_id, administration_id, subject_id,
            trial_id, age, target_label, distractor_label) |>
   summarise(short_window_accuracy = mean(correct[short_window], na.rm=TRUE),
             long_window_accuracy = mean(correct[long_window], na.rm=TRUE),
@@ -205,7 +205,7 @@ ggplot(d_trial,
 
 ```{r}
 d_sub <- d_trial |>
-  group_by(dataset_name, administration_id, age) |>
+  group_by(dataset_name, subject_id, administration_id, age) |>
   summarise(across(c(contains("_window"),"rt","log_rt"), ~mean(.x, na.rm=TRUE)))
 ```
 
