@@ -10,6 +10,7 @@ library(ggthemes)
 # remotes::install_github("jmgirard/agreement")
 # library(agreement)
 # library(tictoc)
+library(GGally)
 
 # Seed for random number generation
 set.seed(42)

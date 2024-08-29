@@ -16,9 +16,9 @@ This is broken due to some repeated fields.
 ```{r}
 d_cdi <- cdi_data |>
   select(administration_id, native_language, measure, language, 
-         rawscore) |>
+         CDI_percent) |>
   filter(language == "English (American)", native_language == "eng") |>
-  pivot_wider(names_from = "measure", values_from = "rawscore", 
+  pivot_wider(names_from = "measure", values_from = "CDI_percent", 
               values_fill = NA, values_fn = mean)
 ```
 
@@ -47,35 +47,54 @@ Let's select the best of these.
 
 ```{r}
 GGally::ggpairs(select(d_sub_cdi, log_age, rt,  
-                       long_window_accuracy, prod, comp), 
+                       long_window_accuracy, short_window_accuracy, prod, comp), 
         progress = FALSE, lower = list(continuous = GGally::wrap("points", alpha = 0.03)))
 
 ```
 
-<!-- So these are somewhat related to one another. Let's take a deeper look.  -->
+# Individual relationships
 
-<!-- ```{r} -->
-<!-- ggplot(acc_rt, aes(x = log_rt, y = elogit, col = log_age)) + -->
-<!--   geom_point(alpha = .3) + -->
-<!--   geom_smooth(method = "lm") + -->
-<!--   geom_hline(yintercept = .5, lty = 2) +  -->
-<!--   xlab("Mean log RT") +  -->
-<!--   ylab("Mean elogit(accuracy)") -->
-<!-- ``` -->
+```{r}
+m_rt <- mean(d_sub_cdi$rt, na.rm=TRUE)
+sd_rt <- sd(d_sub_cdi$rt, na.rm=TRUE)
+d_sub_cdi$factor_rt <- cut(d_sub_cdi$rt, 
+                           breaks = quantile(d_sub_cdi$rt, 
+                                             probs = c(0, .25, .5, .75, 1), 
+                                             na.rm= TRUE))
+                           
 
-<!-- Broken out by age group.  -->
+ggplot(filter(d_sub_cdi, !is.na(rt), !is.na(factor_rt)),
+       aes(x = log_age, 
+                      y = long_window_accuracy, 
+                      col = factor_rt)) +
+  geom_point(alpha = .3) +
+  geom_smooth() +
+  geom_hline(yintercept = .5, lty = 2)+
+  viridis::scale_color_viridis(discrete = TRUE, 
+                               name = "RT quantile")
 
-<!-- ```{r} -->
-<!-- ggplot(acc_rt, aes(x = log_rt, y = elogit)) + -->
-<!--   geom_point(alpha = .3) + -->
-<!--   geom_smooth(method = "lm") + -->
-<!--   geom_hline(yintercept = .5, lty = 2) + -->
-<!--   facet_wrap(~age_group_years) +  -->
-<!--   xlab("Mean log RT") +  -->
-<!--   ylab("Mean elogit accuracy") -->
+```
 
+Broken out by age group.
 
-<!-- ``` -->
+```{r}
+
+d_sub_cdi$age_group <- cut(d_sub_cdi$log_age, 
+                           breaks = log(c(12,24,36,48,60)), 
+                           labels = c("12-24","24-36","36-48","48-60"), 
+                           include_lowest = TRUE)
+                           
+
+ggplot(d_sub_cdi, 
+       aes(x = rt, 
+                      y = long_window_accuracy, 
+                      col = age_group)) +
+  geom_point(alpha = .3) +
+  geom_smooth() +
+  geom_hline(yintercept = .5, lty = 2)+
+  viridis::scale_color_viridis(discrete = TRUE, 
+                               name = "age group")
+```
 
 <!-- By dataset.  -->
 
@@ -92,7 +111,7 @@ GGally::ggpairs(select(d_sub_cdi, log_age, rt,
 
 ## Dimensionality reduction
 
-Let's do principal components analysis over the scaled variables. 
+Make into matrices.
 
 ```{r}
 d_sub_cdi_mat <- d_sub_cdi |>
@@ -106,6 +125,24 @@ d_sub_cdi_mat <- d_sub_cdi |>
 d_sub_cdi_mat <- d_sub_cdi_mat |>
   filter(complete.cases(d_sub_cdi_mat)) |>
   as.matrix() 
+```
+
+Factor analysis
+
+```{r}
+# scree(d_sub_cdi_mat, pc=FALSE)  # Use pc=FALSE for factor analysis
+
+# install.packages("psych")
+mod1 <- fa(d_sub_cdi_mat, 1)
+mod2 <- fa(d_sub_cdi_mat, 2)
+
+```
+
+
+
+Let's do principal components analysis over the scaled variables. 
+
+```{r}
 
 acc_rt_prc <- prcomp(d_sub_cdi_mat, 2)
 

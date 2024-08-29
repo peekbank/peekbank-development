@@ -77,6 +77,15 @@ d_trial_rt_unfiltered <- d_trial |>
 
 # Filtering
 
+Let's look at the RT distribution. 
+
+```{r}
+ggplot(d_trial_rt_unfiltered, aes(x = rt)) + 
+  geom_histogram() + 
+  geom_vline(xintercept = 367, col = "red", lty =2 )
+```
+
+
 Check out age distribution.
 
 ```{r}
@@ -102,17 +111,25 @@ We are also going to NA-out RTs if we have less than 50% data in the short windo
 
 Finally, it will make life easier for now if we filter kids >= 12months. We can revisit this. 
 
+Let's also remove RTs < 367 ms. These are unlikely to be real. 
+
 ```{r}
 d_trial <- d_trial_rt_unfiltered |>
   filter(!(is.na(short_window_prop_data) & is.na(long_window_prop_data)), 
          !(short_window_prop_data < .5 & long_window_prop_data < .5), 
          age >= 12) |>
   mutate(across(contains("window"), ~ ifelse(is.na(.x), NA, .x))) |>
-  mutate(short_window_accuracy = ifelse(short_window_prop_data >= .5, short_window_accuracy, NA),
-         long_window_accuracy = ifelse(long_window_prop_data >= .5, long_window_accuracy, NA),
+  mutate(short_window_accuracy = ifelse(short_window_prop_data >= .5, 
+                                        short_window_accuracy, NA),
+         long_window_accuracy = ifelse(long_window_prop_data >= .5, 
+                                       long_window_accuracy, NA),
          rt = ifelse(short_window_prop_data >= .5, rt, NA),
-         short_window_elogit = ifelse(short_window_prop_data >= .5, short_window_elogit, NA), 
-         long_window_elogit = ifelse(long_window_prop_data >= .5, long_window_elogit, NA))
+         short_window_elogit = ifelse(short_window_prop_data >= .5, 
+                                      short_window_elogit, NA), 
+         long_window_elogit = ifelse(long_window_prop_data >= .5, 
+                                     long_window_elogit, NA), 
+         rt = ifelse(rt < 367, NA, rt), 
+         log_rt = ifelse(rt < 367, NA, log_rt))
 
 ```
 
