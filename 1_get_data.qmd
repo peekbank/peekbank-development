@@ -209,6 +209,39 @@ d_sub <- d_trial |>
   summarise(across(c(contains("_window"),"rt","log_rt"), ~mean(.x, na.rm=TRUE)))
 ```
 
+Add CDIs.
+
+This is very slightly broken due to some repeated fields. We use `values_fn = mean` to suppress them. 
+
+```{r}
+load(here("..", "peekbank-method", "cached_intermediates", "1_cdi_subjects.Rds"))
+
+d_cdi <- cdi_data |>
+  select(administration_id, native_language, measure, language, 
+         CDI_percent) |> # rawscore is form-dependent
+  filter(language == "English (American)", native_language == "eng") |>
+  pivot_wider(names_from = "measure", values_from = "CDI_percent", 
+              values_fill = NA, values_fn = mean)
+```
+
+
+```{r}
+d_sub <- d_sub |>
+  left_join(d_cdi) |>
+  mutate(log_age = log(age)) |>
+  ungroup()
+```
+
+Print descriptives. 
+
+```{r}
+print(paste(length(unique(d_sub$subject_id)), "children,",
+            sum(!is.na(d_sub$prod)), "with CDI data"))
+print(paste(length(unique(d_sub$administration_id)), "administrations"))
+print(paste(length(unique(d_sub$dataset_name)), "datasets"))
+```
+
+
 # Save data
 
 ```{r}

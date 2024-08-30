@@ -23,6 +23,7 @@ Let's not immediately elogit as that was just for models.
 
 Let's also use only `mean(log(rt))` as that's correct if we think RTs are sampled from a log-normal distribution. 
 
+
 # Trial-level, across datasets
 
 Across datasets. Short window looks less wiggly, for whatever reason. 
@@ -44,13 +45,30 @@ RT
 
 ```{r}
 d_trial |>
+  pivot_longer(c("rt","log_rt"), 
+               values_to = "rt", names_to = "measure") |>
 ggplot(aes(x = age, y = rt)) + 
   geom_point(alpha = .05) + 
   geom_smooth() +
   geom_smooth(method = "lm", col = "green") +
   scale_x_log10() +
-  scale_y_log10()
+  facet_wrap(~measure, scales = "free_y")
 ```
+## Stats
+
+```{r}
+mods <- list(log_log = lm(log_rt ~ log_age, data = d_trial),
+             log_lin = lm(log_rt ~ age, data = d_trial),
+             lin_log = lm(rt ~ log_age, data = d_trial),
+             lin_lin = lm(rt ~ age, data = d_trial))
+
+models <- map_df(mods, ~broom::glance(.x)) |>
+  mutate(model = names(mods))
+
+kable(models, digits = 4)
+```
+
+
 
 # Trial-level, for each dataset
 
@@ -105,17 +123,19 @@ ggplot(aes(x = age, y = accuracy)) +
   scale_x_log10() + 
   facet_wrap(~measure)
 ```
-
-RT - but is it the mean of the log or the log of the mean? We choose log of the mean because this fits a log-normal distribution. 
+RTs
 
 ```{r}
 d_sub |>
-ggplot(aes(x = age, y = log_rt)) + 
+  pivot_longer(c("rt","log_rt"), 
+               values_to = "rt", names_to = "measure") |>
+ggplot(aes(x = age, y = rt)) + 
   geom_point(alpha = .05) + 
   geom_smooth() +
   geom_smooth(method = "lm", col = "green") +
   scale_x_log10()  + 
-  ylab("mean log RT")
+  ylab("mean log RT") + 
+  facet_wrap(~measure, scales = "free_y")
 ```
 
 # Participant-level, for each dataset
@@ -162,6 +182,19 @@ ggplot(d_sub_agevar,
   facet_wrap(~dataset_name, scales = "free_x")
 ```
 
+## Stats
+
+```{r}
+mods_sub <- list(log_log = lm(log_rt ~ log_age, data = d_sub),
+             log_lin = lm(log_rt ~ age, data = d_sub),
+             lin_log = lm(rt ~ log_age, data = d_sub),
+             lin_lin = lm(rt ~ age, data = d_sub))
+
+models_sub <- map_df(mods_sub, ~broom::glance(.x)) |>
+  mutate(model = names(mods_sub))
+
+kable(models_sub, digits = 4)
+```
 
 # Variability
 
@@ -169,14 +202,16 @@ ggplot(d_sub_agevar,
 d_trial |>
   group_by(administration_id, age) |>
   summarise (sd_rt = sd(rt, na.rm=TRUE), 
-             sd_acc = sd(long_window_accuracy)) |>
-  pivot_wider(
-ggplot(aes(x = age, y = sd_rt)) + 
+             sd_acc = sd(long_window_accuracy, na.rm=TRUE)) |>
+  pivot_longer(contains("sd"), 
+               values_to = "sd", names_to = "measure") |>
+ggplot(aes(x = age, y = sd)) + 
   geom_point(alpha = .05) + 
   geom_smooth() +
   geom_smooth(method = "lm", col = "green") +
-  geom_hline(yintercept = .5, lty = 2) + 
-  scale_x_log10() 
+  # geom_hline(yintercept = .5, lty = 2) + 
+  scale_x_log10() +
+  facet_wrap(~measure, scales = "free_y")
 ```
 
 

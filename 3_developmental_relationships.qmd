@@ -8,27 +8,6 @@ suppressPackageStartupMessages(library(here))
 suppressPackageStartupMessages(library(psych))
 suppressPackageStartupMessages(source(here("helper","common.R")))
 d_sub <- readRDS(here("cached_intermediates","1_d_sub.Rds"))
-load(here("..", "peekbank-method", "cached_intermediates", "1_cdi_subjects.Rds"))
-```
-
-
-This is very slightly broken due to some repeated fields. We use `values_fn = mean` to suppress them. 
-
-```{r}
-d_cdi <- cdi_data |>
-  select(administration_id, native_language, measure, language, 
-         CDI_percent) |> # rawscore is form-dependent
-  filter(language == "English (American)", native_language == "eng") |>
-  pivot_wider(names_from = "measure", values_from = "CDI_percent", 
-              values_fill = NA, values_fn = mean)
-```
-
-
-```{r}
-d_sub_cdi <- d_sub |>
-  left_join(d_cdi) |>
-  mutate(log_age = log(age)) |>
-  ungroup()
 ```
 
 
@@ -37,7 +16,7 @@ d_sub_cdi <- d_sub |>
 Take a look at correlations to select variables. 
 
 ```{r, fig.width=9, fig.height=9}
-GGally::ggpairs(select(d_sub_cdi, age, log_age, rt, log_rt, 
+GGally::ggpairs(select(d_sub, age, log_age, rt, log_rt, 
                        short_window_accuracy, long_window_accuracy, 
                        short_window_elogit, long_window_elogit, prod, comp), 
                 progress = FALSE, lower = list(continuous = GGally::wrap("points", alpha = 0.03)))
@@ -47,7 +26,7 @@ GGally::ggpairs(select(d_sub_cdi, age, log_age, rt, log_rt,
 Let's select the best of these. 
 
 ```{r, fig.width=9, fig.height=9}
-GGally::ggpairs(select(d_sub_cdi, log_age, rt,  
+GGally::ggpairs(select(d_sub, log_age, rt,  
                        long_window_accuracy, short_window_accuracy, prod, comp), 
                 progress = FALSE, lower = list(continuous = GGally::wrap("points", alpha = 0.03)))
 
@@ -56,16 +35,16 @@ GGally::ggpairs(select(d_sub_cdi, log_age, rt,
 # Individual relationships
 
 ```{r}
-m_rt <- mean(d_sub_cdi$rt, na.rm=TRUE)
-sd_rt <- sd(d_sub_cdi$rt, na.rm=TRUE)
-d_sub_cdi$factor_rt <- cut(d_sub_cdi$rt, 
-                           breaks = quantile(d_sub_cdi$rt, 
+m_rt <- mean(d_sub$rt, na.rm=TRUE)
+sd_rt <- sd(d_sub$rt, na.rm=TRUE)
+d_sub$factor_rt <- cut(d_sub$rt, 
+                           breaks = quantile(d_sub$rt, 
                                              probs = c(0, .25, .5, .75, 1), 
                                              na.rm= TRUE), 
                            labels = c("0-25", "25-50", "50-75", "75-1"))
 
 
-ggplot(filter(d_sub_cdi, !is.na(rt), !is.na(factor_rt)),
+ggplot(filter(d_sub, !is.na(rt), !is.na(factor_rt)),
        aes(x = age, 
            y = long_window_accuracy, 
            col = factor_rt)) +
@@ -85,13 +64,13 @@ Broken out by age group.
 
 ```{r}
 
-d_sub_cdi$age_group <- cut(d_sub_cdi$log_age, 
+d_sub$age_group <- cut(d_sub$log_age, 
                            breaks = log(c(12,24,36,48,60)), 
                            labels = c("12-24","24-36","36-48","48-60"), 
                            include_lowest = TRUE)
 
 
-ggplot(filter(d_sub_cdi, !is.na(age_group)), 
+ggplot(filter(d_sub, !is.na(age_group)), 
        aes(x = rt, 
            y = long_window_accuracy, 
            col = age_group)) +
@@ -110,7 +89,7 @@ datasets_with_age_variation <- d_trial |>
   summarise(age_range = max(age) - min(age)) |>
   filter(age_range >= 6)
 
-ggplot(filter(d_sub_cdi, 
+ggplot(filter(d_sub, 
               !is.na(rt), !is.na(factor_rt), 
               dataset_name %in% datasets_with_age_variation$dataset_name),
        aes(x = age, 
@@ -135,15 +114,15 @@ ggplot(filter(d_sub_cdi,
 Make into matrices and look at PCA 
 
 ```{r}
-d_sub_cdi_mat <- d_sub_cdi |>
+d_sub_mat <- d_sub |>
   ungroup() |>
   select(log_age, rt,  long_window_accuracy, prod) 
 
-d_sub_cdi_mat <- d_sub_cdi_mat |>
-  filter(complete.cases(d_sub_cdi_mat)) |>
+d_sub_mat <- d_sub_mat |>
+  filter(complete.cases(d_sub_mat)) |>
   as.matrix() 
 
-acc_rt_prc <- prcomp(x = d_sub_cdi_mat, scale = TRUE)
+acc_rt_prc <- prcomp(x = d_sub_mat, scale = TRUE)
 
 acc_rt_prc
 summary(acc_rt_prc)
@@ -156,29 +135,29 @@ The claim of some of the Fernald processing corpus is that there is a second pri
 Factor analysis
 
 ```{r}
-mod1 <- fa(d_sub_cdi_mat, 1)
-mod2 <- fa(d_sub_cdi_mat, 2)
+mod1 <- fa(d_sub_mat, 1)
+mod2 <- fa(d_sub_mat, 2)
 ```
 
 Scree plot
 
 ```{r}
-fa.parallel(d_sub_cdi_mat)
+fa.parallel(d_sub_mat)
 ```
 
 ## Comprehension
 
 
 ```{r}
-d_sub_cdi_mat_comp <- d_sub_cdi |>
+d_sub_mat_comp <- d_sub |>
   ungroup() |>
   select(log_age, rt,  long_window_accuracy, comp) 
 
-d_sub_cdi_mat_comp <- d_sub_cdi_mat_comp |>
-  filter(complete.cases(d_sub_cdi_mat_comp)) |>
+d_sub_mat_comp <- d_sub_mat_comp |>
+  filter(complete.cases(d_sub_mat_comp)) |>
   as.matrix() 
 
-acc_rt_prc_comp <- prcomp(x = d_sub_cdi_mat_comp, scale = TRUE)
+acc_rt_prc_comp <- prcomp(x = d_sub_mat_comp, scale = TRUE)
 
 acc_rt_prc_comp
 summary(acc_rt_prc_comp)
@@ -188,28 +167,40 @@ ggbiplot::ggbiplot(acc_rt_prc_comp, alpha = .1)
 Factor analysis
 
 ```{r}
-mod1_comp <- fa(d_sub_cdi_mat_comp, 1)
-mod2_comp <- fa(d_sub_cdi_mat_comp, 2)
+mod1_comp <- fa(d_sub_mat_comp, 1)
+mod2_comp <- fa(d_sub_mat_comp, 2)
 ```
 
 ```{r}
-fa.parallel(d_sub_cdi_mat_comp)
+fa.parallel(d_sub_mat_comp)
 ```
 
 
 # Longitudinal data
 
 ```{r}
-longitudinal <- d_sub_cdi |>
+longitudinal <- d_sub |>
   group_by(dataset_name, subject_id) |>
   count() |>
   filter(n > 1)
 
-d_sub_long <- filter(d_sub_cdi, subject_id %in% longitudinal$subject_id)
-
-d_sub_wide <- d_sub_long |>
-  group_by(subject_id, 
+d_sub_long <- d_sub |>
+  filter(subject_id %in% longitudinal$subject_id, 
+                     !is.na(prod)) |>
+  group_by(subject_id) |>
+  arrange(administration_id) |>
+  mutate(admin_num = 1:n(), 
+         delta_t = c(0,diff(age)))
+  
+ggplot(filter(d_sub_long, admin_num > 1), 
+       aes(x = delta_t)) +
+  geom_histogram()
 ```
+
+```{r}
+
+```
+
 
 ```{r}
 library(lavaan)
