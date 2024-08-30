@@ -5,13 +5,14 @@ format: html
 
 ```{r}
 suppressPackageStartupMessages(library(here))
+suppressPackageStartupMessages(library(psych))
 suppressPackageStartupMessages(source(here("helper","common.R")))
 d_sub <- readRDS(here("cached_intermediates","1_d_sub.Rds"))
 load(here("..", "peekbank-method", "cached_intermediates", "1_cdi_subjects.Rds"))
 ```
 
 
-This is broken due to some repeated fields. 
+This is very slightly broken due to some repeated fields. We use `values_fn = mean` to suppress them. 
 
 ```{r}
 d_cdi <- cdi_data |>
@@ -39,7 +40,7 @@ Take a look at correlations to select variables.
 GGally::ggpairs(select(d_sub_cdi, age, log_age, rt, log_rt, 
                        short_window_accuracy, long_window_accuracy, 
                        short_window_elogit, long_window_elogit, prod, comp), 
-        progress = FALSE, lower = list(continuous = GGally::wrap("points", alpha = 0.03)))
+                progress = FALSE, lower = list(continuous = GGally::wrap("points", alpha = 0.03)))
 
 ```
 
@@ -48,7 +49,7 @@ Let's select the best of these.
 ```{r, fig.width=9, fig.height=9}
 GGally::ggpairs(select(d_sub_cdi, log_age, rt,  
                        long_window_accuracy, short_window_accuracy, prod, comp), 
-        progress = FALSE, lower = list(continuous = GGally::wrap("points", alpha = 0.03)))
+                progress = FALSE, lower = list(continuous = GGally::wrap("points", alpha = 0.03)))
 
 ```
 
@@ -60,18 +61,23 @@ sd_rt <- sd(d_sub_cdi$rt, na.rm=TRUE)
 d_sub_cdi$factor_rt <- cut(d_sub_cdi$rt, 
                            breaks = quantile(d_sub_cdi$rt, 
                                              probs = c(0, .25, .5, .75, 1), 
-                                             na.rm= TRUE))
-                           
+                                             na.rm= TRUE), 
+                           labels = c("0-25", "25-50", "50-75", "75-1"))
+
 
 ggplot(filter(d_sub_cdi, !is.na(rt), !is.na(factor_rt)),
-       aes(x = log_age, 
-                      y = long_window_accuracy, 
-                      col = factor_rt)) +
+       aes(x = age, 
+           y = long_window_accuracy, 
+           col = factor_rt)) +
   geom_point(alpha = .3) +
   geom_smooth() +
+  scale_x_log10() + 
   geom_hline(yintercept = .5, lty = 2)+
   viridis::scale_color_viridis(discrete = TRUE, 
-                               name = "RT quantile")
+                               name = "RT quantile") + 
+  xlab("Age (log months)") + 
+  ylab("Accuracy (long window)") + 
+  theme(legend.position = "bottom")
 
 ```
 
@@ -83,12 +89,12 @@ d_sub_cdi$age_group <- cut(d_sub_cdi$log_age,
                            breaks = log(c(12,24,36,48,60)), 
                            labels = c("12-24","24-36","36-48","48-60"), 
                            include_lowest = TRUE)
-                           
 
-ggplot(d_sub_cdi, 
+
+ggplot(filter(d_sub_cdi, !is.na(age_group)), 
        aes(x = rt, 
-                      y = long_window_accuracy, 
-                      col = age_group)) +
+           y = long_window_accuracy, 
+           col = age_group)) +
   geom_point(alpha = .3) +
   geom_smooth() +
   geom_hline(yintercept = .5, lty = 2)+
@@ -96,89 +102,121 @@ ggplot(d_sub_cdi,
                                name = "age group")
 ```
 
-<!-- By dataset.  -->
+By dataset.
 
-<!-- ```{r} -->
-<!-- ggplot(acc_rt, aes(x = log_rt, y = elogit, col = log_age)) + -->
-<!--   geom_point(alpha = .3) + -->
-<!--   geom_smooth(method = "lm") + -->
-<!--   geom_hline(yintercept = .5, lty = 2) + -->
-<!--   facet_wrap(~dataset_name) +  -->
-<!--   xlab("Mean log RT") +  -->
-<!--   ylab("Mean elogit accuracy") -->
+```{r}
+datasets_with_age_variation <- d_trial |>
+  group_by(dataset_name) |>
+  summarise(age_range = max(age) - min(age)) |>
+  filter(age_range >= 6)
 
-<!-- ``` -->
+ggplot(filter(d_sub_cdi, 
+              !is.na(rt), !is.na(factor_rt), 
+              dataset_name %in% datasets_with_age_variation$dataset_name),
+       aes(x = age, 
+           y = long_window_accuracy, 
+           col = factor_rt)) +
+  geom_point(alpha = .3) +
+  geom_smooth(se= FALSE, method = "lm") +
+  scale_x_log10() + 
+  geom_hline(yintercept = .5, lty = 2)+
+  viridis::scale_color_viridis(discrete = TRUE, 
+                               name = "RT quantile") +
+  facet_wrap(~dataset_name) + 
+  xlab("Age (log months)") + 
+  ylab("Accuracy (long window)")
 
-## Dimensionality reduction
+```
 
-Make into matrices.
+# Dimensionality reduction
 
-```{r control-for-age}
+## Production
+
+Make into matrices and look at PCA 
+
+```{r}
 d_sub_cdi_mat <- d_sub_cdi |>
   ungroup() |>
-  select(age, rt,  long_window_accuracy, prod) |>
-  mutate(rt = scale(rt / age)[,1],
-         long_window_accuracy = scale(long_window_accuracy / age)[,1], 
-         prod = scale(prod / age)[,1]) |>
-  select(-age)
+  select(log_age, rt,  long_window_accuracy, prod) 
 
 d_sub_cdi_mat <- d_sub_cdi_mat |>
   filter(complete.cases(d_sub_cdi_mat)) |>
   as.matrix() 
 
-acc_rt_prc <- prcomp(d_sub_cdi_mat, 2)
+acc_rt_prc <- prcomp(x = d_sub_cdi_mat, scale = TRUE)
 
 acc_rt_prc
 summary(acc_rt_prc)
 ggbiplot::ggbiplot(acc_rt_prc, alpha = .1)
 ```
 
-Controlling for age, the first component (~49% of variance) represents high production, fast RT, but low LWL accuracy.
-The second component (~31% of variance) captures slow RT, low accuracy, and moderate production, and the third component (~20%) captures fast RT, low accuracy, and low production).
 
 The claim of some of the Fernald processing corpus is that there is a second principal component here (namely, processing speed) that is meaningful and relates to later learning outcomes.
 
-```{r}
-d_sub_cdi_mat <- d_sub_cdi |>
-  ungroup() |>
-  select(log_age, rt,  long_window_accuracy, prod) |>
-  mutate(log_age = scale(log_age)[,1], 
-         rt = scale(rt)[,1],
-         long_window_accuracy = scale(long_window_accuracy)[,1], 
-         prod = scale(prod)[,1])
+Factor analysis
 
-d_sub_cdi_mat <- d_sub_cdi_mat |>
-  filter(complete.cases(d_sub_cdi_mat)) |>
+```{r}
+mod1 <- fa(d_sub_cdi_mat, 1)
+mod2 <- fa(d_sub_cdi_mat, 2)
+```
+
+Scree plot
+
+```{r}
+fa.parallel(d_sub_cdi_mat)
+```
+
+## Comprehension
+
+
+```{r}
+d_sub_cdi_mat_comp <- d_sub_cdi |>
+  ungroup() |>
+  select(log_age, rt,  long_window_accuracy, comp) 
+
+d_sub_cdi_mat_comp <- d_sub_cdi_mat_comp |>
+  filter(complete.cases(d_sub_cdi_mat_comp)) |>
   as.matrix() 
+
+acc_rt_prc_comp <- prcomp(x = d_sub_cdi_mat_comp, scale = TRUE)
+
+acc_rt_prc_comp
+summary(acc_rt_prc_comp)
+ggbiplot::ggbiplot(acc_rt_prc_comp, alpha = .1)
 ```
 
 Factor analysis
 
 ```{r}
-# scree(d_sub_cdi_mat, pc=FALSE)  # Use pc=FALSE for factor analysis
-
-# install.packages("psych")
-mod1 <- fa(d_sub_cdi_mat, 1)
-mod2 <- fa(d_sub_cdi_mat, 2)
-
+mod1_comp <- fa(d_sub_cdi_mat_comp, 1)
+mod2_comp <- fa(d_sub_cdi_mat_comp, 2)
 ```
-
-
-
-Let's do principal components analysis over the scaled variables. 
 
 ```{r}
-
-acc_rt_prc <- prcomp(d_sub_cdi_mat, 2)
-
-acc_rt_prc
-summary(acc_rt_prc)
-ggbiplot::ggbiplot(acc_rt_prc, alpha = .1)
+fa.parallel(d_sub_cdi_mat_comp)
 ```
 
-There is a first component capturing ~50% of the variance that is low accuracy, low production, slower, and younger.
-A second component capturing ~30% of the variance is higher accuracy, low production, fast RT, and slightly young.
-A third component (~16%) is older, highly accurate, low production, and somewhat slow RT.
+
+# Longitudinal data
+
+```{r}
+longitudinal <- d_sub_cdi |>
+  group_by(dataset_name, subject_id) |>
+  count() |>
+  filter(n > 1)
+
+d_sub_long <- filter(d_sub_cdi, subject_id %in% longitudinal$subject_id)
+
+d_sub_wide <- d_sub_long |>
+  group_by(subject_id, 
+```
+
+```{r}
+library(lavaan)
+
+```
+
+
 
 # Conclusions
 

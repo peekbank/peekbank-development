@@ -163,6 +163,23 @@ ggplot(d_sub_agevar,
 ```
 
 
+# Variability
+
+```{r}
+d_trial |>
+  group_by(administration_id, age) |>
+  summarise (sd_rt = sd(rt, na.rm=TRUE), 
+             sd_acc = sd(long_window_accuracy)) |>
+  pivot_wider(
+ggplot(aes(x = age, y = sd_rt)) + 
+  geom_point(alpha = .05) + 
+  geom_smooth() +
+  geom_smooth(method = "lm", col = "green") +
+  geom_hline(yintercept = .5, lty = 2) + 
+  scale_x_log10() 
+```
+
+
 # Appendix: What if we remove zoner trials?
 
 Remove floor and ceiling where there are no shifts?
