@@ -167,7 +167,8 @@ d_trial |>
             nas_in_acc_long = mean(is.na(long_window_accuracy)),
             average_prop_data_short = mean(short_window_prop_data, na.rm=TRUE),
             average_prop_data_long = mean(long_window_prop_data, na.rm=TRUE),
-            prop_rts = mean(!is.na(rt))) |>
+            prop_rts = mean(!is.na(rt)), 
+            log_age = log(age)) |>
   arrange(desc(n)) |>
   kable(digits = 2)
 ```

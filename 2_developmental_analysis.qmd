@@ -8,8 +8,12 @@ format:
 
 ```{r}
 suppressPackageStartupMessages(library(here))
+suppressPackageStartupMessages(library(broom))
+suppressPackageStartupMessages(library(broom.mixed))
+
 source(here("helper","common.R"))
-d_trial <- readRDS(here("cached_intermediates","1_d_trial.Rds"))
+d_trial <- readRDS(here("cached_intermediates","1_d_trial.Rds")) |>
+  mutate(log_age = log(age))
 d_sub <- readRDS(here("cached_intermediates","1_d_sub.Rds"))
 ```
 
@@ -24,7 +28,9 @@ Let's not immediately elogit as that was just for models.
 Let's also use only `mean(log(rt))` as that's correct if we think RTs are sampled from a log-normal distribution. 
 
 
-# Trial-level, across datasets
+# Trial-level
+
+## Across datasets
 
 Across datasets. Short window looks less wiggly, for whatever reason. 
 
@@ -32,7 +38,7 @@ Across datasets. Short window looks less wiggly, for whatever reason.
 d_trial |>
   pivot_longer(contains("accuracy"), 
                values_to = "accuracy", names_to = "measure") |>
-ggplot(aes(x = age, y = accuracy)) + 
+  ggplot(aes(x = age, y = accuracy)) + 
   geom_point(alpha = .05) + 
   geom_smooth() +
   geom_smooth(method = "lm", col = "green") +
@@ -47,30 +53,50 @@ RT
 d_trial |>
   pivot_longer(c("rt","log_rt"), 
                values_to = "rt", names_to = "measure") |>
-ggplot(aes(x = age, y = rt)) + 
+  ggplot(aes(x = age, y = rt)) + 
   geom_point(alpha = .05) + 
   geom_smooth() +
   geom_smooth(method = "lm", col = "green") +
   scale_x_log10() +
   facet_wrap(~measure, scales = "free_y")
 ```
-## Stats
+### Stats
+
+Accuracy models. 
 
 ```{r}
-mods <- list(log_log = lm(log_rt ~ log_age, data = d_trial),
-             log_lin = lm(log_rt ~ age, data = d_trial),
-             lin_log = lm(rt ~ log_age, data = d_trial),
-             lin_lin = lm(rt ~ age, data = d_trial))
+acc_mods <- list(lwe_lin = lm(long_window_elogit ~ age, data = d_trial),
+                 lwe_log = lm(long_window_elogit ~ log_age, data = d_trial),
+                 swe_lin = lm(short_window_elogit ~ age, data = d_trial),
+                 swe_log = lm(short_window_elogit ~ log_age, data = d_trial),
+                 lwa_lin = lm(long_window_accuracy ~ age, data = d_trial),
+                 lwa_log = lm(long_window_accuracy ~ log_age, data = d_trial),
+                 swa_lin = lm(short_window_accuracy ~ age, data = d_trial),
+                 swa_log = lm(short_window_accuracy ~ log_age, data = d_trial))
 
-models <- map_df(mods, ~broom::glance(.x)) |>
-  mutate(model = names(mods))
+acc_mods_summary <- map_df(acc_mods, ~broom::glance(.x)) |>
+  mutate(model = names(acc_mods))
 
-kable(models, digits = 4)
+kable(acc_mods_summary, digits = 4)
+```
+
+Reaction time models. 
+
+```{r}
+rt_mods <- list(log_log = lm(log_rt ~ log_age, data = d_trial),
+                log_lin = lm(log_rt ~ age, data = d_trial),
+                lin_log = lm(rt ~ log_age, data = d_trial),
+                lin_lin = lm(rt ~ age, data = d_trial))
+
+rt_mods_summary <- map_df(rt_mods, ~broom::glance(.x)) |>
+  mutate(model = names(rt_mods))
+
+kable(rt_mods_summary, digits = 4)
 ```
 
 
 
-# Trial-level, for each dataset
+## Within dataset
 
 Only look at datasets with some (cross-sectional) variation. 
 
@@ -83,7 +109,9 @@ datasets_with_age_variation <- d_trial |>
 d_trial_agevar <- d_trial |>
   filter(dataset_name %in% datasets_with_age_variation$dataset_name)
 ```
-  
+
+Accuracy
+
 ```{r}
 ggplot(d_trial_agevar, aes(x = age, y = short_window_accuracy)) + 
   geom_point(alpha = .05) + 
@@ -107,46 +135,189 @@ ggplot(d_trial_agevar,
   facet_wrap(~dataset_name, scales = "free_x")
 ```
 
-# Participant-level, across datasets
+### Stats
 
-Accuracy. 
-
-```{r}
-d_sub |>
-  pivot_longer(contains("accuracy"), 
-               values_to = "accuracy", names_to = "measure") |>
-ggplot(aes(x = age, y = accuracy)) + 
-  geom_point(alpha = .05) + 
-  geom_smooth() +
-  geom_smooth(method = "lm", col = "green") +
-  geom_hline(yintercept = .5, lty = 2) + 
-  scale_x_log10() + 
-  facet_wrap(~measure)
-```
-RTs
+Accuracy models. This time LMERs.
 
 ```{r}
-d_sub |>
-  pivot_longer(c("rt","log_rt"), 
-               values_to = "rt", names_to = "measure") |>
-ggplot(aes(x = age, y = rt)) + 
-  geom_point(alpha = .05) + 
-  geom_smooth() +
-  geom_smooth(method = "lm", col = "green") +
-  scale_x_log10()  + 
-  ylab("mean log RT") + 
-  facet_wrap(~measure, scales = "free_y")
+d_trial$age_s <- scale(d_trial$age)[,1]
+d_trial$log_age_s <- scale(d_trial$log_age)[,1]   
+
+acc_mods_lmer <- list(lwe_lin = lmer(long_window_elogit ~ 1 
+                                     + (age_s | dataset_name), data = d_trial),
+                      lwe_log = lmer(long_window_elogit ~ 1
+                                     + (log_age_s | dataset_name), data = d_trial),
+                      swe_lin = lmer(short_window_elogit ~ 1
+                                     + (age_s | dataset_name), data = d_trial),
+                      swe_log = lmer(short_window_elogit ~ 1
+                                     + (log_age_s | dataset_name), data = d_trial),
+                      lwa_lin = lmer(long_window_accuracy ~ 1
+                                     + (age_s | dataset_name), data = d_trial),
+                      lwa_log = lmer(long_window_accuracy ~ 1
+                                     + (log_age_s | dataset_name), data = d_trial),
+                      swa_lin = lmer(short_window_accuracy ~ 1
+                                     + (age_s | dataset_name), data = d_trial),
+                      swa_log = lmer(short_window_accuracy ~ 1
+                                     + (log_age_s | dataset_name), data = d_trial))
+
+acc_mods_lmer_summary <- map_df(acc_mods_lmer, ~broom.mixed::glance(.x)) |>
+  mutate(model = names(acc_mods_lmer), 
+         r2 = map_dbl(acc_mods_lmer, ~performance::r2_nakagawa(.x)$R2_conditional))
+
+kable(acc_mods_lmer_summary, digits = 4)
 ```
 
-# Participant-level, for each dataset
+Reaction time models. 
 
-Within each dataset. 
+```{r}
+rt_mods_lmer <- list(log_log = lmer(log_rt ~ 1 + 
+                                      (log_age_s | dataset_name), data = d_trial),
+                     log_lin = lmer(log_rt ~ 1 + 
+                                      (age_s | dataset_name), data = d_trial),
+                     lin_log = lmer(rt ~ 1 + 
+                                      (log_age_s | dataset_name), data = d_trial),
+                     lin_lin = lmer(rt ~ 1 + 
+                                      (age_s | dataset_name), data = d_trial))
+
+rt_mods_lmer_summary <- map_df(rt_mods_lmer, ~broom.mixed::glance(.x)) |>
+  mutate(model = names(rt_mods_lmer), 
+         r2 = map_dbl(rt_mods_lmer, ~performance::r2_nakagawa(.x)$R2_conditional))
+
+kable(rt_mods_lmer_summary, digits = 4)
+```
+
+
+
+# Participant-level
 
 ```{r}
 d_sub_agevar <- d_sub |>
   filter(dataset_name %in% datasets_with_age_variation$dataset_name)
 ```
-  
+
+## Across datasets
+
+Accuracy. 
+
+```{r}
+d_sub_long <- d_sub |>
+  pivot_longer(contains("accuracy"), 
+               values_to = "accuracy", names_to = "measure") 
+d_sub_agevar_long <- d_sub_agevar |>
+  pivot_longer(contains("accuracy"), 
+               values_to = "accuracy", names_to = "measure") 
+
+ggplot(d_sub_long, 
+       aes(x = age, y = accuracy)) + 
+  geom_point(alpha = .05) + 
+  geom_smooth() +
+  geom_smooth(method = "lm", col = "green") +
+  geom_smooth(data = d_sub_agevar_long,
+              aes(group = dataset_name, col = dataset_name), geom="line",
+              alpha = .1, method = "lm", size = .5, lty = 2) + 
+  geom_hline(yintercept = .5, lty = 2) + 
+  scale_x_log10() + 
+  facet_wrap(~measure) + 
+  theme(legend.position = "bottom") + 
+  ylab("Accuracy") + 
+  xlab("Age (months)")
+```
+
+Elogits
+
+```{r}
+d_sub_long_elogit <- d_sub |>
+  pivot_longer(contains("elogit"), 
+               values_to = "accuracy", names_to = "measure") 
+d_sub_agevar_long_elogit <- d_sub_agevar |>
+  pivot_longer(contains("elogit"), 
+               values_to = "accuracy", names_to = "measure") 
+
+ggplot(d_sub_long_elogit, 
+       aes(x = age, y = accuracy)) + 
+  geom_point(alpha = .05) + 
+  geom_smooth() +
+  geom_smooth(method = "lm", col = "green") +
+  geom_smooth(data = d_sub_agevar_long_elogit,
+              aes(group = dataset_name, col = dataset_name), geom="line",
+              alpha = .1, method = "lm", size = .5, lty = 2) + 
+  geom_hline(yintercept = .5, lty = 2) + 
+  scale_x_log10() + 
+  facet_wrap(~measure) + 
+  theme(legend.position = "bottom") + 
+  ylab("Accuracy (elogit)") + 
+  xlab("Age (months)")
+```
+
+RTs
+
+```{r}
+d_sub_long_rt <- d_sub |>
+  pivot_longer(c("rt","log_rt"), 
+               values_to = "rt", names_to = "measure") 
+
+d_sub_agevar_long_rt <- d_sub_agevar |>
+  pivot_longer(c("rt","log_rt"), 
+               values_to = "rt", names_to = "measure") 
+
+ggplot(d_sub_long_rt, 
+       aes(x = age, y = rt)) + 
+  geom_point(alpha = .05) + 
+  geom_smooth() +
+  geom_smooth(method = "lm", col = "green") +
+  geom_smooth(data = d_sub_agevar_long_rt,
+              aes(group = dataset_name, col = dataset_name), geom="line",
+              alpha = .1, method = "lm", size = .5, lty = 2) + 
+  # geom_hline(yintercept = .5, lty = 2) + 
+  scale_x_log10() + 
+  facet_wrap(~measure, scales = "free_y") + 
+  theme(legend.position = "bottom") + 
+  ylab("mean log RT") + 
+  xlab("Age (months)")
+
+```
+
+### Stats
+
+
+Accuracy models. 
+
+```{r}
+acc_mods_sub <- list(lwe_lin = lm(long_window_elogit ~ age, data = d_sub),
+                     lwe_log = lm(long_window_elogit ~ log_age, data = d_sub),
+                     swe_lin = lm(short_window_elogit ~ age, data = d_sub),
+                     swe_log = lm(short_window_elogit ~ log_age, data = d_sub),
+                     lwa_lin = lm(long_window_accuracy ~ age, data = d_sub),
+                     lwa_log = lm(long_window_accuracy ~ log_age, data = d_sub),
+                     swa_lin = lm(short_window_accuracy ~ age, data = d_sub),
+                     swa_log = lm(short_window_accuracy ~ log_age, data = d_sub))
+
+acc_mods_sub_summary <- map_df(acc_mods_sub, ~broom::glance(.x)) |>
+  mutate(model = names(acc_mods_sub))
+
+kable(acc_mods_sub_summary, digits = 4)
+```
+
+Reaction time models. 
+
+```{r}
+mods_sub <- list(log_log = lm(log_rt ~ log_age, data = d_sub),
+                 log_lin = lm(log_rt ~ age, data = d_sub),
+                 lin_log = lm(rt ~ log_age, data = d_sub),
+                 lin_lin = lm(rt ~ age, data = d_sub))
+
+models_sub <- map_df(mods_sub, ~broom::glance(.x)) |>
+  mutate(model = names(mods_sub))
+
+kable(models_sub, digits = 4)
+```
+
+## Within dataset
+
+Within each dataset. 
+
+
+
 ```{r}
 ggplot(d_sub_agevar, aes(x = age, y = short_window_accuracy)) + 
   geom_point(alpha = .05) + 
@@ -157,15 +328,16 @@ ggplot(d_sub_agevar, aes(x = age, y = short_window_accuracy)) +
   facet_wrap(~dataset_name, scales = "free_x")
 ```
 
-elogits 
+elogits
 
 ```{r}
-ggplot(d_sub_agevar, aes(x = age, y = short_window_elogit)) + 
-  geom_point(alpha = .05) + 
+ggplot(d_sub_agevar, aes(x = age, y = long_window_elogit)) +
+  geom_point(alpha = .05) +
   geom_smooth(method = "lm", col = "green", alpha = .5) +
   geom_smooth(method = "loess", alpha = .5) +
-  geom_hline(yintercept = .5, lty = 2) + 
-  scale_x_log10() + 
+  geom_hline(yintercept = .5, lty = 2) +
+  # scale_x_log10() +
+  ylim(-2,3) + 
   facet_wrap(~dataset_name, scales = "free_x")
 ```
 
@@ -182,37 +354,138 @@ ggplot(d_sub_agevar,
   facet_wrap(~dataset_name, scales = "free_x")
 ```
 
-## Stats
+
+### Stats
+
+Accuracy models. 
 
 ```{r}
-mods_sub <- list(log_log = lm(log_rt ~ log_age, data = d_sub),
-             log_lin = lm(log_rt ~ age, data = d_sub),
-             lin_log = lm(rt ~ log_age, data = d_sub),
-             lin_lin = lm(rt ~ age, data = d_sub))
+d_sub$age_s <- scale(d_sub$age)[,1]
+d_sub$log_age_s <- scale(d_sub$log_age)[,1]   
 
-models_sub <- map_df(mods_sub, ~broom::glance(.x)) |>
-  mutate(model = names(mods_sub))
+acc_mods_sub_lmer <- list(lwe_lin = lmer(long_window_elogit ~ 1 
+                                         + (age_s | dataset_name), data = d_sub),
+                          lwe_log = lmer(long_window_elogit ~ 1
+                                         + (log_age_s | dataset_name), data = d_sub),
+                          swe_lin = lmer(short_window_elogit ~ 1
+                                         + (age_s | dataset_name), data = d_sub),
+                          swe_log = lmer(short_window_elogit ~ 1
+                                         + (log_age_s | dataset_name), data = d_sub),
+                          lwa_lin = lmer(long_window_accuracy ~ 1
+                                         + (age_s | dataset_name), data = d_sub),
+                          lwa_log = lmer(long_window_accuracy ~ 1
+                                         + (log_age_s | dataset_name), data = d_sub),
+                          swa_lin = lmer(short_window_accuracy ~ 1
+                                         + (age_s | dataset_name), data = d_sub),
+                          swa_log = lmer(short_window_accuracy ~ 1
+                                         + (log_age_s | dataset_name), data = d_sub))
 
-kable(models_sub, digits = 4)
+acc_mods_sub_lmer_summary <- map_df(acc_mods_sub_lmer, ~broom.mixed::glance(.x)) |>
+  mutate(model = names(acc_mods_sub_lmer), 
+         r2 = map_dbl(acc_mods_sub_lmer, ~performance::r2_nakagawa(.x)$R2_conditional))
+
+kable(acc_mods_sub_lmer_summary, digits = 4)
+```
+
+Reaction time models. 
+
+```{r}
+rt_mods_lmer <- list(log_log = lmer(log_rt ~ 1 + 
+                                      (log_age_s | dataset_name), data = d_sub),
+                     log_lin = lmer(log_rt ~ 1 + 
+                                      (age_s | dataset_name), data = d_sub),
+                     lin_log = lmer(rt ~ 1 + 
+                                      (log_age_s | dataset_name), data = d_sub),
+                     lin_lin = lmer(rt ~ 1 + 
+                                      (age_s | dataset_name), data = d_sub))
+
+rt_mods_lmer_summary <- map_df(rt_mods_lmer, ~broom.mixed::glance(.x)) |>
+  mutate(model = names(rt_mods_lmer), 
+         r2 = map_dbl(rt_mods_lmer, ~performance::r2_nakagawa(.x)$R2_conditional))
+
+kable(rt_mods_lmer_summary, digits = 4)
 ```
 
 # Variability
 
 ```{r}
-d_trial |>
-  group_by(administration_id, age) |>
-  summarise (sd_rt = sd(rt, na.rm=TRUE), 
-             sd_acc = sd(long_window_accuracy, na.rm=TRUE)) |>
+d_var <- d_trial |>
+  group_by(dataset_name, administration_id, age) |>
+  summarise (`SD(log RT)` = sd(log_rt, na.rm=TRUE), 
+             `SD(accuracy)` = sd(long_window_elogit, na.rm=TRUE)) |>
   pivot_longer(contains("sd"), 
-               values_to = "sd", names_to = "measure") |>
-ggplot(aes(x = age, y = sd)) + 
+               values_to = "sd", names_to = "measure") 
+
+
+v <- ggplot(d_var, aes(x = age, y = sd)) + 
   geom_point(alpha = .05) + 
   geom_smooth() +
   geom_smooth(method = "lm", col = "green") +
-  # geom_hline(yintercept = .5, lty = 2) + 
+  geom_smooth(data = d_var |>
+  filter(dataset_name %in% datasets_with_age_variation$dataset_name),
+              aes(group = dataset_name, col = dataset_name), geom="line",
+              alpha = .1, method = "lm", size = .5, lty = 2) + 
+  scale_color_discrete(guide = FALSE) + 
   scale_x_log10() +
   facet_wrap(~measure, scales = "free_y")
+
+v 
+ggsave(v, filename = "figures/var.png", width = 8, height = 3.5)
+
 ```
+# Pub stuff
+
+stats
+
+```{r}
+d_sub |>
+  group_by(dataset_name) |>
+  summarise(n = n(), 
+            `Mean Age` = mean(age), 
+            `Min Age` = min(age), 
+            `Max Age` = max(age), 
+            `CDIs` = ifelse(!is.na(any(prod)), "x", ""), 
+            `longitudinal` = ifelse(any(duplicated(subject_id)), "x", "")) |>
+  xtable(caption = "Characteristics of included datasets from Peekbank.")
+```
+
+
+
+```{r}
+a <- ggplot(d_sub_long_elogit |> filter(measure == "long_window_elogit"), 
+       aes(x = age, y = accuracy)) + 
+  geom_point(alpha = .05) + 
+  geom_smooth() +
+  geom_smooth(method = "lm", col = "green") +
+  geom_smooth(data = d_sub_agevar_long_elogit |> filter(measure == "long_window_elogit"),
+              aes(group = dataset_name, col = dataset_name), geom="line",
+              alpha = .1, method = "lm", size = .5, lty = 2) + 
+  geom_hline(yintercept = .5, lty = 2) + 
+  scale_x_log10() +
+  scale_color_discrete(guide = FALSE) + 
+  ylab("Accuracy (elogit)") + 
+  xlab("Age (months)")
+
+b <- ggplot(d_sub_long_rt |> filter(measure == "log_rt"), 
+       aes(x = age, y = rt)) + 
+  geom_point(alpha = .05) + 
+  geom_smooth() +
+  geom_smooth(method = "lm", col = "green") +
+  geom_smooth(data = d_sub_agevar_long_rt |> filter(measure == "log_rt"),
+              aes(group = dataset_name, col = dataset_name), geom="line",
+              alpha = .1, method = "lm", size = .5, lty = 2) + 
+  # geom_hline(yintercept = .5, lty = 2) + 
+  scale_x_log10() +
+  scale_color_discrete(guide = FALSE) + 
+  theme(legend.position = "bottom") + 
+  ylab("Reaction Time (log)") + 
+  xlab("Age (months)")
+
+f <- cowplot::plot_grid(a,b)
+ggsave(f, filename = "figures/acc_rt.png", width = 8, height = 3.5)
+
+```
+
 
 
 # Appendix: What if we remove zoner trials?
@@ -226,7 +499,7 @@ d_trial |>
   pivot_longer(contains("accuracy"), 
                values_to = "accuracy", names_to = "measure") |>
   filter(accuracy > 0, accuracy < 1) |> 
-ggplot(aes(x = age, y = accuracy)) + 
+  ggplot(aes(x = age, y = accuracy)) + 
   geom_point(alpha = .05) + 
   geom_smooth() +
   geom_smooth(method = "lm", col = "green") +
@@ -248,7 +521,7 @@ d_sub_nozoner <- d_trial |>
 d_sub_nozoner |>
   pivot_longer(contains("accuracy"), 
                values_to = "accuracy", names_to = "measure") |>
-ggplot(aes(x = age, y = accuracy)) + 
+  ggplot(aes(x = age, y = accuracy)) + 
   geom_point(alpha = .05) + 
   geom_smooth() +
   geom_smooth(method = "lm", col = "green") +
