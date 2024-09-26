@@ -7,10 +7,11 @@ format: html
 suppressPackageStartupMessages(library(here))
 suppressPackageStartupMessages(library(psych))
 suppressPackageStartupMessages(source(here("helper","common.R")))
-d_sub <- readRDS(here("cached_intermediates","1_d_sub.Rds"))
 library(lavaan)
 library(tidySEM)
 
+d_sub <- readRDS(here("cached_intermediates","1_d_sub.Rds"))
+d_trial <- readRDS(here("cached_intermediates","1_d_trial.Rds"))
 ```
 
 
@@ -43,8 +44,30 @@ d_sub |>
   select(log_age, log_rt,  
          long_window_accuracy,  prod, comp) |>
 GGally::ggpairs(progress = FALSE, 
-                lower = list(continuous = GGally::wrap("points", alpha = 0.03)))
+                lower = list(continuous = GGally::wrap("points", alpha = 0.03)),
+                axisLabels = "show") 
+ 
 
+```
+
+### Controlling for age (between dataset)
+
+```{r}
+d_residualized_by_age <- d_sub |>
+  select(subject_id, administration_id,log_age,log_rt, long_window_accuracy, prod, comp) |> 
+  pivot_longer(cols=c(log_rt,long_window_accuracy,  prod, comp),names_to="measure",values_to="value") |>
+  group_by(measure) |> 
+  nest() |> 
+  mutate(fits = map(data, \(d) lm(value ~ log_age, data = d) |>
+                      broom::augment(newdata = d))) |> 
+  unnest(fits) |> 
+  select(-data)
+
+d_residualized_by_age |>
+  select(administration_id, measure, .resid) |>
+  pivot_wider(names_from = measure, values_from = .resid) |>
+  select(-administration_id) |>
+  GGally::ggpairs(progress=FALSE,lower = list(continuous = GGally::wrap("points", alpha = 0.03)))
 ```
 
 ## Within dataset
@@ -77,6 +100,11 @@ ggplot(all_corrs, aes(x = variable1, y = r, col = dataset_name)) +
 Several variables. 
 
 ```{r}
+datasets_with_age_variation <- d_trial |>
+  group_by(dataset_name) |>
+  summarise(age_range = max(age) - min(age)) |>
+  filter(age_range >= 4)
+
 d_sub_agevar <- d_sub |>
   filter(dataset_name %in% datasets_with_age_variation$dataset_name)
 
@@ -135,8 +163,70 @@ ggplot(all_corrs,
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ```
 
+Hmm, want to think more about  estimating an "average" correlation when the variation in age changes so dramatically between datasets
 
+```{r}
+#order by correlation value of log age and long window accuracy
+all_corrs_log_age_acc <- all_corrs |> 
+  ungroup() |> 
+  filter(variable1 == "log_age" & variable2 == "long_window_accuracy") |>
+  mutate(dataset_name_ordered= fct_reorder(dataset_name,r))
 
+d_sub_agevar <- d_sub_agevar |> 
+  left_join(all_corrs_log_age_acc)
+
+#quick peek at cross-dataset estimates, ranked by strength of correlation
+ggplot(d_sub_agevar,aes(log_age,long_window_accuracy))+geom_point()+geom_smooth(method="lm")+facet_wrap(~dataset_name_ordered)
+```
+
+### Controlling for age (within dataset)
+
+```{r}
+all_corrs_age_residualized <- d_sub_agevar |>
+  ungroup() |> 
+  #compute variables residualized by age
+select(dataset_name, administration_id,subject_id,log_age, log_rt, rt,
+                       long_window_accuracy, long_window_elogit,prod) |>
+  pivot_longer(cols=c(log_rt, rt,
+                       long_window_accuracy, long_window_elogit,  prod),names_to="measure",values_to="value") |>
+  group_by(dataset_name,measure) |> 
+  nest() |> 
+  mutate(fits = map(data, \(d) {if(sum(!is.na(d$value))>0) {lm(value ~ log_age, data = d) |> broom::augment(newdata = d)} })) |>
+  unnest(fits) |> 
+  select(dataset_name,subject_id,administration_id,measure, .resid) |> 
+  rename(resid = .resid) |> 
+  pivot_wider(names_from=measure,values_from=resid,names_prefix="resid_") |> 
+  #now group by dataset and compute pairwise correlations
+  select(-subject_id,-administration_id) |>
+  group_by(dataset_name) |>
+  nest() |>
+  mutate(corrs = map(data, ~cor(.x, use = "pairwise.complete.obs")),
+         long_corrs = map(corrs, ~pivot_longer(as_tibble(.x) |> 
+                                                mutate(variable1 = colnames(.x)), 
+                                               -variable1, names_to = "variable2", 
+                                               values_to = "r"))) |>
+  mutate(corrs = map(data, ~cor(.x, use = "pairwise.complete.obs")),
+         long_corrs = map(corrs, ~pivot_longer(as_tibble(.x) |> 
+                                                mutate(variable1 = colnames(.x)), 
+                                               -variable1, names_to = "variable2", 
+                                               values_to = "r"))) |>
+  select(-data, -corrs) |>
+  unnest(cols = c(long_corrs)) |>
+  filter(variable1 != variable2, 
+         !(variable1 == "resid_rt" & variable2 == "resid_log_rt"), 
+         !(variable1 == "resid_log_rt" & variable2 == "resid_rt"),
+         !(variable1 == "resid_long_window_accuracy" & variable2 == "resid_long_window_elogit"),
+         !(variable1 == "resid_long_window_elogit" & variable2 == "resid_long_window_accuracy"))
+
+ggplot(all_corrs_age_residualized,
+       aes(x = variable1, y = r, col = dataset_name)) + 
+  geom_point(alpha = .5, pch = 20) +
+  stat_summary(fun.data = "mean_cl_boot", aes(group = 1)) +
+  geom_hline(yintercept = 0, lty = 2) + 
+  # coord_flip() +
+  facet_grid(.~variable2, scales = "free_x") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
 
 # Individual relationships
 
@@ -190,11 +280,6 @@ ggplot(filter(d_sub, !is.na(age_group)),
 By dataset.
 
 ```{r}
-datasets_with_age_variation <- d_trial |>
-  group_by(dataset_name) |>
-  summarise(age_range = max(age) - min(age)) |>
-  filter(age_range >= 4)
-
 ggplot(filter(d_sub, 
               !is.na(rt), !is.na(factor_rt), 
               dataset_name %in% datasets_with_age_variation$dataset_name),
