@@ -8,6 +8,9 @@ suppressPackageStartupMessages(library(here))
 suppressPackageStartupMessages(library(psych))
 suppressPackageStartupMessages(source(here("helper","common.R")))
 d_sub <- readRDS(here("cached_intermediates","1_d_sub.Rds"))
+library(lavaan)
+library(tidySEM)
+
 ```
 
 
@@ -214,6 +217,28 @@ ggplot(filter(d_sub,
 
 The claim of some of the Fernald processing corpus is that there is a second principal component here (namely, processing speed) that is meaningful and relates to later learning outcomes.
 
+## All data
+
+
+Scree plot
+
+```{r}
+d_sub_mat <- d_sub |>
+  ungroup() |>
+  select(log_age, log_rt, long_window_accuracy) 
+
+d_sub_mat <- d_sub_mat |>
+  filter(complete.cases(d_sub_mat)) |>
+  as.matrix() 
+
+fa.parallel(d_sub_mat)
+```
+```{r}
+mod1 <- fa(d_sub_mat, 1, rotate = "varimax")
+
+```
+
+
 
 
 ## Production
@@ -268,12 +293,21 @@ d_sub_mat_grp <- d_sub_mat_dataset |>
     mat = as.matrix(complete_data), 
     has_data = map_lgl(complete_data, ~nrow(.x)>0)) |>
   filter(has_data) |>
-  mutate(factors = map(mat, ~fa(.x, 1, rotate = "varimax")), 
-         f_summary = map(factors, summary), 
-         loadings = map_df(factors, ~as.tibble(loadings(x))))
+  mutate(fas = map(mat, ~fa(.x, 1, rotate = "varimax")), 
+         f_summary = map(fas, summary), 
+         loadings = map(fas, ~tibble(loadings = as.double(loadings(.x)), 
+                                     name = rownames(loadings(.x)))))
 
-d_sub_mat_grp |>
-  
+
+ls <- d_sub_mat_grp |>
+  select(dataset_name, loadings) |>
+  unnest(cols = c(loadings))
+
+ggplot(ls, aes(x = name, y = loadings, col = dataset_name)) + 
+  geom_point(aes = .5) +
+  stat_summary(fun.data = "mean_cl_boot", aes(group = 1)) +
+  geom_hline(yintercept = 0, lty = 2) + 
+  coord_flip()
 
 ```
 
@@ -319,6 +353,72 @@ summary(acc_rt_prc_comp)
 ggbiplot::ggbiplot(acc_rt_prc_comp, alpha = .1)
 ```
 
+# CFA models
+
+```{r}
+
+d_cfa <- d_sub |>
+             rename(`accuracy` = long_window_accuracy) |>
+             mutate(accuracy = scale(accuracy), 
+                    log_age = scale(log_age), 
+                    log_rt = scale(log_rt)) |>
+  select(accuracy, log_age, log_rt) 
+
+d_cfa <- d_cfa[complete.cases(d_cfa), ]
+
+fa_model <-  "F1  =~ log_age + log_rt + accuracy"
+fit <- cfa(fa_model, d_cfa, std.lv=TRUE)
+
+summary(fit)
+a <- graph_sem(model = fit)+ theme(panel.background = element_rect(fill = "white"))
+```
+
+```{r}
+d_cfa_prod <- d_sub |>
+             rename(`accuracy` = long_window_accuracy) |>
+             mutate(accuracy = scale(accuracy), 
+                    log_age = scale(log_age), 
+                    log_rt = scale(log_rt), 
+                    prod = scale(prod)) |>
+  select(accuracy, log_age, log_rt, prod) 
+
+d_cfa_prod <- d_cfa_prod[complete.cases(d_cfa_prod), ]
+
+fa_model_prod <-  "F1  =~ log_age + log_rt + accuracy + prod"
+fit_prod <- cfa(fa_model_prod, d_cfa_prod, std.lv=TRUE)
+
+summary(fit_prod)
+b <- graph_sem(model = fit_prod) + 
+  theme(panel.background = element_rect(fill = "white"))
+b
+```
+```{r}
+d_cfa_comp <- d_sub |>
+             rename(`accuracy` = long_window_accuracy) |>
+             mutate(accuracy = scale(accuracy), 
+                    log_age = scale(log_age), 
+                    log_rt = scale(log_rt), 
+                    comp = scale(comp)) |>
+  select(accuracy, log_age, log_rt, comp) 
+
+d_cfa_comp <- d_cfa_comp[complete.cases(d_cfa_comp), ]
+
+fa_model_comp <-  "F1  =~ log_age + log_rt + accuracy + comp"
+fit_comp <- cfa(fa_model_comp, d_cfa_comp, std.lv=TRUE)
+
+summary(fit_comp)
+c <- graph_sem(model = fit_comp,
+            layout = get_layout(x = fit_comp, layout_algorithm = "layout_as_star")) + 
+    theme(panel.background = element_rect(fill = "white"))
+c
+```
+
+```{r}
+plot_grid(a,b,c, nrow = 1, labels = c("A","B","C"))
+ggsave(here("figures","sem.png"), width = 25, height = 4)
+```
+
+
 # Longitudinal data
 
 ```{r}
@@ -328,29 +428,35 @@ longitudinal <- d_sub |>
   filter(n > 1)
 
 d_sub_long <- d_sub |>
-  filter(subject_id %in% longitudinal$subject_id, 
-                     !is.na(prod)) |>
+  filter(subject_id %in% longitudinal$subject_id) |>
   group_by(subject_id) |>
   arrange(administration_id) |>
   mutate(admin_num = 1:n(), 
          delta_t = c(0,diff(age)))
   
-ggplot(filter(d_sub_long, admin_num > 1), 
-       aes(x = delta_t)) +
-  geom_histogram()
+ggplot(d_sub_long, 
+       aes(x = delta_t, fill = as.factor(admin_num))) +
+  geom_histogram() + 
+  facet_wrap(~dataset_name)
 ```
+
+Longitudinal data with CDI is just FMW2013 right now. 
 
 ```{r}
+fmw <- filter(d_sub_long, dataset_name == "fmw_2013") |>
+  mutate(t = ifelse(age < 23, "t1","t2")) |>
+  group_by(subject_id, t) |>
+  summarise(age = mean(age), 
+            log_rt = mean(log_rt), 
+            prod = mean(prod), 
+            long_window_accuracy = mean(long_window_accuracy),
+            delta_t = mean(delta_t)) |>
+  pivot_wider(names_from = "t", 
+              values_from = c("age","log_rt","prod","long_window_accuracy", "delta_t"))
 
+summary(lm(prod_t2 ~ long_window_accuracy_t1 * log_rt_t1 + age_t2, 
+             data = fmw))
 ```
-
-
-```{r}
-library(lavaan)
-
-```
-
-
 
 # Conclusions
 

@@ -411,9 +411,9 @@ kable(rt_mods_lmer_summary, digits = 4)
 ```{r}
 d_var <- d_trial |>
   group_by(dataset_name, administration_id, age) |>
-  summarise (`SD(log RT)` = sd(log_rt, na.rm=TRUE), 
-             `SD(accuracy)` = sd(long_window_elogit, na.rm=TRUE)) |>
-  pivot_longer(contains("sd"), 
+  summarise (`log(RT)` = sd(log_rt, na.rm=TRUE), 
+             `Accuracy` = sd(long_window_accuracy, na.rm=TRUE)) |>
+  pivot_longer(c("log(RT)","Accuracy"), 
                values_to = "sd", names_to = "measure") 
 
 
@@ -427,7 +427,9 @@ v <- ggplot(d_var, aes(x = age, y = sd)) +
               alpha = .1, method = "lm", size = .5, lty = 2) + 
   scale_color_discrete(guide = FALSE) + 
   scale_x_log10() +
-  facet_wrap(~measure, scales = "free_y")
+  facet_wrap(~measure, scales = "free_y") + 
+  ylab("Standard Deviation") + 
+  xlab("Age (months)")
 
 v 
 ggsave(v, filename = "figures/var.png", width = 8, height = 3.5)
@@ -440,30 +442,34 @@ stats
 ```{r}
 d_sub |>
   group_by(dataset_name) |>
-  summarise(n = n(), 
+  summarise(`N subjects` = length(unique(subject_id)),
+            `N admins` = n(), 
             `Mean Age` = mean(age), 
             `Min Age` = min(age), 
             `Max Age` = max(age), 
+            `Avg Trials` = mean(n_trials),
+            `Avg RT Trials` = mean(n_trials_rt),
             `CDIs` = ifelse(!is.na(any(prod)), "x", ""), 
             `longitudinal` = ifelse(any(duplicated(subject_id)), "x", "")) |>
-  xtable(caption = "Characteristics of included datasets from Peekbank.")
+  arrange(desc(`N subjects`)) |>
+  xtable(caption = "Characteristics of included datasets from Peekbank. `Admins` denotes separate experimental sessions.")
 ```
 
 
 
 ```{r}
-a <- ggplot(d_sub_long_elogit |> filter(measure == "long_window_elogit"), 
+a <- ggplot(d_sub_long |> filter(measure == "long_window_accuracy"), 
        aes(x = age, y = accuracy)) + 
   geom_point(alpha = .05) + 
   geom_smooth() +
   geom_smooth(method = "lm", col = "green") +
-  geom_smooth(data = d_sub_agevar_long_elogit |> filter(measure == "long_window_elogit"),
+  geom_smooth(data = d_sub_agevar_long |> filter(measure == "long_window_accuracy"),
               aes(group = dataset_name, col = dataset_name), geom="line",
               alpha = .1, method = "lm", size = .5, lty = 2) + 
   geom_hline(yintercept = .5, lty = 2) + 
   scale_x_log10() +
   scale_color_discrete(guide = FALSE) + 
-  ylab("Accuracy (elogit)") + 
+  ylab("Accuracy") + 
   xlab("Age (months)")
 
 b <- ggplot(d_sub_long_rt |> filter(measure == "log_rt"), 
