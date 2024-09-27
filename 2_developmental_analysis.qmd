@@ -28,6 +28,11 @@ Let's not immediately elogit as that was just for models.
 Let's also use only `mean(log(rt))` as that's correct if we think RTs are sampled from a log-normal distribution. 
 
 
+TODO:
+- number of trials RT cleaning for slope comparison? (25% dataset? 2 RTs)
+- check factor invariance across age - Measurement invariance?!?
+- report on non-linearity model comparison
+
 # Trial-level
 
 ## Across datasets

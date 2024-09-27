@@ -29,7 +29,7 @@ cor(select(d_sub, age, log_age, rt, log_rt,
 
 Take a look at correlations to select variables. 
 
-```{r, fig.width=9, fig.height=9}
+```{r}
 GGally::ggpairs(select(d_sub, age, log_age, rt, log_rt, 
                        short_window_accuracy, long_window_accuracy, 
                        short_window_elogit, long_window_elogit, prod, comp), 
@@ -318,8 +318,10 @@ d_sub_mat <- d_sub_mat |>
 
 fa.parallel(d_sub_mat)
 ```
+
 ```{r}
 mod1 <- fa(d_sub_mat, 1, rotate = "varimax")
+mod1
 
 ```
 
@@ -364,7 +366,9 @@ summary(acc_rt_prc)
 ggbiplot::ggbiplot(acc_rt_prc, alpha = .1)
 ```
 
+
 ## Production within individual datasets
+
 
 ```{r}
 d_sub_mat_dataset <- d_sub |>
@@ -457,6 +461,7 @@ fit <- cfa(fa_model, d_cfa, std.lv=TRUE)
 summary(fit)
 a <- graph_sem(model = fit)+ theme(panel.background = element_rect(fill = "white"))
 ```
+Production. 
 
 ```{r}
 d_cfa_prod <- d_sub |>
@@ -477,6 +482,9 @@ b <- graph_sem(model = fit_prod) +
   theme(panel.background = element_rect(fill = "white"))
 b
 ```
+
+Comprehension.
+
 ```{r}
 d_cfa_comp <- d_sub |>
              rename(`accuracy` = long_window_accuracy) |>
@@ -498,9 +506,22 @@ c <- graph_sem(model = fit_comp,
 c
 ```
 
+Plot these as a grid. 
+
 ```{r}
 plot_grid(a,b,c, nrow = 1, labels = c("A","B","C"))
 ggsave(here("figures","sem.png"), width = 25, height = 4)
+```
+
+## Measurement invariance across age? 
+
+```{r}
+fa_model <-  "F1  =~ log_age + log_rt + accuracy"
+fit_younger <- cfa(fa_model, 
+                   filter(d_cfa, log_age <= median(log_age)),
+                   std.lv=TRUE)
+
+graph_sem(model = fit_younger)
 ```
 
 
@@ -543,7 +564,30 @@ summary(lm(prod_t2 ~ long_window_accuracy_t1 * log_rt_t1 + age_t2,
              data = fmw))
 ```
 
+## Without CDIs
+
+```{r}
+ggplot(d_sub_long, 
+       aes(x = age, y = long_window_accuracy, group = subject_id, col = dataset_name)) +
+  geom_line(alpha = .3, position = position_jitter(width = .1, height = 0)) + 
+  geom_smooth(aes(group = 1)) + 
+  scale_y_log10() + 
+  geom_hline(lty = 2, yintercept = .5)
+
+```
+
+```{r}
+ggplot(filter(d_sub_long, n_trials_rt > 3),
+       aes(x = age, y = log_rt, group = subject_id, col = dataset_name)) +
+  geom_line(alpha = .3, position = position_jitter(width = .1, height = 0)) + 
+  geom_smooth(aes(group = 1)) + 
+  scale_y_log10() 
+```
+
+## Model comparison of growth forms within kids
+
+
+
 # Conclusions
 
-The next thing to do is look at any longitudinal data we have, to see how predictive faster LWL at t0 is of higher CDIs at t1.
 
