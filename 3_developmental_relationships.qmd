@@ -4,6 +4,9 @@ format: html
 ---
 
 ```{r}
+AGEVAR_CUTOFF <- 6
+
+
 suppressPackageStartupMessages(library(here))
 suppressPackageStartupMessages(library(psych))
 suppressPackageStartupMessages(source(here("helper","common.R")))
@@ -21,8 +24,8 @@ d_trial <- readRDS(here("cached_intermediates","1_d_trial.Rds"))
 
 ```{r}
 cor(select(d_sub, age, log_age, rt, log_rt, 
-                       short_window_accuracy, long_window_accuracy, 
-                       short_window_elogit, long_window_elogit, prod, comp), 
+           short_window_accuracy, long_window_accuracy, 
+           short_window_elogit, long_window_elogit, prod, comp), 
     use = "pairwise.complete.obs") |>
   round(2)
 ```
@@ -43,10 +46,10 @@ Let's select the most interesting of these.
 d_sub |>
   select(log_age, log_rt,  
          long_window_accuracy,  prod, comp) |>
-GGally::ggpairs(progress = FALSE, 
-                lower = list(continuous = GGally::wrap("points", alpha = 0.03)),
-                axisLabels = "show") 
- 
+  GGally::ggpairs(progress = FALSE, 
+                  lower = list(continuous = GGally::wrap("points", alpha = 0.03)),
+                  axisLabels = "show") 
+
 
 ```
 
@@ -77,14 +80,14 @@ All the variables.
 
 ```{r}
 all_corrs <- d_sub |>
-select(dataset_name, age, log_age, rt, log_rt, 
-                       short_window_accuracy, long_window_accuracy, 
-                       short_window_elogit, long_window_elogit, prod, comp) |>
+  select(dataset_name, age, log_age, rt, log_rt, 
+         short_window_accuracy, long_window_accuracy, 
+         short_window_elogit, long_window_elogit, prod, comp) |>
   group_by(dataset_name) |>
   nest() |>
   mutate(corrs = map(data, ~cor(.x, use = "pairwise.complete.obs")),
          long_corrs = map(corrs, ~pivot_longer(as_tibble(.x) |> 
-                                                mutate(variable1 = colnames(.x)), 
+                                                 mutate(variable1 = colnames(.x)), 
                                                -variable1, names_to = "variable2", 
                                                values_to = "r"))) |>
   select(-data, -corrs) |>
@@ -103,20 +106,20 @@ Several variables.
 datasets_with_age_variation <- d_trial |>
   group_by(dataset_name) |>
   summarise(age_range = max(age) - min(age)) |>
-  filter(age_range >= 4)
+  filter(age_range >= AGEVAR_CUTOFF)
 
 d_sub_agevar <- d_sub |>
   filter(dataset_name %in% datasets_with_age_variation$dataset_name)
 
 
 all_corrs <- d_sub_agevar |>
-select(dataset_name, log_age, log_rt, rt,
-                       long_window_accuracy, long_window_elogit) |>
+  select(dataset_name, log_age, log_rt, rt,
+         long_window_accuracy, long_window_elogit) |>
   group_by(dataset_name) |>
   nest() |>
   mutate(corrs = map(data, ~cor(.x, use = "pairwise.complete.obs")),
          long_corrs = map(corrs, ~pivot_longer(as_tibble(.x) |> 
-                                                mutate(variable1 = colnames(.x)), 
+                                                 mutate(variable1 = colnames(.x)), 
                                                -variable1, names_to = "variable2", 
                                                values_to = "r"))) |>
   select(-data, -corrs) |>
@@ -141,13 +144,13 @@ Plot correlations of key variables now.  Annoying to figure out how to remove th
 
 ```{r}
 all_corrs <- d_sub_agevar |>
-select(dataset_name, log_age, log_rt,
-                       long_window_accuracy) |>
+  select(dataset_name, log_age, log_rt,
+         long_window_accuracy) |>
   group_by(dataset_name) |>
   nest() |>
   mutate(corrs = map(data, ~cor(.x, use = "pairwise.complete.obs")),
          long_corrs = map(corrs, ~pivot_longer(as_tibble(.x) |> 
-                                                mutate(variable1 = colnames(.x)), 
+                                                 mutate(variable1 = colnames(.x)), 
                                                -variable1, names_to = "variable2", 
                                                values_to = "r"))) |>
   select(-data, -corrs) |>
@@ -185,10 +188,10 @@ ggplot(d_sub_agevar,aes(log_age,long_window_accuracy))+geom_point()+geom_smooth(
 all_corrs_age_residualized <- d_sub_agevar |>
   ungroup() |> 
   #compute variables residualized by age
-select(dataset_name, administration_id,subject_id,log_age, log_rt, rt,
-                       long_window_accuracy, long_window_elogit,prod) |>
+  select(dataset_name, administration_id,subject_id,log_age, log_rt, rt,
+         long_window_accuracy, long_window_elogit,prod) |>
   pivot_longer(cols=c(log_rt, rt,
-                       long_window_accuracy, long_window_elogit,  prod),names_to="measure",values_to="value") |>
+                      long_window_accuracy, long_window_elogit,  prod),names_to="measure",values_to="value") |>
   group_by(dataset_name,measure) |> 
   nest() |> 
   mutate(fits = map(data, \(d) {if(sum(!is.na(d$value))>0) {lm(value ~ log_age, data = d) |> broom::augment(newdata = d)} })) |>
@@ -202,12 +205,12 @@ select(dataset_name, administration_id,subject_id,log_age, log_rt, rt,
   nest() |>
   mutate(corrs = map(data, ~cor(.x, use = "pairwise.complete.obs")),
          long_corrs = map(corrs, ~pivot_longer(as_tibble(.x) |> 
-                                                mutate(variable1 = colnames(.x)), 
+                                                 mutate(variable1 = colnames(.x)), 
                                                -variable1, names_to = "variable2", 
                                                values_to = "r"))) |>
   mutate(corrs = map(data, ~cor(.x, use = "pairwise.complete.obs")),
          long_corrs = map(corrs, ~pivot_longer(as_tibble(.x) |> 
-                                                mutate(variable1 = colnames(.x)), 
+                                                 mutate(variable1 = colnames(.x)), 
                                                -variable1, names_to = "variable2", 
                                                values_to = "r"))) |>
   select(-data, -corrs) |>
@@ -234,10 +237,10 @@ ggplot(all_corrs_age_residualized,
 m_rt <- mean(d_sub$rt, na.rm=TRUE)
 sd_rt <- sd(d_sub$rt, na.rm=TRUE)
 d_sub$factor_rt <- cut(d_sub$rt, 
-                           breaks = quantile(d_sub$rt, 
-                                             probs = c(0, .25, .5, .75, 1), 
-                                             na.rm= TRUE), 
-                           labels = c("0-25", "25-50", "50-75", "75-1"))
+                       breaks = quantile(d_sub$rt, 
+                                         probs = c(0, .25, .5, .75, 1), 
+                                         na.rm= TRUE), 
+                       labels = c("0-25", "25-50", "50-75", "75-1"))
 
 
 ggplot(filter(d_sub, !is.na(rt), !is.na(factor_rt)),
@@ -261,9 +264,9 @@ Broken out by age group.
 ```{r}
 
 d_sub$age_group <- cut(d_sub$log_age, 
-                           breaks = log(c(12,24,36,48,60)), 
-                           labels = c("12-24","24-36","36-48","48-60"), 
-                           include_lowest = TRUE)
+                       breaks = log(c(12,24,36,48,60)), 
+                       labels = c("12-24","24-36","36-48","48-60"), 
+                       include_lowest = TRUE)
 
 
 ggplot(filter(d_sub, !is.na(age_group)), 
@@ -310,7 +313,7 @@ Scree plot
 ```{r}
 d_sub_mat <- d_sub |>
   ungroup() |>
-  select(log_age, log_rt, long_window_accuracy) 
+  select(log_age, rt, long_window_accuracy) 
 
 d_sub_mat <- d_sub_mat |>
   filter(complete.cases(d_sub_mat)) |>
@@ -319,10 +322,26 @@ d_sub_mat <- d_sub_mat |>
 fa.parallel(d_sub_mat)
 ```
 
+
+Now with variance too. 
+
+
+```{r}
+d_sub_mat <- d_sub |>
+  ungroup() |>
+  select(log_age, rt, long_window_accuracy, long_window_acc_var, rt_var) 
+
+d_sub_mat <- d_sub_mat |>
+  filter(complete.cases(d_sub_mat)) |>
+  as.matrix() 
+
+fa.parallel(d_sub_mat)
+```
+
+
 ```{r}
 mod1 <- fa(d_sub_mat, 1, rotate = "varimax")
 mod1
-
 ```
 
 
@@ -379,8 +398,8 @@ d_sub_mat_dataset <- d_sub |>
 d_sub_mat_grp <- d_sub_mat_dataset |>
   nest() |>
   mutate(complete_data = map(data, ~filter(.x[complete.cases(.x),])),
-    mat = as.matrix(complete_data), 
-    has_data = map_lgl(complete_data, ~nrow(.x)>0)) |>
+         mat = as.matrix(complete_data), 
+         has_data = map_lgl(complete_data, ~nrow(.x)>0)) |>
   filter(has_data) |>
   mutate(fas = map(mat, ~fa(.x, 1, rotate = "varimax")), 
          f_summary = map(fas, summary), 
@@ -447,29 +466,29 @@ ggbiplot::ggbiplot(acc_rt_prc_comp, alpha = .1)
 ```{r}
 
 d_cfa <- d_sub |>
-             rename(`accuracy` = long_window_accuracy) |>
-             mutate(accuracy = scale(accuracy), 
-                    log_age = scale(log_age), 
-                    log_rt = scale(log_rt)) |>
-  select(accuracy, log_age, log_rt) 
+  rename(`accuracy` = long_window_accuracy) |>
+  mutate(accuracy = scale(accuracy), 
+         log_age = scale(log_age), 
+         rt = scale(rt)) |>
+  select(accuracy, log_age, rt) 
 
 d_cfa <- d_cfa[complete.cases(d_cfa), ]
 
-fa_model <-  "F1  =~ log_age + log_rt + accuracy"
+fa_model <-  "F1  =~ log_age + rt + accuracy"
 fit <- cfa(fa_model, d_cfa, std.lv=TRUE)
 
 summary(fit)
-a <- graph_sem(model = fit)+ theme(panel.background = element_rect(fill = "white"))
+graph_sem(model = fit)+ theme(panel.background = element_rect(fill = "white"))
 ```
 Production. 
 
 ```{r}
 d_cfa_prod <- d_sub |>
-             rename(`accuracy` = long_window_accuracy) |>
-             mutate(accuracy = scale(accuracy), 
-                    log_age = scale(log_age), 
-                    log_rt = scale(log_rt), 
-                    prod = scale(prod)) |>
+  rename(`accuracy` = long_window_accuracy) |>
+  mutate(accuracy = scale(accuracy), 
+         log_age = scale(log_age), 
+         log_rt = scale(log_rt), 
+         prod = scale(prod)) |>
   select(accuracy, log_age, log_rt, prod) 
 
 d_cfa_prod <- d_cfa_prod[complete.cases(d_cfa_prod), ]
@@ -487,11 +506,11 @@ Comprehension.
 
 ```{r}
 d_cfa_comp <- d_sub |>
-             rename(`accuracy` = long_window_accuracy) |>
-             mutate(accuracy = scale(accuracy), 
-                    log_age = scale(log_age), 
-                    log_rt = scale(log_rt), 
-                    comp = scale(comp)) |>
+  rename(`accuracy` = long_window_accuracy) |>
+  mutate(accuracy = scale(accuracy), 
+         log_age = scale(log_age), 
+         log_rt = scale(log_rt), 
+         comp = scale(comp)) |>
   select(accuracy, log_age, log_rt, comp) 
 
 d_cfa_comp <- d_cfa_comp[complete.cases(d_cfa_comp), ]
@@ -501,8 +520,8 @@ fit_comp <- cfa(fa_model_comp, d_cfa_comp, std.lv=TRUE)
 
 summary(fit_comp)
 c <- graph_sem(model = fit_comp,
-            layout = get_layout(x = fit_comp, layout_algorithm = "layout_as_star")) + 
-    theme(panel.background = element_rect(fill = "white"))
+               layout = get_layout(x = fit_comp, layout_algorithm = "layout_as_star")) + 
+  theme(panel.background = element_rect(fill = "white"))
 c
 ```
 
@@ -513,15 +532,108 @@ plot_grid(a,b,c, nrow = 1, labels = c("A","B","C"))
 ggsave(here("figures","sem.png"), width = 25, height = 4)
 ```
 
-## Measurement invariance across age? 
+## Within dataset
+
 
 ```{r}
-fa_model <-  "F1  =~ log_age + log_rt + accuracy"
-fit_younger <- cfa(fa_model, 
-                   filter(d_cfa, log_age <= median(log_age)),
-                   std.lv=TRUE)
 
-graph_sem(model = fit_younger)
+d_cfa_dataset <- d_cfa |>
+  filter(dataset_name %in% datasets_with_age_variation$dataset_name) |>
+  group_by(dataset_name) |>
+  nest() |>
+  mutate(complete_data = map(data, ~filter(.x[complete.cases(.x),])),
+         mat = as.matrix(complete_data), 
+         has_data = map_lgl(complete_data, ~nrow(.x)>0)) |>
+  filter(has_data) |>
+  mutate(fa = map(mat, ~cfa(fa_model, .x, std.lv=TRUE)), 
+         loadings = map(fa, ~summary(.x)[[5]]))
+
+d_loadings <- d_cfa_dataset |>
+  select(dataset_name, loadings) |>
+  unnest(cols = c(loadings)) |>
+  filter(!is.na(se))
+
+ggplot(filter(d_loadings, lhs == "F1", rhs != "F1"),
+       aes(x = rhs, y = est, col = dataset_name)) + 
+  geom_point(alpha = .5) +
+  stat_summary(fun.data = "mean_cl_boot", aes(group = 1)) +
+  geom_hline(yintercept = 0, lty = 2) + 
+  coord_flip()+ 
+  ylab("Standardized loading") + 
+  xlab("Predictor") +
+  scale_color_discrete(name = "Dataset")
+```
+With production data. 
+
+```{r}
+fa_model_prod <-  "F1  =~ log_age + rt + accuracy + prod"
+
+d_cfa_dataset_prod <-  d_sub |>
+  rename(`accuracy` = long_window_accuracy) |>
+  mutate(accuracy = scale(accuracy), 
+         log_age = scale(log_age), 
+         rt = scale(rt), 
+         prod = scale(prod)) |>
+  select(dataset_name, accuracy, log_age, rt, prod) |>
+  filter(dataset_name %in% datasets_with_age_variation$dataset_name) |>
+  group_by(dataset_name) |>
+  nest() |>
+  mutate(complete_data = map(data, ~filter(.x[complete.cases(.x),])),
+         mat = as.matrix(complete_data), 
+         has_data = map_lgl(complete_data, ~nrow(.x)>0)) |>
+  filter(has_data) |>
+  mutate(fa = map(mat, ~cfa(fa_model_prod, .x, std.lv=TRUE)), 
+         loadings = map(fa, ~summary(.x)[[5]]))
+
+d_loadings_prod <- d_cfa_dataset_prod |>
+  select(dataset_name, loadings) |>
+  unnest(cols = c(loadings)) |>
+  filter(!is.na(se))
+
+ggplot(filter(d_loadings_prod, lhs == "F1", rhs != "F1"),
+       aes(x = rhs, y = est, col = dataset_name)) + 
+  geom_point(alpha = .5) +
+  stat_summary(fun.data = "mean_cl_boot", aes(group = 1)) +
+  geom_hline(yintercept = 0, lty = 2) + 
+  coord_flip()+ 
+  ylab("Standardized loading") + 
+  xlab("Predictor") +
+  scale_color_discrete(name = "Dataset")
+```
+## Measurement invariance across age? 
+
+This doesn't work. 
+
+```{r}
+d_cfa_younger <- d_sub |>
+    filter(age < median(age)) |>
+  rename(`accuracy` = long_window_accuracy) |>
+  mutate(accuracy = scale(accuracy), 
+         log_age = scale(log_age), 
+         log_rt = scale(log_rt)) |>
+  select(accuracy, log_age, log_rt) 
+d_cfa_younger <- d_cfa_younger[complete.cases(d_cfa_younger), ]
+
+
+d_cfa_older <- d_sub |>
+  filter(age >= median(age)) |>
+  rename(`accuracy` = long_window_accuracy) |>
+  mutate(accuracy = scale(accuracy), 
+         log_age = scale(log_age), 
+         log_rt = scale(log_rt)) |>
+  select(accuracy, log_age, log_rt) 
+d_cfa_older <- d_cfa_older[complete.cases(d_cfa_older), ]
+
+fit_younger <- cfa(fa_model, 
+                   data = d_cfa_younger,
+                   std.lv=TRUE)
+fit_older <- cfa(fa_model, 
+                 data = d_cfa_older,
+                 std.lv=TRUE)
+
+younger_plot <- graph_sem(model = fit_younger)
+older_plot <- graph_sem(model = fit_older)
+plot_grid(younger_plot, older_plot)
 ```
 
 
@@ -539,7 +651,7 @@ d_sub_long <- d_sub |>
   arrange(administration_id) |>
   mutate(admin_num = 1:n(), 
          delta_t = c(0,diff(age)))
-  
+
 ggplot(d_sub_long, 
        aes(x = delta_t, fill = as.factor(admin_num))) +
   geom_histogram() + 
@@ -561,7 +673,7 @@ fmw <- filter(d_sub_long, dataset_name == "fmw_2013") |>
               values_from = c("age","log_rt","prod","long_window_accuracy", "delta_t"))
 
 summary(lm(prod_t2 ~ long_window_accuracy_t1 * log_rt_t1 + age_t2, 
-             data = fmw))
+           data = fmw))
 ```
 
 ## Without CDIs
