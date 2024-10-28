@@ -279,6 +279,8 @@ print(paste(length(unique(d_sub$dataset_name)), "datasets"))
 
 ```{r}
 saveRDS(d_trial, here("cached_intermediates","1_d_trial.Rds"))
+write_csv(d_trial, here("cached_intermediates","1_d_trial.csv"), na = "")
 saveRDS(d_sub, here("cached_intermediates","1_d_sub.Rds"))
+write_csv(d_sub, here("cached_intermediates","1_d_sub.csv"), na = "")
 ```
 

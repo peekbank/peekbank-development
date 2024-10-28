@@ -1,0 +1,190 @@
+---
+title: "Analyses in the paper"
+format: html
+---
+
+
+```{r}
+
+suppressPackageStartupMessages(library(here))
+suppressPackageStartupMessages(library(lmerTest))
+suppressPackageStartupMessages(library(lavaan))
+suppressPackageStartupMessages(library(tidySEM))
+
+source(here("helper","common.R"))
+d_trial <- readRDS(here("cached_intermediates","1_d_trial.Rds")) |>
+  mutate(log_age = log(age))
+d_sub <- readRDS(here("cached_intermediates","1_d_sub.Rds"))
+
+d_trial$age_s <- scale(d_trial$age)[,1]
+d_trial$log_age_s <- scale(d_trial$log_age)[,1]   
+
+```
+
+# Datasets table
+
+
+```{r}
+d_sub |>
+  group_by(dataset_name) |>
+  summarise(`N subjects` = length(unique(subject_id)),
+            `N admins` = n(), 
+            `Mean Age` = mean(age), 
+            `Min Age` = min(age), 
+            `Max Age` = max(age), 
+            `Avg Trials` = mean(n_trials),
+            `Avg RT Trials` = mean(n_trials_rt),
+            `CDIs` = ifelse(!is.na(any(prod)), "x", ""), 
+            `longitudinal` = ifelse(any(duplicated(subject_id)), "x", "")) |>
+  arrange(desc(`N subjects`)) |>
+  xtable(caption = "Characteristics of included datasets from Peekbank. `Admins` denotes separate experimental sessions.")
+```
+
+# Speed and accuracy
+
+Accuracy
+
+```{r}
+acc_mod = lmer(long_window_accuracy ~ log_age_s + (log_age_s | dataset_name) + 
+                 (1 | subject_id), 
+               data = d_trial)
+
+summary(acc_mod)
+```
+
+Reaction time. 
+
+```{r}
+rt_mod = lmer(rt ~ log_age_s + (log_age_s | dataset_name) + 
+                 (1 | subject_id), 
+               data = d_trial)
+
+summary(rt_mod)
+```
+
+
+
+
+
+
+```{r}
+
+datasets_with_age_variation <- d_trial |>
+  group_by(dataset_name) |>
+  summarise(age_range = max(age) - min(age)) |>
+  filter(age_range >= AGEVAR_CUTOFF)
+
+d_sub_agevar <- d_sub |>
+  filter(dataset_name %in% datasets_with_age_variation$dataset_name)
+
+
+a <- ggplot(d_sub,
+       aes(x = age, y = long_window_accuracy)) + 
+  geom_point(alpha = .05) + 
+  geom_smooth() +
+  geom_smooth(method = "lm", col = "green") +
+  geom_smooth(data = d_sub_agevar,
+              aes(group = dataset_name, col = dataset_name), se=FALSE,
+              alpha = .1, method = "lm", size = .5, lty = 2) + 
+  geom_hline(yintercept = .5, lty = 2) + 
+  scale_x_log10() +
+  scale_color_discrete(guide = FALSE) + 
+  ylab("Accuracy") + 
+  xlab("Age (months)")
+
+b <- ggplot(d_sub,
+       aes(x = age, y = rt)) + 
+  geom_point(alpha = .05) + 
+  geom_smooth() +
+  geom_smooth(method = "lm", col = "green") +
+  geom_smooth(data = d_sub_agevar,
+              aes(group = dataset_name, col = dataset_name), se=FALSE,
+              alpha = .1, method = "lm", size = .5, lty = 2) + 
+  # geom_hline(yintercept = .5, lty = 2) + 
+  scale_x_log10() +
+  scale_color_discrete(guide = FALSE) + 
+  theme(legend.position = "bottom") + 
+  ylab("Reaction Time (log)") + 
+  xlab("Age (months)")
+
+f <- cowplot::plot_grid(a,b)
+f
+ggsave(f, filename = "figures/acc_rt.png", width = 8, height = 3.5)
+
+```
+
+# Variability
+
+```{r}
+d_var <- d_sub |>
+  rename(RT = rt_var,
+         Accuracy = long_window_acc_var) |>
+  pivot_longer(c("RT","Accuracy"), 
+               values_to = "sd", names_to = "measure") 
+
+
+v <- ggplot(d_var, aes(x = age, y = sd)) + 
+  geom_point(alpha = .05) + 
+  geom_smooth() +
+  geom_smooth(method = "lm", col = "green") +
+  geom_smooth(data = d_var |>
+  filter(dataset_name %in% datasets_with_age_variation$dataset_name),
+              aes(group = dataset_name, col = dataset_name), 
+              alpha = .1, method = "lm", size = .5, lty = 2, se=FALSE) + 
+  scale_color_discrete(guide = FALSE) + 
+  scale_x_log10() +
+  facet_wrap(~measure, scales = "free_y") + 
+  ylab("Standard Deviation") + 
+  xlab("Age (months)")
+
+v 
+ggsave(v, filename = "figures/var.png", width = 8, height = 3.5)
+
+```
+
+Accuracy
+
+```{r}
+d_var$age_s <- scale(d_var$age)[,1]
+d_var$log_age_s <- scale(d_var$log_age)[,1]   
+
+acc_var_mod <- lmer(sd ~ log_age_s + (log_age_s | dataset_name) + 
+                 (1 | subject_id), 
+               data = filter(d_var, measure == "Accuracy"))
+
+summary(acc_mod)
+```
+
+Reaction time. 
+
+```{r}
+rt_var_mod <- lmer(sd ~ log_age_s + (log_age_s | dataset_name) + 
+                 (1 | subject_id), 
+               data = filter(d_var, measure == "RT"))
+summary(rt_var_mod)
+```
+
+
+# Factor analysis
+
+
+
+```{r}
+d_cfa <- d_sub |>
+  rename(`accuracy` = long_window_accuracy) |>
+  mutate(accuracy = scale(accuracy), 
+         log_age = scale(log_age), 
+         rt = scale(rt)) |>
+  select(dataset_name, accuracy, log_age, rt) 
+
+d_cfa <- d_cfa[complete.cases(d_cfa), ]
+
+fa_model <-  "F1  =~ log_age + rt + accuracy"
+fit <- cfa(fa_model, d_cfa, std.lv=TRUE)
+
+summary(fit)
+graph_sem(model = fit)+ theme(panel.background = element_rect(fill = "white"))
+```
+
+
+

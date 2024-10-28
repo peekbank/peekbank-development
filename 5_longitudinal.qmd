@@ -1,0 +1,206 @@
+---
+title: "Longitudinal models"
+format: html
+---
+
+Questions: 
+(from Nilam)
+
+1. Is the mean of the latent “language ability” factor scores different across 1st assessment, 2nd assessment, 3rd assessment, etc? This is basically an ANOVA on the latent factor scores – using “assessment number” as the categorical predictor. – an examination of “practice effects”. 
+
+Is the mean of the latent “language ability” factor scores increasing with age?
+- This is basically a regression on the latent factor scores – and a growth model.
+- In which case we also implicitly test research questions about the variances
+- Is the (between-person) variance of the latent “language ability” factor scores increasing with age?
+
+- A more nuanced version of the “practice effects" examination might use delta_t. 
+- Is the mean of the latent “language ability” factor different across retest interval?
+- This is basically a regression on the latent factor scores.
+
+- In which case we also implicitly test research questions about the variances
+- Is the (between-person) variance of the latent “language ability” factor scores increasing with age?
+
+ 
+3. If we are interested in the covariances –
+- Is the structure of the latent “language ability” factor changing with age?
+- This again gets us into a multi-group SEM –
+- Testing whether the factor loading structure differs across groups.
+- This is most easily invoked with using categorical “time variable” – e.g, assessment number, age-group.
+- However, it is also possible to do using a continuous time variable (e.g., age). In this case we basically use a moving window to obtain the covariances and then basically use age as a moderator of the factor loadings to examine the age x factor loading interaction.
+
+
+
+# Descriptives
+
+## Longitudinal data
+
+```{r}
+longitudinal <- d_sub |>
+  group_by(dataset_name, subject_id) |>
+  count() |>
+  filter(n > 1)
+
+d_sub_long <- d_sub |>
+  filter(subject_id %in% longitudinal$subject_id) |>
+  group_by(subject_id) |>
+  arrange(administration_id) |>
+  mutate(admin_num = 1:n(), 
+         delta_t = c(0,diff(age)))
+
+ggplot(d_sub_long, 
+       aes(x = delta_t, fill = as.factor(admin_num))) +
+  geom_histogram() + 
+  facet_wrap(~dataset_name)
+```
+## Datasets with CDIs
+
+Longitudinal data with CDI is just FMW2013 right now. 
+
+```{r}
+fmw <- filter(d_sub_long, dataset_name == "fmw_2013") |>
+  mutate(t = ifelse(age < 23, "t1","t2")) |>
+  group_by(subject_id, t) |>
+  summarise(age = mean(age), 
+            log_rt = mean(log_rt), 
+            prod = mean(prod), 
+            long_window_accuracy = mean(long_window_accuracy),
+            delta_t = mean(delta_t)) |>
+  pivot_wider(names_from = "t", 
+              values_from = c("age","log_rt","prod","long_window_accuracy", "delta_t"))
+
+summary(lm(prod_t2 ~ long_window_accuracy_t1 * log_rt_t1 + age_t2, 
+           data = fmw))
+```
+
+## Without CDIs
+
+```{r}
+ggplot(d_sub_long, 
+       aes(x = age, y = long_window_accuracy, group = subject_id, col = dataset_name)) +
+  geom_line(alpha = .3, position = position_jitter(width = .1, height = 0)) + 
+  geom_smooth(aes(group = 1)) + 
+  scale_y_log10() + 
+  geom_hline(lty = 2, yintercept = .5)
+
+```
+
+```{r}
+ggplot(filter(d_sub_long, n_trials_rt > 3),
+       aes(x = age, y = log_rt, group = subject_id, col = dataset_name)) +
+  geom_line(alpha = .3, position = position_jitter(width = .1, height = 0)) + 
+  geom_smooth(aes(group = 1)) + 
+  scale_y_log10() 
+```
+# Q1: age-related change in the latent score
+
+Growth in latent language factor. This is the same as the previous factor analysis, but we only look within child and within dataset. 
+
+## 1 factor approach
+
+This has the benefits of simplicity, even though we know that the 1F model is "wrong." 
+
+```{r}
+fa_model <-  "F1  =~ rt + rt_var + long_window_accuracy + long_window_acc_var + prod + comp"
+fit <- cfa(fa_model, d_sub_mat_s, std.lv=TRUE, missing='fiml')
+
+d_sub$f1 <- lavPredict(fit, newdata = d_sub_mat_s)
+
+```
+
+```{r}
+ggplot(d_sub |>
+         filter(subject_id %in% longitudinal$subject_id), 
+       aes(x = age, y = f1, group = subject_id, col = dataset_name)) + 
+  geom_point(alpha = .4) + 
+  geom_line(alpha = .4) + 
+  geom_smooth(aes(group = dataset_name), method = "lm")
+```
+Note that nesting age slopes doesn't converge. Could go Bayesian if we cared...
+
+```{r}
+long_mod <- lmer(f1 ~ age + (1 | subject_id) + (1 | dataset_name), 
+                 data = d_sub)
+
+summary(long_mod)
+```
+
+
+
+
+## 2 factor approach
+
+Let's try looking at the speed/accuracy model across time.  
+
+```{r}
+fa2_model <-  "accuracy =~ long_window_accuracy + long_window_acc_var + comp + prod
+               speed =~ rt + rt_var"
+
+fit2 <- cfa(fa2_model, d_sub_mat_s, std.lv=TRUE, missing='fiml')
+
+preds <- predict(fit2)
+
+d_sub$accuracy <- preds[,1]
+d_sub$speed <- preds[,2]
+```
+
+Merge with longitudinal data. 
+
+```{r}
+d_long <- d_sub |>
+  filter(subject_id %in% longitudinal$subject_id) |>
+  group_by(subject_id) |>
+  arrange(administration_id) |>
+  mutate(admin_num = 1:n(), 
+         delta_t = c(0,diff(age)), 
+         speed_0 = speed[1]) |>
+  group_by(dataset_name) |>
+  mutate(speed_0_high = speed_0 > median(speed_0, na.rm=TRUE))
+```
+
+Plot. 
+
+```{r}
+ggplot(d_long |>
+         pivot_longer(speed:accuracy, names_to = "variable", values_to = "value"), 
+       aes(x = age, y = value, group = subject_id, col = dataset_name)) + 
+  geom_point(alpha = .4) + 
+  geom_line(alpha = .4) + 
+  geom_smooth(aes(group = dataset_name), method = "lm") + 
+  scale_x_log10() +
+  facet_wrap(~variable) +
+  theme(legend.position = "bottom") + 
+  xlab("Age (months)") + 
+  ylab("Latent score") 
+```
+Change in the latents over age. 
+
+```{r}
+long_mod_acc <- lmer(accuracy ~ age + (1 | subject_id) + (1 | dataset_name), 
+                 data = d_sub)
+long_mod_speed <- lmer(speed ~ age + (1 | subject_id) + (1 | dataset_name), 
+                 data = d_sub)
+
+
+summary(long_mod_acc)
+summary(long_mod_speed)
+```
+
+# Q2: relations between latents and other factors
+
+Longitudinal model. 
+
+```{r}
+lmod <- lmer(accuracy ~ age + speed_0 * delta_t + (1 | subject_id) + (1 | dataset_name), 
+     data = d_long)
+
+summary(lmod)
+```
+
+```{r}
+ggplot(d_long, 
+       aes(x = age, y = accuracy, group = subject_id, col = dataset_name, lty = speed_0_high)) + 
+  geom_line(alpha = .4) + 
+  geom_smooth(aes(group = speed_0_high), method = "lm") + 
+  facet_wrap(~dataset_name, scales="free_x")
+```
+
