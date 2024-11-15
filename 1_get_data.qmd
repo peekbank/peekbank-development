@@ -209,7 +209,7 @@ ggplot(d_trial,
 # Create subject-level RDS as well
 
 ```{r}
-d_sub <- d_trial |>
+d_sub_nocdi <- d_trial |>
   group_by(dataset_name, subject_id, administration_id, age) |>
   summarise(n_trials = sum(!is.na(long_window_accuracy)), 
             n_trials_rt = sum(!is.na(rt)),
@@ -222,12 +222,12 @@ d_sub <- d_trial |>
 
 
 ```{r}
-ggplot(d_sub, aes(x = n_trials, fill = n_trials < 4)) + 
+ggplot(d_sub_nocdi, aes(x = n_trials, fill = n_trials < 4)) + 
   geom_histogram(binwidth = 1) + 
   facet_wrap(~dataset_name, scales = "free_y")
 ```
 ```{r}
-ggplot(d_sub, aes(x = n_trials_rt, fill = n_trials_rt < 2)) + 
+ggplot(d_sub_nocdi, aes(x = n_trials_rt, fill = n_trials_rt < 2)) + 
   geom_histogram(binwidth = 1) + 
   facet_wrap(~dataset_name, scales = "free_y")
 ```
@@ -235,8 +235,9 @@ ggplot(d_sub, aes(x = n_trials_rt, fill = n_trials_rt < 2)) +
 We impose the arbitrary cutoff that we need more than 4 accuracies and more than 2 RTs to analyze a participant.
 
 ```{r}
-d_sub <- d_sub |>
-  mutate(across(contains("log_rt"), ~ifelse(n_trials_rt < RT_MIN_TRIAL_CUTOFF, NA, .x)),
+d_sub_nocdi_exclusions <- d_sub_nocdi |>
+  mutate(across(c("rt", "rt_var"), ~ifelse(n_trials_rt < RT_MIN_TRIAL_CUTOFF, NA, .x)),
+         across(contains("log_rt"), ~ifelse(n_trials_rt < RT_MIN_TRIAL_CUTOFF, NA, .x)),
          across(contains("window"), ~ifelse(n_trials < ACC_MIN_TRIAL_CUTOFF, NA, .x)))
 
 ```
@@ -244,23 +245,14 @@ d_sub <- d_sub |>
 
 # Add CDI
 
-This is very slightly broken due to some repeated fields. We use `values_fn = mean` to suppress them. 
+This join is very tricky and is done based on some careful work in `peekbank-method` to get the English CDIs and fuzzy join them. 
 
 ```{r}
 load(here("..", "peekbank-method", "cached_intermediates", "1_cdi_subjects.Rds"))
 
-d_cdi <- cdi_data |>
-  select(administration_id, native_language, measure, language, 
-         CDI_percent) |> # rawscore is form-dependent
-  filter(language == "English (American)", native_language == "eng") |>
-  pivot_wider(names_from = "measure", values_from = "CDI_percent", 
-              values_fill = NA, values_fn = mean)
-```
-
-
-```{r}
-d_sub <- d_sub |>
-  left_join(d_cdi) |>
+d_sub <- d_sub_nocdi_exclusions |>
+  left_join(select(cdi_data, -age, -dataset_name), 
+            by = c("subject_id","administration_id")) |>
   mutate(log_age = log(age)) |>
   ungroup()
 ```
@@ -268,9 +260,9 @@ d_sub <- d_sub |>
 Print descriptives. 
 
 ```{r}
-print(paste(length(unique(d_sub$subject_id)), "children,",
-            sum(!is.na(d_sub$prod)), "with CDI data"))
+print(paste(length(unique(d_sub$subject_id)), "children"))
 print(paste(length(unique(d_sub$administration_id)), "administrations"))
+print(paste(sum(!is.na(d_sub$prod)| !is.na(d_sub$comp)), "administrations have CDI data"))
 print(paste(length(unique(d_sub$dataset_name)), "datasets"))
 ```
 

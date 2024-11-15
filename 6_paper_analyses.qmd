@@ -10,6 +10,7 @@ suppressPackageStartupMessages(library(here))
 suppressPackageStartupMessages(library(lmerTest))
 suppressPackageStartupMessages(library(lavaan))
 suppressPackageStartupMessages(library(tidySEM))
+suppressPackageStartupMessages(library(xtable))
 
 source(here("helper","common.R"))
 d_trial <- readRDS(here("cached_intermediates","1_d_trial.Rds")) |>
@@ -19,24 +20,32 @@ d_sub <- readRDS(here("cached_intermediates","1_d_sub.Rds"))
 d_trial$age_s <- scale(d_trial$age)[,1]
 d_trial$log_age_s <- scale(d_trial$log_age)[,1]   
 
+AGEVAR_CUTOFF <- 6
+
 ```
 
 # Datasets table
 
 
 ```{r}
-d_sub |>
+dataset_characteristics <- d_sub |>
   group_by(dataset_name) |>
   summarise(`N subjects` = length(unique(subject_id)),
             `N admins` = n(), 
             `Mean Age` = mean(age), 
             `Min Age` = min(age), 
             `Max Age` = max(age), 
-            `Avg Trials` = mean(n_trials),
-            `Avg RT Trials` = mean(n_trials_rt),
+            `Avg Trials` = mean(n_trials[!is.na(long_window_accuracy)]),
+            `Avg RT Trials` = mean(n_trials_rt[!is.na(rt)]),
             `CDIs` = ifelse(!is.na(any(prod)), "x", ""), 
             `longitudinal` = ifelse(any(duplicated(subject_id)), "x", "")) |>
-  arrange(desc(`N subjects`)) |>
+  arrange(desc(`N subjects`)) 
+knitr::kable(dataset_characteristics)
+```
+
+
+```{r}
+dataset_characteristics |>
   xtable(caption = "Characteristics of included datasets from Peekbank. `Admins` denotes separate experimental sessions.")
 ```
 
@@ -61,9 +70,6 @@ rt_mod = lmer(rt ~ log_age_s + (log_age_s | dataset_name) +
 
 summary(rt_mod)
 ```
-
-
-
 
 
 
@@ -93,7 +99,7 @@ a <- ggplot(d_sub,
   xlab("Age (months)")
 
 b <- ggplot(d_sub,
-       aes(x = age, y = rt)) + 
+       aes(x = age, y = log_rt)) + 
   geom_point(alpha = .05) + 
   geom_smooth() +
   geom_smooth(method = "lm", col = "green") +
@@ -101,7 +107,7 @@ b <- ggplot(d_sub,
               aes(group = dataset_name, col = dataset_name), se=FALSE,
               alpha = .1, method = "lm", size = .5, lty = 2) + 
   # geom_hline(yintercept = .5, lty = 2) + 
-  scale_x_log10() +
+  # scale_x_log10() +
   scale_color_discrete(guide = FALSE) + 
   theme(legend.position = "bottom") + 
   ylab("Reaction Time (log)") + 

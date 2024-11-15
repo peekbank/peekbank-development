@@ -28,13 +28,14 @@ Let's use the approach advocated by Nilam, namely test for a single dimension of
 ```{r}
 d_sub_mat <- d_sub |>
   ungroup() |>
-  select(dataset_name, rt, rt_var, long_window_accuracy, long_window_acc_var, prod, comp) 
+  select(dataset_name, rt, rt_var, long_window_accuracy, long_window_acc_var, prod, comp, age) 
+
 
 d_sub_mat_s <- d_sub_mat |>
   ungroup() |>
   mutate(across(all_of(c("rt", "rt_var", "long_window_accuracy", 
                          "long_window_acc_var", "prod", "comp")), 
-                       ~ scale(.x)[,1])) 
+                       ~ age_scale(.x, age))) 
 ```
          
 ## EFA 
@@ -42,7 +43,7 @@ d_sub_mat_s <- d_sub_mat |>
 First we will fit EFA. You can do this over unscaled data, result is the same. 
 
 ```{r}
-fa.parallel(select(d_sub_mat, -dataset_name), fa = "fa", 
+fa.parallel(select(d_sub_mat, -dataset_name, -age), fa = "fa", 
             use = "pairwise.complete.obs")
 ```
 
@@ -52,7 +53,13 @@ There is some variation on the second dimension, though.
 fa(select(d_sub_mat, -dataset_name), nfactor = 2,
             use = "pairwise", rotate = "varimax")
 ```
+Here's what this looks like not forced to be orthogonal. 
 
+```{r}
+fa(select(d_sub_mat, -dataset_name, -age), nfactor = 2,
+            use = "pairwise", rotate = "oblimin")
+
+```
 
 ## CFA 
 
@@ -237,7 +244,7 @@ graph_sem(model = fit_novar) +
   theme(panel.background = element_rect(fill = "white"))
 ```
 
-# Three-factor mode
+# Three-factor model
 
 Compare to model with separate speed and accuracy. This one is better fitting.
 
@@ -264,64 +271,80 @@ graph_sem(model = fit3, text_size = 2, layout = layout)
 
 ```
 
+## Age regression
+
+```{r}
+
+fa3_age_model <- "
+# measurement model
+vocab =~ prod + comp
+accuracy =~ long_window_accuracy + long_window_acc_var
+speed =~ rt + rt_var
+
+# regressions
+vocab ~ age
+accuracy ~ age
+speed ~ age
+"
+
+fit3_age <- cfa(fa3_age_model, d_sub_mat_s, std.lv=TRUE, missing='fiml')
+
+summary(fit3_age, fit.measures=TRUE, standardize=TRUE)
+layout_age = matrix(nrow=5, ncol = 6,
+                data = c(NA,NA,"age",NA, NA, NA,
+                         NA, NA, NA, NA, NA, NA, 
+                         "speed",NA,"accuracy",NA,"vocab",NA,
+                         NA, NA, NA, NA, NA, NA, 
+                         "rt_var","rt", "long_window_accuracy",
+                         "long_window_acc_var", "prod","comp"), 
+                byrow = TRUE)
+
+graph_sem(model = fit3_age, text_size = 2, layout = t(layout_age))
+```
+
+
 
 # Fit models with dataset grouping
 
 One big worry here is that it's between-group confounding that leads to model misfit, not actual factor structure. To deal with this, we fit the same model but with grouping by dataset. 
 
-We can't really handle the missing data here sadly, because there's too much missing prod and comp data. 
-
-```{r}
-fa_model_reduced <-  "F1  =~ rt + rt_var + long_window_accuracy + long_window_acc_var"
-
-fit_reduced <- cfa(fa_model_reduced, d_sub_mat_s, std.lv=TRUE, 
-                   missing='fiml')
-summary(fit_reduced, fit.measures=TRUE, standardize=TRUE)
-```
+These mdels generally do not work sadly. 
 
 Now the grouped dataset. 
 
 ```{r}
-fit_reduced_grouped <- cfa(fa_model_reduced, d_sub_mat_s, std.lv=TRUE, 
-                   missing='fiml', 
-                   group = "dataset_name")
+fa3_model_l2 <- "
+level: 1
+  vocab =~ prod + comp
+  accuracy =~ long_window_accuracy + long_window_acc_var
+  speed =~ rt + rt_var
 
-summary(fit_reduced_grouped, fit.measures=TRUE, standardize=TRUE)
+level: 2
+  vocab =~ prod + comp
+  accuracy =~ long_window_accuracy + long_window_acc_var
+  speed =~ rt + rt_var"
+
+# optimization from https://lavaan.ugent.be/tutorial/multilevel.html
+fit3_grouped <- cfa(fa3_model_l2, d_sub_mat_s, std.lv=TRUE, missing='fiml', 
+                    cluster = "dataset_name", 
+                    optim.method = "em", 
+                    em.iter.max = 20000,
+                    em.fx.tol = 1e-08, em.dx.tol = 1e-04)
+
+summary(fit3_grouped, fit.measures=TRUE, standardize=TRUE)
 ```
 
-We can look at invariance.
+We can look at invariance. Not implemented due to convergence issues. 
 
 ```{r}
-fit_reduced_grouped_loadings <- cfa(fa_model_reduced, d_sub_mat_s, std.lv=TRUE, 
-                   missing='fiml', 
-                   group = "dataset_name", 
-                   group.equal = "loadings")
+# fit_reduced_grouped_loadings <- cfa(fa_model_reduced, d_sub_mat_s, std.lv=TRUE, 
+#                    missing='fiml', 
+#                    group = "dataset_name", 
+#                    group.equal = "loadings")
 
 # summary(fit_reduced_grouped_loadings, fit.measures=TRUE, standardize=TRUE)
 
-lavTestLRT(fit_reduced_grouped, fit_reduced_grouped_loadings)
+# lavTestLRT(fit_reduced_grouped, fit_reduced_grouped_loadings)
 ```
 
 This test suggests that we reject the null and the non-invariant model is better. 
-
-## Fernald and Marchman only
-
-```{r}
-fm_data <- d_sub_mat_s |>
-  filter(dataset_name %in% c("adams_marchman_2018","fmw_2013"))
-
-fa_model <-  "F1  =~ rt + rt_var + long_window_accuracy + long_window_acc_var + prod + comp"
-
-fm_fit <- cfa(fa_model, fm_data, std.lv=TRUE, missing='fiml')
-
-summary(fm_fit, fit.measures=TRUE, standardize=TRUE)
-```
-```{r}
-fa2_model <-  "accuracy =~ long_window_accuracy + long_window_acc_var + prod + comp
-               speed =~ rt + rt_var"
-
-fm_fit2 <- cfa(fa2_model, fm_data, std.lv=TRUE, missing='fiml')
-
-summary(fm_fit2, fit.measures=TRUE, standardize=TRUE)
-```
-

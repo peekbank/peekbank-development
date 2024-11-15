@@ -1,38 +1,53 @@
 ---
 title: "Longitudinal models"
-format: html
+format: 
+  html:
+    toc: true
+execute: 
+  cache: true
 ---
 
-Questions: 
-(from Nilam)
+Notes from Nilam:
 
-1. Is the mean of the latent “language ability” factor scores different across 1st assessment, 2nd assessment, 3rd assessment, etc? This is basically an ANOVA on the latent factor scores – using “assessment number” as the categorical predictor. – an examination of “practice effects”. 
+- don't z score, mean center + scale by the variance in one age group (e.g., youngest or oldest)
+- check data on Draft 2: latent change scores
+- propagate changes to D6 top model to bottom
+- consider adding shared parameter to ensure invariance across factors at t1 and t2 for D6 model 1
+- what is residual variance on each of the time points - if you say they are equal then it's measurement error, but if you let them vary, it's deviation
+- fit with shared error across all of the observed -->>
+Look at this part of the latent growth tutorial #observed residual variances (constrained to equality)- math2 ~~ sigma2_u*math2
 
-Is the mean of the latent “language ability” factor scores increasing with age?
-- This is basically a regression on the latent factor scores – and a growth model.
-- In which case we also implicitly test research questions about the variances
-- Is the (between-person) variance of the latent “language ability” factor scores increasing with age?
-
-- A more nuanced version of the “practice effects" examination might use delta_t. 
-- Is the mean of the latent “language ability” factor different across retest interval?
-- This is basically a regression on the latent factor scores.
-
-- In which case we also implicitly test research questions about the variances
-- Is the (between-person) variance of the latent “language ability” factor scores increasing with age?
-
- 
-3. If we are interested in the covariances –
-- Is the structure of the latent “language ability” factor changing with age?
-- This again gets us into a multi-group SEM –
-- Testing whether the factor loading structure differs across groups.
-- This is most easily invoked with using categorical “time variable” – e.g, assessment number, age-group.
-- However, it is also possible to do using a continuous time variable (e.g., age). In this case we basically use a moving window to obtain the covariances and then basically use age as a moderator of the factor loadings to examine the age x factor loading interaction.
+the two-wave model:
+change in inter-individual differences
+vs. differences in intra-individual change
 
 
+This markdown documents attempts to do longitudinal models for the Peekbank data.
 
-# Descriptives
+```{r}
+library(here)
+source(here("helper","common.R"))
+library(lavaan)
+library(tidySEM)
+d_sub <- readRDS(here("cached_intermediates","1_d_sub.Rds"))
 
-## Longitudinal data
+```
+
+```{r}
+d_sub_mat <- d_sub |>
+  ungroup() |>
+  select(dataset_name, rt, rt_var, long_window_accuracy, long_window_acc_var, prod, comp, age) 
+
+
+d_sub_mat_s <- d_sub_mat |>
+  ungroup() |>
+  mutate(across(all_of(c("rt", "rt_var", "long_window_accuracy", 
+                         "long_window_acc_var", "prod", "comp")), 
+                       ~ age_scale(.x, age))) 
+```
+
+
+# Descriptives of the longitudinal data
 
 ```{r}
 longitudinal <- d_sub |>
@@ -49,51 +64,55 @@ d_sub_long <- d_sub |>
 
 ggplot(d_sub_long, 
        aes(x = delta_t, fill = as.factor(admin_num))) +
-  geom_histogram() + 
+  geom_histogram(binwidth = 1) + 
   facet_wrap(~dataset_name)
-```
-## Datasets with CDIs
 
-Longitudinal data with CDI is just FMW2013 right now. 
+```
+
+How much do we have production vs. comprehension vocab? 
 
 ```{r}
-fmw <- filter(d_sub_long, dataset_name == "fmw_2013") |>
-  mutate(t = ifelse(age < 23, "t1","t2")) |>
-  group_by(subject_id, t) |>
-  summarise(age = mean(age), 
-            log_rt = mean(log_rt), 
-            prod = mean(prod), 
-            long_window_accuracy = mean(long_window_accuracy),
-            delta_t = mean(delta_t)) |>
-  pivot_wider(names_from = "t", 
-              values_from = c("age","log_rt","prod","long_window_accuracy", "delta_t"))
-
-summary(lm(prod_t2 ~ long_window_accuracy_t1 * log_rt_t1 + age_t2, 
-           data = fmw))
+d_long |>
+  group_by(dataset_name, subject_id) |>
+  summarise(n_prod = sum(!is.na(prod), na.rm=TRUE), 
+            n_comp = sum(!is.na(comp), na.rm=TRUE)) |>
+  summarise(n_prod = mean(n_prod, na.rm=TRUE), 
+            n_comp = mean(n_comp, na.rm=TRUE))
 ```
-
-## Without CDIs
+# Q0: longitudinal stability of measures
 
 ```{r}
-ggplot(d_sub_long, 
-       aes(x = age, y = long_window_accuracy, group = subject_id, col = dataset_name)) +
-  geom_line(alpha = .3, position = position_jitter(width = .1, height = 0)) + 
-  geom_smooth(aes(group = 1)) + 
-  scale_y_log10() + 
-  geom_hline(lty = 2, yintercept = .5)
+MONTH_CUTOFF <- 3
 
+d_reliability <- d_long |>
+  filter(delta_t <= MONTH_CUTOFF) |>
+  pivot_wider(id_cols = c("subject_id","dataset_name"), 
+              names_from = "admin_num",
+              values_from = c("rt", "rt_var", "long_window_accuracy", 
+                              "long_window_acc_var", "prod", "comp"))
+
+d_reliability |>
+  summarise(rt_corr = cor(rt_1, rt_2, use = "pairwise.complete.obs"),
+            rt_var_corr = cor(rt_var_1, rt_var_2, use = "pairwise.complete.obs"),
+            acc_corr = cor(long_window_accuracy_1, 
+                          long_window_accuracy_2, use = "pairwise.complete.obs"),
+            acc_var_corr = cor(long_window_acc_var_1, 
+                              long_window_acc_var_2, use = "pairwise.complete.obs"),
+            prod_corr = cor(prod_1, prod_2, use = "pairwise.complete.obs"),
+            comp_corr = cor(comp_1, comp_2, use = "pairwise.complete.obs"))
 ```
 
-```{r}
-ggplot(filter(d_sub_long, n_trials_rt > 3),
-       aes(x = age, y = log_rt, group = subject_id, col = dataset_name)) +
-  geom_line(alpha = .3, position = position_jitter(width = .1, height = 0)) + 
-  geom_smooth(aes(group = 1)) + 
-  scale_y_log10() 
-```
-# Q1: age-related change in the latent score
 
-Growth in latent language factor. This is the same as the previous factor analysis, but we only look within child and within dataset. 
+
+# Q1: age-related changes in latent scores
+
+Let's look at growth in latent language factor. 
+
+This is the same as the previous factor analysis, but we only look within child and within dataset. 
+
+Summary - this is very interpretable and shows us that we see linear growth in the latents with the log of age. 
+
+Downside is that we don't get a sense of the relations between the latents over time. 
 
 ## 1 factor approach
 
@@ -110,10 +129,11 @@ d_sub$f1 <- lavPredict(fit, newdata = d_sub_mat_s)
 ```{r}
 ggplot(d_sub |>
          filter(subject_id %in% longitudinal$subject_id), 
-       aes(x = age, y = f1, group = subject_id, col = dataset_name)) + 
-  geom_point(alpha = .4) + 
-  geom_line(alpha = .4) + 
-  geom_smooth(aes(group = dataset_name), method = "lm")
+       aes(x = age, y = f1, group = subject_id)) + 
+  geom_point(alpha = .2) + 
+  geom_line(alpha = .2) + 
+  geom_smooth(aes(group = dataset_name), method = "lm") + 
+  facet_wrap(~dataset_name)
 ```
 Note that nesting age slopes doesn't converge. Could go Bayesian if we cared...
 
@@ -176,31 +196,844 @@ Change in the latents over age.
 
 ```{r}
 long_mod_acc <- lmer(accuracy ~ age + (1 | subject_id) + (1 | dataset_name), 
-                 data = d_sub)
+                     data = d_sub)
 long_mod_speed <- lmer(speed ~ age + (1 | subject_id) + (1 | dataset_name), 
-                 data = d_sub)
+                       data = d_sub)
 
 
 summary(long_mod_acc)
 summary(long_mod_speed)
 ```
 
-# Q2: relations between latents and other factors
+## 3 factor approach
 
-Longitudinal model. 
+Let's try looking at the speed/accuracy/vocab model across time.  
 
 ```{r}
-lmod <- lmer(accuracy ~ age + speed_0 * delta_t + (1 | subject_id) + (1 | dataset_name), 
-     data = d_long)
+fa3_model <- "vocab =~ prod + comp
+              accuracy =~ long_window_accuracy + long_window_acc_var
+              speed =~ rt + rt_var"
 
-summary(lmod)
+
+fit3 <- cfa(fa3_model, d_sub_mat_s, std.lv=TRUE, missing='fiml')
+
+preds <- predict(fit3)
+
+d_sub$vocab <- preds[,1]
+d_sub$accuracy <- preds[,2]
+d_sub$speed <- preds[,3]
 ```
 
+Merge with longitudinal data. 
+
 ```{r}
-ggplot(d_long, 
-       aes(x = age, y = accuracy, group = subject_id, col = dataset_name, lty = speed_0_high)) + 
-  geom_line(alpha = .4) + 
-  geom_smooth(aes(group = speed_0_high), method = "lm") + 
+d_long <- d_sub |>
+  filter(subject_id %in% longitudinal$subject_id) |>
+  group_by(subject_id) |>
+  arrange(administration_id) |>
+  mutate(admin_num = 1:n(), 
+         delta_t = c(0,diff(age)), 
+         speed_0 = speed[1]) |>
+  group_by(dataset_name) |>
+  mutate(speed_0_slow = speed_0 > median(speed_0, na.rm=TRUE))
+```
+
+Plot. 
+
+```{r}
+ggplot(d_long |>
+         pivot_longer(vocab:accuracy, names_to = "variable", values_to = "value"), 
+       aes(x = age, y = value, group = subject_id, col = dataset_name)) + 
+  # geom_point(alpha = .1) + 
+  geom_line(alpha = .1) + 
+  geom_smooth(aes(group = dataset_name), method = "lm") + 
+  scale_x_log10() +
+  facet_wrap(~variable) +
+  theme(legend.position = "bottom") + 
+  xlab("Age (months)") + 
+  ylab("Latent score") 
+```
+Change in the latents over age. 
+
+```{r}
+long_mod_acc <- lmer(accuracy ~ age + (1 | subject_id) + (1 | dataset_name), 
+                     data = d_sub)
+long_mod_speed <- lmer(speed ~ age + (1 | subject_id) + (1 | dataset_name), 
+                       data = d_sub)
+long_mod_vocab <- lmer(vocab ~ age + (1 | subject_id) + (1 | dataset_name), 
+                       data = d_sub)
+
+
+summary(long_mod_acc)
+summary(long_mod_speed)
+summary(long_mod_vocab)
+```
+
+
+
+# Q2: Does RT relate to growth in vocabulary? 
+
+We see from the factor analysis that we are getting a coherent speed factor, but does it relate to anything else over time? 
+
+
+## Draft 1: with LMERs
+
+Longitudinal model of change in accuracy. This is pretty crude, I just wanted to try it. 
+
+```{r}
+lmod_acc <- lmer(accuracy ~ age + speed_0 * delta_t + (1 | subject_id) + (1 | dataset_name), 
+                 data = d_long)
+
+summary(lmod_acc)
+```
+
+So speed at time zero does have an effect on accuracy. Low speed at t0 means accuracy is higher. And this interacts with delta_t, but isn't the coefficient in the wrong direction? 
+
+
+Here's a visualization that doesn't quite capture this. 
+
+```{r}
+ggplot(filter(d_long, !is.na(speed_0_slow)),
+       aes(x = age, y = accuracy, group = subject_id, 
+           col = dataset_name, 
+           lty = speed_0_slow)) + 
+  geom_line(alpha = .2) + 
+  geom_smooth(aes(group = speed_0_slow), method = "lm") + 
   facet_wrap(~dataset_name, scales="free_x")
 ```
 
+Longitudinal model of change in vocabulary now. 
+
+```{r}
+lmod_vocab <- lmer(vocab ~ age + speed_0 * delta_t + (1 | subject_id) + (1 | dataset_name), 
+                   data = d_long)
+
+summary(lmod_vocab)
+```
+We don't see differences in vocab over time (no interaction of delta_t). 
+
+```{r}
+ggplot(d_long, 
+       aes(x = age, y = vocab, group = subject_id, 
+           col = dataset_name, 
+           lty = speed_0_slow)) + 
+  geom_line(alpha = .2) + 
+  geom_smooth(aes(group = speed_0_slow), method = "lm") + 
+  facet_wrap(~dataset_name, scales="free_x")
+```
+
+## Draft 2: latent change scores
+
+Idea behind this approach is to get a delta-vocabulary score for the longitudinal data and look at its relationship to vocab. 
+
+```{r}
+d_long_s <- d_long |>
+  mutate(across(all_of(c("rt", "rt_var", "long_window_accuracy", 
+                         "long_window_acc_var", "prod", "comp")), 
+                ~ age_scale(.x, age))) 
+```
+
+First fit the three-factor model to just the first obs of the longitudinal data. 
+
+```{r}
+fa3l_model <- "vocab_l =~ prod + comp
+              accuracy_l =~ long_window_accuracy + long_window_acc_var
+              speed_l =~ rt + rt_var"
+
+
+fit3l <- cfa(fa3l_model, 
+             data = filter(d_long_s, admin_num == 1), 
+             std.lv=TRUE, missing='fiml')
+
+summary(fit3l, fit.measures=TRUE, standardize=TRUE)
+```
+```{r}
+layout_l = matrix(nrow=2, ncol = 6,
+                  data = c("speed_l",NA,"accuracy_l",NA,"vocab_l",NA,
+                           "rt_var","rt", "long_window_accuracy",
+                           "long_window_acc_var", "prod","comp"), 
+                  byrow = TRUE)
+
+graph_sem(model = fit3l, text_size = 2, layout = layout_l)
+
+```
+
+Now let's compare to the three-factor model again, with the fit to delta-prod and delta-comp.
+
+```{r}
+slopes <- d_long |>
+  group_by(dataset_name, subject_id) |>
+  nest() |>
+  mutate(delta_prod = map_dbl(data, 
+                              possibly(\(d) coef(lm(prod ~ delta_t, data = d))[2], 
+                                       otherwise = NA)), 
+         delta_comp = map_dbl(data, 
+                              possibly(\(d) coef(lm(comp ~ delta_t, data = d))[2], 
+                                       otherwise = NA))) |>
+  select(-data)
+
+d_long_s <- left_join(d_long_s, slopes)
+
+fa3l_delta_model <- "vocab_l =~ delta_prod + delta_comp
+              accuracy_l =~ long_window_accuracy + long_window_acc_var
+              speed_l =~ rt + rt_var"
+
+
+fit3l_delta <- cfa(fa3l_delta_model, 
+                   data = filter(d_long_s, admin_num == 1), 
+                   std.lv=TRUE, missing='fiml')
+
+summary(fit3l_delta, fit.measures=TRUE, standardize=TRUE)
+```
+
+```{r}
+layout_ld = matrix(nrow=2, ncol = 6,
+                   data = c("speed_l",NA,"accuracy_l",NA,"vocab_l",NA,
+                            "rt_var","rt", "long_window_accuracy",
+                            "long_window_acc_var", "delta_prod","delta_comp"), 
+                   byrow = TRUE)
+graph_sem(model = fit3l_delta, text_size = 2, layout = layout_ld)
+```
+
+## Draft 3: discrete variables
+
+Need to create discrete variables for each thing changing across time. 
+
+Nice piece is that we can do this with all the data. 
+
+```{r}
+d_sub_wide_mod_s <- d_sub |>
+  mutate(across(all_of(c("rt", "rt_var", "long_window_accuracy",
+                         "long_window_acc_var", "prod", "comp")),
+                ~ age_scale(.x, age)))
+
+
+wide_rts <- d_sub_wide_mod_s |>
+  select(dataset_name, subject_id, age, rt) |>
+  mutate(age = floor(age)) |>
+  pivot_wider(names_from = "age", values_from = "rt", 
+              names_prefix = "rt_", 
+              values_fn = mean) 
+
+wide_accs <- d_sub_wide_mod_s |>
+  select(dataset_name, subject_id, age, long_window_accuracy) |>
+  mutate(age = floor(age)) |>
+  pivot_wider(names_from = "age", values_from = "long_window_accuracy", 
+              names_prefix = "acc_",
+              values_fn = mean) 
+
+wide_prods <- d_sub_wide_mod_s |>
+  select(dataset_name, subject_id, age, prod) |>
+  mutate(age = floor(age)) |>
+  pivot_wider(names_from = "age", values_from = "prod", 
+              names_prefix = "prod_",
+              values_fn = mean) 
+
+wide_comps <- d_sub_wide_mod_s |>
+  select(dataset_name, subject_id, age, comp) |>
+  mutate(age = floor(age)) |>
+  pivot_wider(names_from = "age", values_from = "comp", 
+              names_prefix = "comp_",
+              values_fn = mean) 
+
+
+d_wide <- full_join(wide_rts, wide_accs) |>
+  full_join(wide_prods) |>
+  full_join(wide_comps)
+```
+
+```{r}
+ggplot(filter(d_sub_wide_mod_s, subject_id %in% longitudinal$subject_id),
+       aes(x = rt, y = long_window_accuracy, group = subject_id)) + 
+  geom_point(alpha = .2, aes(col = as.factor(subject_id)))+ 
+  geom_line(alpha = .2, aes(col = as.factor(subject_id))) +
+  geom_smooth(aes(group = 1), method = "lm") + 
+  scale_color_discrete(guide = FALSE)
+```
+
+
+```{r}
+coupled_change <- "accuracy_intercept =~ 1 * acc_13 
+accuracy_intercept =~ 1 * acc_14 
+accuracy_intercept =~ 1 * acc_15 
+accuracy_intercept =~ 1 * acc_16 
+accuracy_intercept =~ 1 * acc_17
+accuracy_intercept =~ 1 * acc_18 
+accuracy_intercept =~ 1 * acc_19
+accuracy_intercept =~ 1 * acc_20
+accuracy_intercept =~ 1 * acc_21
+accuracy_intercept =~ 1 * acc_22
+accuracy_intercept =~ 1 * acc_23
+accuracy_intercept =~ 1 * acc_24
+accuracy_intercept =~ 1 * acc_25
+accuracy_intercept =~ 1 * acc_26
+
+accuracy_slope =~ 0 * acc_13 
+accuracy_slope =~ 1 * acc_14 
+accuracy_slope =~ 2 * acc_15 
+accuracy_slope =~ 3 * acc_16 
+accuracy_slope =~ 4 * acc_17
+accuracy_slope =~ 5 * acc_18 
+accuracy_slope =~ 6 * acc_19
+accuracy_slope =~ 7 * acc_20
+accuracy_slope =~ 8 * acc_21
+accuracy_slope =~ 9 * acc_22
+accuracy_slope =~ 10 * acc_23
+accuracy_slope =~ 11 * acc_24
+accuracy_slope =~ 12 * acc_25
+accuracy_slope =~ 13 * acc_26
+
+rt_intercept =~ 1 * rt_13 
+rt_intercept =~ 1 * rt_14 
+rt_intercept =~ 1 * rt_15 
+rt_intercept =~ 1 * rt_16 
+rt_intercept =~ 1 * rt_17
+rt_intercept =~ 1 * rt_18 
+rt_intercept =~ 1 * rt_19
+rt_intercept =~ 1 * rt_20
+rt_intercept =~ 1 * rt_21
+rt_intercept =~ 1 * rt_22
+rt_intercept =~ 1 * rt_23
+rt_intercept =~ 1 * rt_24
+rt_intercept =~ 1 * rt_25
+rt_intercept =~ 1 * rt_26
+
+rt_slope =~ 0 * rt_13 
+rt_slope =~ 1 * rt_14 
+rt_slope =~ 2 * rt_15 
+rt_slope =~ 3 * rt_16 
+rt_slope =~ 4 * rt_17
+rt_slope =~ 5 * rt_18 
+rt_slope =~ 6 * rt_19
+rt_slope =~ 7 * rt_20
+rt_slope =~ 8 * rt_21
+rt_slope =~ 9 * rt_22
+rt_slope =~ 10 * rt_23
+rt_slope =~ 11 * rt_24
+rt_slope =~ 12 * rt_25
+rt_slope =~ 13 * rt_26
+
+# factor variances
+accuracy_intercept ~~ accuracy_intercept
+accuracy_slope ~~ accuracy_slope
+rt_intercept ~~ rt_intercept
+rt_slope ~~ rt_slope
+
+# covariances among factors 
+accuracy_intercept ~~ rt_intercept
+accuracy_slope ~~ rt_slope
+accuracy_intercept ~~ accuracy_slope
+rt_intercept ~~ rt_slope
+
+#residual covariances
+rt_13 ~~ sigma * acc_13
+rt_14 ~~ sigma * acc_14 
+rt_15 ~~ sigma * acc_15 
+rt_16 ~~ sigma * acc_16 
+rt_17 ~~ sigma * acc_17
+rt_18 ~~ sigma * acc_18 
+rt_19 ~~ sigma * acc_19
+rt_20 ~~ sigma * acc_20
+rt_21 ~~ sigma * acc_21
+rt_22 ~~ sigma * acc_22
+rt_23 ~~ sigma * acc_23
+rt_24 ~~ sigma * acc_24
+rt_25 ~~ sigma * acc_25
+rt_26 ~~ sigma * acc_26
+
+# means
+accuracy_intercept ~ 1
+accuracy_slope ~ 1
+rt_intercept ~ 1
+rt_slope ~ 1
+
+# manifest variances (made equivalent by naming theta)
+acc_13 ~~ theta * acc_13 
+acc_14 ~~ theta * acc_14 
+acc_15 ~~ theta * acc_15 
+acc_16 ~~ theta * acc_16 
+acc_17 ~~ theta * acc_17
+acc_18 ~~ theta * acc_18 
+acc_19 ~~ theta * acc_19
+acc_20 ~~ theta * acc_20
+acc_21 ~~ theta * acc_21
+acc_22 ~~ theta * acc_22
+acc_23 ~~ theta * acc_23
+acc_24 ~~ theta * acc_24
+acc_25 ~~ theta * acc_25
+acc_26 ~~ theta * acc_26
+
+rt_13 ~~ theta2 * rt_13
+rt_14 ~~ theta2 * rt_14 
+rt_15 ~~ theta2 * rt_15 
+rt_16 ~~ theta2 * rt_16 
+rt_17 ~~ theta2 * rt_17
+rt_18 ~~ theta2 * rt_18 
+rt_19 ~~ theta2 * rt_19
+rt_20 ~~ theta2 * rt_20
+rt_21 ~~ theta2 * rt_21
+rt_22 ~~ theta2 * rt_22
+rt_23 ~~ theta2 * rt_23
+rt_24 ~~ theta2 * rt_24
+rt_25 ~~ theta2 * rt_25
+rt_26 ~~ theta2 * rt_26
+
+# manifest means (fixed at zero)
+acc_13 ~ 0*1
+acc_14 ~ 0*1
+acc_15 ~ 0*1
+acc_16 ~ 0*1
+acc_17 ~ 0*1
+acc_18 ~ 0*1
+acc_19 ~ 0*1
+acc_20 ~ 0*1
+acc_21 ~ 0*1
+acc_22 ~ 0*1
+acc_23 ~ 0*1
+acc_24 ~ 0*1
+acc_25 ~ 0*1
+acc_26 ~ 0*1
+
+rt_13 ~ 0*1 
+rt_14 ~ 0*1 
+rt_15 ~ 0*1 
+rt_16 ~ 0*1 
+rt_17 ~ 0*1
+rt_18 ~ 0*1 
+rt_19 ~ 0*1
+rt_20 ~ 0*1
+rt_21 ~ 0*1
+rt_22 ~ 0*1
+rt_23 ~ 0*1
+rt_24 ~ 0*1
+rt_25 ~ 0*1
+rt_26 ~ 0*1"
+
+fit_cc <- lavaan(coupled_change, 
+                 data = d_wide,
+                 std.lv=TRUE, missing='fiml')
+
+summary(fit_cc)
+```
+
+```{r}
+layout_cc = matrix(
+  nrow=4, 
+  ncol = 16,
+  data = c("rt_intercept","rt_slope", NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,
+           NA, NA, "rt_13","rt_14","rt_15","rt_16","rt_17","rt_18","rt_19","rt_20","rt_21","rt_22","rt_23","rt_24","rt_25","rt_26",
+           NA, NA, "acc_13","acc_14","acc_15","acc_16","acc_17","acc_18","acc_19","acc_20","acc_21","acc_22","acc_23","acc_24","acc_25","acc_26",
+           "accuracy_intercept","accuracy_slope", NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
+  byrow = TRUE)
+
+
+graph_sem(model = fit_cc, text_size = 3, layout = layout_cc)
+```
+
+## Draft 4: Another version of coupled change
+
+This one doesn't have:
+
+* single residual variance
+* coupled covariances
+* pinned means
+
+```{r}
+coupled_change <- "
+accuracy_intercept =~ 1 * acc_13 + 1 * acc_15 + 1 * acc_16 + 1 * acc_17 + 1 * acc_18 + 1 * acc_19 + 1 * acc_20 + 1 * acc_21 + 1 * acc_22 + 1 * acc_23 + 1 * acc_24 + 1 * acc_25 + 1 * acc_26
+
+accuracy_slope =~ 0 * acc_13  + 1 * acc_14  + 2 * acc_15  + 3 * acc_16  + 4 * acc_17 + 5 * acc_18  + 6 * acc_19 + 7 * acc_20 + 8 * acc_21 + 9 * acc_22 + 10 * acc_23 + 11 * acc_24 + 12 * acc_25 + 13 * acc_26
+
+rt_intercept =~ 1 * rt_13 + 1 * rt_14  + 1 * rt_15  + 1 * rt_16  + 1 * rt_17 + 1 * rt_18  + 1 * rt_19+ 1 * rt_20 + 1 * rt_21 + 1 * rt_22 + 1 * rt_23 + 1 * rt_24 + 1 * rt_25 + 1 * rt_26
+
+rt_slope =~ 0 * rt_13 + 1 * rt_14 + 2 * rt_15 + 3 * rt_16 + 4 * rt_17+ 5 * rt_18 + 6 * rt_19 + 7 * rt_20 + 8 * rt_21 + 9 * rt_22 + 10 * rt_23 + 11 * rt_24 + 12 * rt_25 + 13 * rt_26"
+
+fit_cc <- growth(coupled_change, data = d_wide, missing='fiml')
+
+summary(fit_cc)
+```
+
+```{r}
+graph_sem(model = fit_cc, text_size = 3, layout = layout_cc)
+```
+
+## Draft 5: Adding vocab to the mix
+
+I was trying to figure out how to link the observed variables, but I think the observations are too sparse.
+
+```{r eval=FALSE}
+cc_vocab <- "
+accuracy_intercept =~ 1 * acc_13 + 1 * acc_15 + 1 * acc_16 + 1 * acc_17 + 1 * acc_18 + 1 * acc_19 + 1 * acc_20 + 1 * acc_21 + 1 * acc_22 + 1 * acc_23 + 1 * acc_24 + 1 * acc_25 + 1 * acc_26
+
+accuracy_slope =~ 0 * acc_13  + 1 * acc_14  + 2 * acc_15  + 3 * acc_16  + 4 * acc_17 + 5 * acc_18  + 6 * acc_19 + 7 * acc_20 + 8 * acc_21 + 9 * acc_22 + 10 * acc_23 + 11 * acc_24 + 12 * acc_25 + 13 * acc_26
+
+rt_intercept =~ 1 * rt_13 + 1 * rt_14  + 1 * rt_15  + 1 * rt_16  + 1 * rt_17 + 1 * rt_18  + 1 * rt_19+ 1 * rt_20 + 1 * rt_21 + 1 * rt_22 + 1 * rt_23 + 1 * rt_24 + 1 * rt_25 + 1 * rt_26
+
+rt_slope =~ 0 * rt_13 + 1 * rt_14 + 2 * rt_15 + 3 * rt_16 + 4 * rt_17+ 5 * rt_18 + 6 * rt_19 + 7 * rt_20 + 8 * rt_21 + 9 * rt_22 + 10 * rt_23 + 11 * rt_24 + 12 * rt_25 + 13 * rt_26
+
+prod_intercept =~ 1 * prod_13 + 1 * prod_14  + 1 * prod_15  + 1 * prod_16  + 1 * prod_17 + 1 * prod_18  + 1 * prod_19+ 1 * prod_20 + 1 * prod_21 + 1 * prod_22 + 1 * prod_23 + 1 * prod_24 + 1 * prod_25 + 1 * prod_26
+
+prod_slope =~ 0 * prod_13 + 1 * prod_14 + 2 * prod_15 + 3 * prod_16 + 4 * prod_17+ 5 * prod_18 + 6 * prod_19 + 7 * prod_20 + 8 * prod_21 + 9 * prod_22 + 10 * prod_23 + 11 * prod_24 + 12 * prod_25 + 13 * prod_26"
+
+fit_ccv <- growth(cc_vocab, data = d_wide, missing='fiml', 
+                  optim.method = "GN", 
+                  optim.gn.tol.x = .001, 
+                  optim.gn.iter.max = 500
+)
+
+summary(fit_ccv)
+```
+
+This model does not converge. Let's think about other ways to describe the same coupling. 
+
+## Draft 6: Longitudinal common factor model
+
+Let's think about a two-point factor model, where we:
+* analyze all the data
+* average observations 0-2 months apart and then analyze 3-6 month growth
+
+First prep the data for this. 
+
+```{r}
+d_sub_long <- d_sub |>
+  mutate(across(all_of(c("rt", "rt_var", "long_window_accuracy",
+                         "long_window_acc_var", "prod", "comp")),
+                ~ age_scale(.x,age)) |>
+  group_by(subject_id) |>
+  arrange(administration_id) |>
+  mutate(admin_num = 1:n(), 
+         delta_t = c(0,diff(age)))
+
+
+d_sub_long_t <- d_sub_long |> 
+  mutate(t = ifelse(delta_t > 2, "t2", "t1")) |>
+  group_by(subject_id, dataset_name, t) |>
+  summarise(across(all_of(c("rt", "rt_var", "long_window_accuracy",
+                            "long_window_acc_var", "prod", "comp")),
+                   ~ mean(.x, na.rm=TRUE))) |> 
+  mutate(across(all_of(c("rt", "rt_var", "long_window_accuracy",
+                         "long_window_acc_var", "prod", "comp")),
+                ~ ifelse(is.nan(.x), NA, .x)))
+
+d_sub_wide <- d_sub_long_t |>
+  pivot_wider(id_cols = c("subject_id","dataset_name"), 
+              names_from = "t",
+              values_from = c("rt", "rt_var", "long_window_accuracy", 
+                              "long_window_acc_var", "prod", "comp"))
+```
+
+Big choice point here is whether to constrain the loadings, which makes something wrong but interpretable. 
+
+
+```{r}
+fa3_model_long <- "
+# measurement model
+vocab_t1 =~ 1*prod_t1 + 1*comp_t1
+accuracy_t1 =~ 1*long_window_accuracy_t1 + 1*long_window_acc_var_t1
+speed_t1 =~ 1*rt_t1 + 1*rt_var_t1
+
+vocab_t2 =~ 1*prod_t2 + 1*comp_t2
+accuracy_t2 =~ 1*long_window_accuracy_t2 + 1*long_window_acc_var_t2
+speed_t2 =~ 1*rt_t2 + 1*rt_var_t2
+
+# longitudinal relationships
+vocab_t2 ~ vocab_t1 + speed_t1 + accuracy_t1
+speed_t2 ~ vocab_t1 + speed_t1 + accuracy_t1
+accuracy_t2 ~ vocab_t1 + speed_t1 + accuracy_t1
+
+# factor covariances
+vocab_t1 ~~ accuracy_t1
+vocab_t1 ~~ speed_t1
+accuracy_t1 ~~ speed_t1
+
+vocab_t2 ~~ accuracy_t2
+vocab_t2 ~~ speed_t2
+accuracy_t2 ~~ speed_t2
+"
+
+fit3_long <- sem(fa3_model_long, d_sub_wide, std.lv=TRUE, missing='fiml')
+
+summary(fit3_long, fit.measures=TRUE, standardize=TRUE)
+
+layout_long = matrix(nrow=5, ncol = 7,
+                     data = c("rt_var_t1","rt_t1", "long_window_accuracy_t1", "long_window_acc_var_t1", "prod_t1","comp_t1", NA,
+                              "speed_t1",NA,"accuracy_t1",NA,"vocab_t1",NA,  NA,
+                              NA, NA, NA, NA, NA, NA,  NA,
+                               NA,"speed_t2",NA,"accuracy_t2",NA,"vocab_t2",NA,
+                               NA,"rt_var_t2","rt_t2", "long_window_accuracy_t2", "long_window_acc_var_t2", "prod_t2","comp_t2"), 
+                     byrow = TRUE)
+graph_sem(model = fit3_long, text_size = 3, layout = t(layout_long))
+
+```
+To test for fit:
+
+- Constrain regression coefficients to be zero and test for misfit (e.g., key fernald coefficient)
+- those are nested so chi2 test can compare between them 
+- maybe constrain ALL cross-influences to zero 
+
+
+Alternative with no identification constraints:
+
+```{r}
+fa3_model_long <- "
+# measurement model
+vocab_t1 =~ 1*prod_t1 + comp_t1
+accuracy_t1 =~ 1*long_window_accuracy_t1 + long_window_acc_var_t1
+speed_t1 =~ 1*rt_t1 + rt_var_t1
+
+vocab_t2 =~ 1*prod_t2 + comp_t2
+accuracy_t2 =~ 1*long_window_accuracy_t2 + long_window_acc_var_t2
+speed_t2 =~ 1*rt_t2 + rt_var_t2
+
+# longitudinal relationships
+vocab_t2 ~ vocab_t1 + speed_t1 + accuracy_t1
+speed_t2 ~ vocab_t1 + speed_t1 + accuracy_t1
+accuracy_t2 ~ vocab_t1 + speed_t1 + accuracy_t1
+
+# factor covariances
+vocab_t1 ~~ accuracy_t1
+vocab_t1 ~~ speed_t1
+accuracy_t1 ~~ speed_t1
+
+vocab_t2 ~~ accuracy_t2
+vocab_t2 ~~ speed_t2
+accuracy_t2 ~~ speed_t2
+
+# means for the latents
+vocab_t1 ~ 1
+vocab_t2 ~ 1
+accuracy_t1 ~ 1
+accuracy_t2 ~ 1
+speed_t1 ~ 1
+speed_t2 ~ 1
+
+# residual variance for the latents
+vocab_t1 ~~ NA*vocab_t1
+vocab_t2 ~~ NA*vocab_t2
+accuracy_t1 ~~ NA*accuracy_t1
+accuracy_t2 ~~ NA*accuracy_t2
+speed_t1 ~~ NA*speed_t1
+speed_t2 ~~ NA*speed_t2
+"
+
+fit3_long <- sem(fa3_model_long, d_sub_wide, std.lv=TRUE, missing='fiml')
+
+summary(fit3_long, fit.measures=TRUE, standardize=TRUE)
+
+graph_sem(model = fit3_long, text_size = 3, layout = t(layout_long))
+```
+
+Now with baseline compariosns
+
+```{r}
+fa3_model_long_baseline <- "
+# measurement model
+vocab_t1 =~ 1*prod_t1 + comp_t1
+accuracy_t1 =~ 1*long_window_accuracy_t1 + long_window_acc_var_t1
+speed_t1 =~ 1*rt_t1 + rt_var_t1
+
+vocab_t2 =~ 1*prod_t2 + comp_t2
+accuracy_t2 =~ 1*long_window_accuracy_t2 + long_window_acc_var_t2
+speed_t2 =~ 1*rt_t2 + rt_var_t2
+
+# longitudinal relationships
+vocab_t2 ~ vocab_t1 + 0 * speed_t1 + 0 * accuracy_t1
+speed_t2 ~ 0 * vocab_t1 + speed_t1 + 0 * accuracy_t1
+accuracy_t2 ~ 0 * vocab_t1 + 0 * speed_t1 + accuracy_t1
+
+# factor covariances
+vocab_t1 ~~ accuracy_t1
+vocab_t1 ~~ speed_t1
+accuracy_t1 ~~ speed_t1
+
+vocab_t2 ~~ accuracy_t2
+vocab_t2 ~~ speed_t2
+accuracy_t2 ~~ speed_t2
+
+# means for the latents
+vocab_t1 ~ 1
+vocab_t2 ~ 1
+accuracy_t1 ~ 1
+accuracy_t2 ~ 1
+speed_t1 ~ 1
+speed_t2 ~ 1
+
+# residual variance for the latents
+vocab_t1 ~~ NA*vocab_t1
+vocab_t2 ~~ NA*vocab_t2
+accuracy_t1 ~~ NA*accuracy_t1
+accuracy_t2 ~~ NA*accuracy_t2
+speed_t1 ~~ NA*speed_t1
+speed_t2 ~~ NA*speed_t2
+"
+
+fit3_long_baseline <- sem(fa3_model_long_baseline, 
+                          d_sub_wide, std.lv=TRUE, missing='fiml')
+
+summary(fit3_long_baseline, fit.measures=TRUE, standardize=TRUE)
+
+anova(fit3_long, fit3_long_baseline)
+```
+With a close baseline. 
+
+```{r}
+fa3_model_long_closebaseline <- "
+# measurement model
+vocab_t1 =~ 1*prod_t1 + comp_t1
+accuracy_t1 =~ 1*long_window_accuracy_t1 + long_window_acc_var_t1
+speed_t1 =~ 1*rt_t1 + rt_var_t1
+
+vocab_t2 =~ 1*prod_t2 + comp_t2
+accuracy_t2 =~ 1*long_window_accuracy_t2 + long_window_acc_var_t2
+speed_t2 =~ 1*rt_t2 + rt_var_t2
+
+# longitudinal relationships
+vocab_t2 ~ vocab_t1 + 0* speed_t1 + accuracy_t1
+speed_t2 ~ vocab_t1 + speed_t1 + accuracy_t1
+accuracy_t2 ~ vocab_t1 + speed_t1 + accuracy_t1
+
+# factor covariances
+vocab_t1 ~~ accuracy_t1
+vocab_t1 ~~ speed_t1
+accuracy_t1 ~~ speed_t1
+
+vocab_t2 ~~ accuracy_t2
+vocab_t2 ~~ speed_t2
+accuracy_t2 ~~ speed_t2
+
+# means for the latents
+vocab_t1 ~ 1
+vocab_t2 ~ 1
+accuracy_t1 ~ 1
+accuracy_t2 ~ 1
+speed_t1 ~ 1
+speed_t2 ~ 1
+
+# residual variance for the latents
+vocab_t1 ~~ NA*vocab_t1
+vocab_t2 ~~ NA*vocab_t2
+accuracy_t1 ~~ NA*accuracy_t1
+accuracy_t2 ~~ NA*accuracy_t2
+speed_t1 ~~ NA*speed_t1
+speed_t2 ~~ NA*speed_t2
+"
+
+fit3_long_closebaseline <- sem(fa3_model_long_closebaseline, 
+                               d_sub_wide, std.lv=TRUE, missing='fiml')
+
+summary(fit3_long_closebaseline, fit.measures=TRUE, standardize=TRUE)
+
+anova(fit3_long, fit3_long_closebaseline)
+```
+
+## Draft 7: slope/intercept on delta-t
+
+Working from [https://thechangelab.stanford.edu/tutorials/growth-modeling/multivariate-latent-change-score-models/]()
+
+
+Right now I think we need to cut by 2 month intervals because of data sparsity. 
+
+```{r}
+d_sub_long_dt <- d_sub |> 
+   mutate(across(all_of(c("rt", "rt_var", "long_window_accuracy", 
+                         "long_window_acc_var", "prod", "comp")), 
+                ~ age_scale(.x,age))) |>
+  group_by(subject_id) |>
+  arrange(administration_id) |>
+  mutate(admin_num = 1:n(), 
+         delta_t = c(0,diff(age))) |>
+  mutate(delta_t = cut(delta_t, 
+                       breaks = c(-10, 2, 4, 6, 30), 
+                       labels = c(0, 2, 4, 6))) |>
+  group_by(subject_id, dataset_name, delta_t) |>
+  summarise(across(all_of(c("rt", "rt_var", "long_window_accuracy",
+                            "long_window_acc_var", "prod", "comp")),
+                   ~ mean(.x, na.rm=TRUE))) |> 
+  mutate(across(all_of(c("rt", "rt_var", "long_window_accuracy",
+                         "long_window_acc_var", "prod", "comp")),
+                ~ ifelse(is.nan(.x), NA, .x)))
+
+d_sub_wide_dt <- d_sub_long_dt |>
+  pivot_wider(id_cols = c("subject_id","dataset_name"), 
+              names_from = "delta_t",
+              values_from = c("rt", "rt_var", "long_window_accuracy", 
+                              "long_window_acc_var", "prod", "comp"))
+
+d_sub_wide_dt |>
+  ungroup() |>
+  summarise(across(rt_0:comp_4, 
+                   ~sum(!is.na(.x))))
+```
+
+Note there is no comp_6 and comp_4
+
+** Note propagate the intercept and also the fit variances from D6 ***
+
+```{r}
+dt_model <- "
+# measurement model
+vocab_int =~ 1*prod_0 + 1*comp_0 + 1*prod_2 + 1*comp_2 + 1*prod_4 + 1*prod_6 
+vocab_slope =~ 1*prod_0 + 1*comp_0 + 2*prod_2 + 2*comp_2 + 3*prod_4 + 4*prod_6 
+
+accuracy_int =~ 1*long_window_accuracy_0 + 1*long_window_acc_var_0 + 1*long_window_accuracy_2 + 1*long_window_acc_var_2 + 1*long_window_accuracy_4 + 1*long_window_acc_var_4 + 1*long_window_accuracy_6 + 1*long_window_acc_var_6
+
+accuracy_slope =~ 1*long_window_accuracy_0 + 1*long_window_acc_var_0 + 2*long_window_accuracy_2 + 2*long_window_acc_var_2 + 3*long_window_accuracy_4 + 3*long_window_acc_var_4 + 4*long_window_accuracy_6 + 4*long_window_acc_var_6
+
+speed_int =~ 1*rt_var_0 + 1*rt_0 + 1*rt_var_2 + 1*rt_2 + 1*rt_var_4 + 1*rt_4 + 1*rt_var_6 + 1*rt_6 
+speed_slope =~ 1*rt_0 + 1*rt_var_0 + 2*rt_2 + 2*rt_var_2 + 3*rt_4 + 3*rt_var_4 + 4*rt_6 + 4*rt_var_6 
+
+# covariances
+vocab_int ~~ vocab_slope
+accuracy_int ~~ accuracy_slope
+speed_int ~~ speed_slope
+
+# couplings
+# vocab_int ~~ accuracy_int
+# vocab_int ~~ speed_int
+# accuracy_int ~~ speed_int
+# vocab_slope ~~ accuracy_slope
+# vocab_slope ~~ speed_slope
+# accuracy_slope ~~ speed_slope
+
+# means for the latents
+vocab_int ~ 1
+vocab_slope ~ 1
+accuracy_int ~ 1
+accuracy_slope ~ 1
+speed_int ~ 1
+speed_slope ~ 1
+ 
+# residual variance for the latents
+vocab_int ~~ NA*vocab_int
+vocab_slope ~~ NA*vocab_slope
+accuracy_int ~~ NA*accuracy_int
+accuracy_slope ~~ NA*accuracy_slope
+speed_int ~~ NA*speed_int
+speed_slope ~~ NA*speed_slope
+
+# age regressions
+
+"
+
+fit_dt <- sem(dt_model, d_sub_wide_dt, std.lv=TRUE, missing='fiml')
+
+summary(fit_dt, fit.measures=TRUE, standardize=TRUE)
+
+layout_dt = matrix(nrow=11, ncol = 7,
+                   data = c("prod_0", "prod_2", "prod_4", "prod_6", "vocab_int", NA, NA,t
+                            NA, NA, NA, NA, NA, NA, NA,
+                            "comp_0", "comp_2", NA, NA, "vocab_slope", NA,NA,
+                            NA, NA, NA, NA, NA, NA, NA,
+                            "long_window_accuracy_0", "long_window_accuracy_2", "long_window_accuracy_4", "long_window_accuracy_6", "accuracy_int", NA, NA,
+                            NA, NA, NA, NA, NA, NA, NA,
+                            "long_window_acc_var_0", "long_window_acc_var_2", "long_window_acc_var_4", "long_window_acc_var_6", "accuracy_slope", NA, NA,
+                            NA, NA, NA, NA, NA, NA, NA,
+                            "rt_0", "rt_2", "rt_4", "rt_6", "speed_int", NA, NA,
+                            NA, NA, NA, NA, NA, NA, NA,
+                            "rt_var_0", "rt_var_2", "rt_var_4", "rt_var_6", "speed_slope", NA, NA),
+                   byrow = TRUE)
+
+
+graph_sem(model = fit_dt, text_size = 3, layout = t(layout_dt[,c(7,6, 5,1:4)]))
+
+```

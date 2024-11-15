@@ -22,7 +22,7 @@ d_trial <- readRDS(here("cached_intermediates","1_d_trial.Rds"))
 ## Between datasets
 
 ```{r}
-cor(select(d_sub, log_age, rt, 
+cor(select(d_sub, age, log_age, rt, log_rt, 
            long_window_accuracy, long_window_elogit, prod, comp), 
     use = "pairwise.complete.obs") |>
   round(2)
