@@ -116,14 +116,18 @@ suppressPackageStartupMessages(library(lmerTest))
 suppressPackageStartupMessages(library(lavaan))
 suppressPackageStartupMessages(library(tidySEM))
 suppressPackageStartupMessages(library(xtable))
-# suppressPackageStartupMessages(library(kableExtra))
 suppressPackageStartupMessages(library(papaja))
 
-
 source(here("helper","common.R"))
+
 d_trial <- readRDS(here("cached_intermediates","1_d_trial.Rds")) |>
   mutate(log_age = log(age))
-d_sub <- readRDS(here("cached_intermediates","1_d_sub.Rds"))
+d_sub <- readRDS(here("cached_intermediates","1_d_sub.Rds")) |>
+  group_by(subject_id) |>
+  arrange(age) |>
+  mutate(admin_num = 1:n(), 
+         time_since_t0 = age - age[1],
+         delta_t = c(0, diff(age)))
 
 d_trial$age_s <- scale(d_trial$age)[,1]
 d_trial$log_age_s <- scale(d_trial$log_age)[,1]   
@@ -139,7 +143,7 @@ knitr::opts_chunk$set(echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE)
 
 To address these questions, we made use of a new release of data in Peekbank, an open database of  looking while listening data from young children, stored in a harmonized format [@zettersten2023peekbank]. We retrieved data from children ages 1--6 years. Although experiments in Peekbank include a variety of different experimental manipulations, we analyzed data only from simple word recognition trials in which children were shown two pictures of concrete objects and heard a word; these trials often constituted control conditions for experiments. We focus here on English purely for practical reasons -- the Peekbank dataset contains limited data from other languages. 
 
-These criteria yielded `r length(unique(d_sub$dataset_name))` datasets, including `r length(unique(d_sub$subject_id))` children and `r length(unique(d_sub$administration_id))` administrations of the LWL procedure (some datasets were longitudinal or involved multiple closely-spaced testing sessions). Table \ref{tab:datasets} shows the characteristics of individual datasets. The size of the combined dataset, the unified data processing pipeline, and the fact that individual studies used very similar implementations of the LWL experimental paradigm, all allow us to take a more detailed look at early language processing than has previously been possible. 
+These criteria yielded `r length(unique(d_sub$dataset_name))` datasets, including `r length(unique(d_sub$subject_id))` children and `r length(unique(d_sub$administration_id))` administrations of the LWL procedure (some datasets were longitudinal or involved multiple closely-spaced testing sessions). Table \ref{tab:datasets} shows the characteristics of individual datasets (see also Figures S1 and S2). The size of the combined dataset, the unified data processing pipeline, and the fact that individual studies used very similar implementations of the LWL experimental paradigm, all allowed us to make a more detailed exploration of the development of word recognition than has previously been possible.
 
 
 ```{r dataset_table}
@@ -204,8 +208,7 @@ rt_mods_lmer_summary <- map_df(rt_mods_lmer, ~broom.mixed::glance(.x)) |>
 ```
 
 We were first interested in developmental changes in speed and accuracy. We computed both reaction times and accuracies following standard practices in the literature [@fernald2008]. Because there is no consensus about the length of time windows for the computation of accuracy, we considered both a shorter window (from 200 -- 2200 ms after noun onset) and a longer window (from 200 -- 4000 ms). 
-
-Our first question was about the functional form of the relationships between age, speed, and accuracy. To investigate this question, we fit linear mixed effects models predicting accuracy and reaction time on each trial across the full dataset with random slopes of age by study and random intercepts by participant. We compared models that included both long and short accuracy windows, as well as logarithmic and linear effects of age, and logarithmic and linear transformations of reaction time. The best fitting model of accuracy predicted long window accuracy as a function of the logarithm of age,^[This longer window yielded overall higher cross-trial reliability as well, and so we report long window results in the main text. All findings reported here hold for both window sizes, however.] and the best fitting model of speed predicted log reaction time as a function of log age as well (See Supplemental Tables 1 and 2 for model fit statistics). 
+Our first question was about the functional form of the relationships between age, speed, and accuracy (see Table S-XYZ for raw correlations between variables). To investigate this question, we fit linear mixed effects models predicting accuracy and reaction time on each trial across the full dataset with random slopes of age by study and random intercepts by participant. We compared models that included both long and short accuracy windows, as well as logarithmic and linear effects of age, and logarithmic and linear transformations of reaction time. The best fitting model of accuracy predicted long window accuracy as a function of the logarithm of age,^[This longer window yielded overall higher cross-trial reliability as well, and so we report long window results in the main text. All findings reported here hold for both window sizes, however (see SI: Short Window Analyses).] and the best fitting model of speed predicted log reaction time as a function of log age as well (See Tables S1 and S2 for model fit statistics). 
 
 Figure \ref{fig:devchange} shows these relationships. Log reaction time decreased significantly with age (`r papaja::apa_print(rt_mods_lmer[[2]])$full_result$log_age_s`) and accuracy increased significantly with age  (`r papaja::apa_print(acc_mods_lmer[[2]])$full_result$log_age_s`). In sum, we see continuing improvements in word recognition across the full age range in our dataset that appear roughly linear in the logarithm of age.  These logarithmic relationships follow theoretical expectations that both speed and accuracy should gradually asymptote to mature levels of performance as in skill learning more generally [@anderson1982,@snoddy1926]. 
 <!-- With our current dataset we cannot specifically determine whether within-individual patterns of change conform to power law or exponential forms [@kail1991,@heathcote2000], but regardless we see clear patterns of developmental change related to skill acquisition. -->
@@ -295,7 +298,7 @@ cowplot::plot_grid(c,d)
 ```
 
 
-## Speed and accuracy covary with vocabulary {.unnumbered}
+## Speed and accuracy relate to vocabulary size {.unnumbered}
 
 We were next interested in whether the various different aspects of word recognition -- including accuracy, reaction time, and the variability of each of these -- were related to other aspects of early language ability. Of the studies in our database, `r sum(str_length(dataset_characteristics$CDIs)>0)` gathered parent reports about children's early vocabulary using the MacArthur-Bates Communicative Development Inventory (CDI), a popular survey instrument that provides a reliable and valid holistic picture of children's early language [@marchman2023;@frank2021]. Different forms of the CDI can be used to measure either receptive and expressive vocabulary (for children up to 18 months) or expressive vocabulary only (for children 16 -- 30 months). 
 
@@ -325,10 +328,10 @@ fit3 <- cfa(fa3_model, d_sub_mat_s, std.lv=TRUE, missing='fiml')
 fit_stats <- suppressMessages(summary(fit3, fit.measures=TRUE, standardize=TRUE))
 ```
 
-We fit a series of factor analytic models to explore the dimensionality of the data. Initial exploratory factor analysis using paralell analysis suggested that three factors explained substantial variance in the data. Due to missingness of data, we used confirmatory factory analysis with full information maximum likelihood to find the best set of loadings. The best fitting model was a three-factor model with factors for speed (reaction time and reaction time variability), accuracy (accuracy and accuracy variability), and vocabulary (comprehension and production from the CDI). Fit statistics for this model were generally good (Confirmatory fit index: `r round(fit_stats$fit["cfi"], 3)`, RMSE: `r round(fit_stats$fit["rmsea"], 3)`, RMSE $p$-value: `r round(fit_stats$fit["rmsea.pvalue"], 3)`). 
+We fit a series of factor analytic models to explore the dimensionality of the data. Initial exploratory factor analysis using paralell analysis suggested that three factors explained substantial variance in the data (see SI: Factor Analysis). Due to missingness of data, we used confirmatory factory analysis with full information maximum likelihood to find the best set of loadings. The best fitting model was a three-factor model with factors for speed (reaction time and reaction time variability), accuracy (accuracy and accuracy variability), and vocabulary (comprehension and production from the CDI). Fit statistics for this model were generally good (Confirmatory fit index: `r round(fit_stats$fit["cfi"], 3)`, RMSE: `r round(fit_stats$fit["rmsea"], 3)`)`; see SI: Alternative Factor Structures). 
 
 
-```{r age_regression, fig.env="figure*", fig.cap="Structural equation model showing the three-factor factor analysis with a regression of each latent variable on the logarithm of age. Squares show  Solid lines show regression coefficients and factor loadings, and dotted lines show covariances (reflecting age-residualized correlations). Abbreviations: acc = accuracy, prod = production vocabulary, comp = comprehension vocabulary.", fig.height = 3}
+```{r age_regression, fig.env="figure*", fig.cap="Structural equation model showing the three-factor factor analysis with a regression of each latent variable on the logarithm of age. Observed variables are notated as squares and latent variables are notated as circles Factor loadings and regression coefficients are shown with straight, solid lines; covariances are shown with dashed lines; residual variances are shown as solid circular connections. Stars show conventional levels of statistical significance, e.g. * indicates p < .05, ** indicates p < .01, and *** indicates p < .001. Covariances reflect age-residualized correlations between variables. Abbreviations: acc = accuracy, prod = production vocabulary, comp = comprehension vocabulary.", fig.height = 3}
 
 d_sub_mat_s_renamed <- d_sub_mat_s |>
   rename(acc = long_window_accuracy, 
@@ -378,9 +381,9 @@ longitudinal <- d_sub |>
 d_long <- d_sub |>
   filter(subject_id %in% longitudinal$subject_id) |>
   group_by(subject_id) |>
-  arrange(administration_id) |>
+  arrange(age) |>
   mutate(admin_num = 1:n(), 
-         delta_t = c(0,diff(age))) 
+         delta_t = age - age[1])
 
 
 d_reliability <- d_long |>
@@ -412,33 +415,39 @@ While we fit the latent variable models above to the full cross-sectional datase
 
 
 ```{r prep_long_data}
-d_sub_long <- d_sub |>
-  mutate(across(all_of(c("log_rt", "log_rt_var", "long_window_accuracy",
-                         "long_window_acc_var", "prod", "comp")),
-                ~ age_scale(.x,age))) |>
-  group_by(subject_id) |>
-  arrange(administration_id) |>
-  mutate(admin_num = 1:n(), 
-         delta_t = c(0, diff(age)))
-
-d_sub_long_t <- d_sub_long |> 
-  mutate(t = ifelse(delta_t > MONTH_CUTOFF, "t2", "t1")) |>
-  rename(acc = long_window_accuracy,
-         acc_sd = long_window_acc_var,
+# rename and scale variables
+d_sub_s <- d_sub |>
+  ungroup() |>
+  select(dataset_name, subject_id, administration_id, age, 
+         time_since_t0, delta_t,
+         log_rt, log_rt_var, 
+         long_window_accuracy, long_window_acc_var, prod, comp, ) |>
+  rename(acc = long_window_accuracy, 
+         acc_sd = long_window_acc_var, 
          log_rt_sd = log_rt_var) |>
+  ungroup() |>
+  mutate(across(all_of(c("log_rt", "log_rt_sd", "acc", "acc_sd", 
+                         "prod", "comp")), 
+                       ~ age_scale(.x, age))) 
+
+d_sub_wide <- d_sub_s |> 
+  mutate(t = cut(time_since_t0, breaks = c(0, 6, 12, 30), 
+                 include.lowest = TRUE)) |>
+  filter(t != "(12,30]") |>
+  mutate(t = as.numeric(t)) |>
   group_by(subject_id, dataset_name, t) |>
   summarise(across(all_of(c("log_rt", "log_rt_sd", "acc",
                             "acc_sd", "prod", "comp")),
                    ~ mean(.x, na.rm=TRUE))) |> 
   mutate(across(all_of(c("log_rt", "log_rt_sd", "acc",
                          "acc_sd", "prod", "comp")),
-                ~ ifelse(is.nan(.x), NA, .x)))
-
-d_sub_wide <- d_sub_long_t |>
+                ~ ifelse(is.nan(.x), NA, .x))) |>
   pivot_wider(id_cols = c("subject_id","dataset_name"), 
               names_from = "t",
               values_from = c("log_rt", "log_rt_sd", "acc", 
-                              "acc_sd", "prod", "comp"))
+                              "acc_sd", "prod", "comp"), 
+              names_prefix = "t")
+
 ```
 
 
@@ -449,7 +458,7 @@ vocab_t1 =~ 1*prod_t1 + s1*comp_t1
 accuracy_t1 =~ 1*acc_t1 + s2*acc_sd_t1
 speed_t1 =~ 1*log_rt_t1 + s3*log_rt_sd_t1
 
-vocab_t2 =~ 1*prod_t2 + s1*comp_t2
+vocab_t2 =~ 1*prod_t2 
 accuracy_t2 =~ 1*acc_t2 + s2*acc_sd_t2
 speed_t2 =~ 1*log_rt_t2 + s3*log_rt_sd_t2
 
@@ -489,12 +498,12 @@ fit3_long <- sem(fa3_model_long, d_sub_wide, std.lv=TRUE, missing='fiml')
 fit3_long_summary <- suppressMessages(summary(fit3_long, fit.measures=TRUE, standardize=TRUE))
 ```
 
-Given this relatively low reliability in our longitudinal datasets (which also tended to be from younger children), we chose to measure longitudinal relationships between LWL and vocabulary via a longitudinal latent factor model. We fit the same three-factor model, but this time averaging longitudinal administrations after splitting them into two categories: those datapoints within a two-month time period (which we designate as $t_1$) and those datapoints between three and six months from the initial measurement ($t_2$). To ensure measurement invariance, we coupled the factor loadings across the two time-points. Next, to investigate coupling between the different measures, we fit regressions linking the two time points. 
+Given this relatively low reliability in our longitudinal datasets (which also tended to be from younger children), we chose to measure longitudinal relationships between LWL and vocabulary via a longitudinal latent factor model. We fit the same three-factor model, but this time averaging longitudinal administrations after splitting them into two categories: those datapoints within a two-month time period (which we designate as $t_1$) and those datapoints between three and six months from the initial measurement ($t_2$) (see SI: Sensitivity Analysis for Longitudinal Models). To ensure measurement invariance, we coupled the factor loadings across the two time-points. Next, to investigate coupling between the different measures, we fit regressions linking the two time points. 
 
-The fitted longitudinal model is shown in \ref{fig:longitudinal}. Overall fit statistics were generally good (Confirmatory fit index: `r round(fit_stats$fit["cfi"], 3)`, RMSE: `r round(fit3_long_summary$fit["rmsea"], 3)`, RMSE $p$-value: `r round(fit3_long_summary$fit["rmsea.pvalue"], 3)`). Each latent factor was significantly coupled across time, again indicating moderate longitudinal stability of these abilities. 
+The fitted longitudinal model is shown in Figure \ref{fig:longitudinal}. Overall fit statistics were generally good (Confirmatory fit index: `r round(fit_stats$fit["cfi"], 3)`, RMSE: `r round(fit3_long_summary$fit["rmsea"], 3)`, RMSE $p$-value: `r round(fit3_long_summary$fit["rmsea.pvalue"], 3)`). Each latent factor was significantly coupled across time, again indicating moderate longitudinal stability of these abilities. 
 
 
-```{r longitudinal, fig.env="figure*", height = 3.5, fig.cap = "Coupled change model."}
+```{r longitudinal, fig.env="figure*", height = 3.5, fig.cap = "Structural equation model showing longitudinal couplings between latent factors. Variables marked t1 are measures from two or fewer months from study initiation; variables marked t2 are measures from 3--6 months after study initiation. Factor loadings are constrained to be equivalent between t1 and t2. Plotting conventions are as in Figure 3."}
 layout_long = matrix(nrow=7, ncol = 7,
                      data = c("log_rt_sd_t1","log_rt_t1", "acc_t1", "acc_sd_t1", "prod_t1","comp_t1", NA,
                                NA, NA, NA, NA, NA, NA,  NA,
@@ -502,7 +511,7 @@ layout_long = matrix(nrow=7, ncol = 7,
                               NA, NA, NA, NA, NA, NA,  NA,
                                NA,"speed_t2",NA,"accuracy_t2",NA,NA,"vocab_t2",
                                NA, NA, NA, NA, NA, NA,  NA,
-                               NA,"log_rt_sd_t2","log_rt_t2", "acc_t2", "acc_sd_t2", "prod_t2","comp_t2"), 
+                               NA,"log_rt_sd_t2","log_rt_t2", "acc_t2", "acc_sd_t2", NA, "prod_t2"), 
                      byrow = TRUE)
 graph_sem(model = fit3_long, text_size = 2, layout = t(layout_long))
 ```
@@ -555,11 +564,18 @@ speed_vocab_anova$p = speed_vocab_anova$`Pr(>Chisq)`
 speed_vocab_anova$c2d = speed_vocab_anova$`Chisq diff`
 ```
 
-Critically, LWL processing speed at time 1 predicted vocabulary at time 2 ($\beta=$ `r round(fit3_long_summary$pe[14,"est"],3)`, SE = `r round(fit3_long_summary$pe[21,"se"],3)`, $p =$ `r round(fit3_long_summary$pe[14,"pvalue"],3)`). This model significantly improved fit compared with a model that set this coupling parameter to zero but was otherwise unchanged ($\chi^2 = `r round(speed_vocab_anova$c2d[2], 2)`$, $p =  `r round(speed_vocab_anova$p[2], 4)`$). These findings are consistent with the claim that faster processing is related to longitudinal growth in vocabulary [@fernald2012,@Weisleder2013]. 
+Critically, LWL processing speed at time 1 predicted vocabulary at time 2 ($\beta=$ `r round(fit3_long_summary$pe[14,"est"],3)`, SE = `r round(fit3_long_summary$pe[21,"se"],3)`, $p =$ `r round(fit3_long_summary$pe[14,"pvalue"],3)`). This model significantly improved fit compared with a model that set this coupling parameter to zero but was otherwise unchanged ($\chi^2 = `r round(speed_vocab_anova$c2d[2], 2)`$, $p =  `r round(speed_vocab_anova$p[2], 4)`$). These findings are consistent with the claim that faster processing is related to longitudinal growth in vocabulary [@fernald2006;@Weisleder2013]. 
 
 # Discussion {.unnumbered}
 
-We used a new database aggregating results across many individual developmental eye-tracking experiments to investigate the developmental course of word recognition and its relationship with early language learning. We found continuous developmental changes across all measures, consistent with a characterization of word recognition as a skill. Speed and accuracy both improved asymptoticaly, with evidence that recognition speed showed the log-log relationship associated with the power law of practice, that is, gradually converging on mature levels of processing efficiency. Further, older children showed less variability in accuracy and reaction time across trials, indicating more robust execution of this skilled behavior.
+How does word recognition change across early childhood, and how does it relate to language learning? We investigated these questions using a new dataset of developmental eye-tracking measurements. We found continuous developmental changes from ages 1 -- 6 years. Speed and accuracy both improved asymptotically, with evidence that recognition speed showed the log-log relationship associated with the power law of practice, that is, gradually converging on mature levels of processing efficiency. Further, older children showed less variability in accuracy and reaction time across trials, indicating more robust execution of this skilled behavior. Speed and accuracy were both related to vocabulary size concurrently, and processing speed was also related to later vocabulary growth.
+
+By aggregating data from many pre-existing studies, we were able to overcome the limitations of prior investigations, which typically had samples sizes at least an order of magnitude smaller than ours. The presence of multiple studies with longitudinal data, 
+
+
+These findings are consistent with theories that posit that language learning is a process of skill acquisition, in which children become skillful at quickly converting ephemeral signals into meaning [@christiansen2016].  
+
+
 
 
 FACTOR PARAGRAPH

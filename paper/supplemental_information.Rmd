@@ -6,17 +6,17 @@ header-includes:
   - \usepackage{booktabs}
 ---
 
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(here)
+source(here("helper","common.R"))
+```
+
 ```{r, echo=FALSE}
-knitr::opts_chunk$set(echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE)
-```
-
-```{r}
 knitr::purl("paper.Rmd", documentation = 0)
-source("paper.R")
+suppressMessages(source("paper.R"))
 ```
 
-
-# Supplemental Figure 1: Age histograms 
+# Dataset description
 
 ```{r, fig.env="figure*"}
 ggplot(d_sub, aes(x = age))+ 
@@ -24,9 +24,40 @@ ggplot(d_sub, aes(x = age))+
   facet_wrap(~dataset_name, scale = "free_y")
 ```
 
+```{r, fig.cap="Number of administrations for datasets with repeated measurements."}
+longitudinal <- d_sub |>
+  group_by(dataset_name, subject_id) |>
+  count() |>
+  filter(n > 1)
 
+d_sub_long <- d_sub |>
+  filter(subject_id %in% longitudinal$subject_id) |>
+  group_by(subject_id) |>
+  arrange(age) |>
+  mutate(admin_num = 1:n(), 
+         delta_t = age - age[1])
 
-# Supplemental Table 1: Model comparison for accuracy models
+ggplot(d_sub_long, 
+       aes(x = delta_t, fill = dataset_name)) +
+  geom_histogram(binwidth = 1) + 
+  # facet_wrap(~dataset_name) + 
+  xlab("Age since first test")
+```
+
+# Speed and accuracy
+
+Correlations between variables
+
+```{r, results = "asis"}
+
+cor(select(d_sub, age, log_age, rt, log_rt, 
+           long_window_accuracy, short_window_accuracy, prod, comp), 
+    use = "pairwise.complete.obs") |>
+  round(2) |>
+  papaja::apa_table()
+
+```
+
 
 ```{r results="asis"}
 papaja::apa_table(acc_mods_lmer_summary)
@@ -34,14 +65,37 @@ papaja::apa_table(acc_mods_lmer_summary)
 
 
 
-# Supplemental Table 2: Model comparison for reaction time models
 
 ```{r results="asis"}
 papaja::apa_table(rt_mods_lmer_summary)
 ```
 
-# Supplemental Table 3: Reliabilities by dataset
+
+
+# Exploratory Factor Analysis 
+
+- Full EFA results
+
+# Alternative Factor Structures
+
+- Alternative factor models: variances together, two factor, etc. etc. 
+
+# Sensitivity Analysis for Longitudinal Models
+
+THIS IS WRONG
 
 ```{r reliability_table, results="asis"}
 xtable(dataset_reliabilities)
 ```
+
+Sensitivity analysis for age split point (e.g., split at 3 months)
+
+Sensitivity analysis for measurement invariance (e.g., not constraining loadings)
+
+# Analyses using short window accuracy
+
+## Longitudinal factor analysis
+
+## Longitudinal factor analysis
+
+
