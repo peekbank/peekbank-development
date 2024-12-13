@@ -7,14 +7,6 @@ execute:
   cache: true
 ---
 
-Notes from Nilam:
-Look at this part of the latent growth tutorial #observed residual variances (constrained to equality)- math2 ~~ sigma2_u*math2
-
-the two-wave model:
-change in inter-individual differences
-vs. differences in intra-individual change
-
-
 This markdown documents attempts to do longitudinal models for the Peekbank data.
 
 ```{r}
@@ -22,6 +14,10 @@ library(here)
 source(here("helper","common.R"))
 library(lavaan)
 library(tidySEM)
+library(nlme)
+library(emmeans)
+library(lme4)
+library(lmerTest)
 
 d_sub <- readRDS(here("cached_intermediates","1_d_sub.Rds")) |>
   group_by(subject_id) |>
@@ -48,38 +44,113 @@ ggplot(d_sub_long,
   xlab("Time since first test")
 ```
 
-# Reliability
+# Draft 1: Replicate growth models from Fernald & Marchman 2012
 
+First, we try replicating the original growth models. 
 
-How to do this right? WRONG RIGHT NOW
+## Just FM2012
 
 ```{r}
-MONTH_CUTOFF <- 3
-
-d_reliability <- d_sub_long |>
-  filter(admin_num <= 2) |>
-  pivot_wider(id_cols = c("subject_id","dataset_name"), 
-              names_from = "admin_num",
-              values_from = c("log_rt", "log_rt_var", "long_window_accuracy", 
-                              "long_window_acc_var", "prod", "comp"))
-
-dataset_reliabilities <- d_reliability |>
-  group_by(dataset_name) |>
-  summarise(rt = cor(log_rt_1, log_rt_2, use = "pairwise.complete.obs"),
-            acc = cor(long_window_accuracy_1, 
-                          long_window_accuracy_2, use = "pairwise.complete.obs")) |>
-  filter(dataset_name != "fernald_totlot") 
+fm2012 <- filter(d_sub, dataset_name == "fernald_marchman_2012") |>
+  group_by(subject_id) |>
+  mutate(age_group = case_when(age < 21 ~ 18, 
+                               age > 21 & age < 27 ~ 24, 
+                               .default = 30)) |>
+  arrange(age) |>
+  mutate(rt_t0 = rt[1]) |>
+  ungroup() |>
+  mutate(rt_t0_group = ifelse(rt_t0 < median(rt_t0), "low", "high"))
 ```
 
+```{r}
+ggplot(fm2012, 
+       aes(x = age_group, y= prod)) + 
+  geom_line(alpha = .2, aes(group = subject_id)) + 
+  stat_summary(aes(col = rt_t0_group)) + 
+  geom_smooth(aes(col = rt_t0_group), method = "lm", formula = y ~ poly(x, 2))
+```
 
-# Longitudinal factor analysis
+This looks similar (but maybe a bit worse with log rt. 
 
+```{r}
+fm_mod <- lmer(prod ~ age * rt_t0 + (age | subject_id), 
+     data = fm2012, 
+     control = lmerControl(optimizer = "bobyqa"))
+
+summary(fm_mod)
+```
+
+Note that this model looks a lot better with quadratic growth. (They used quadratics in the original). 
+
+```{r}
+fm_mod <- lmer(prod ~ age * rt_t0 + I(age^2) * rt_t0 + (age | subject_id), 
+     data = fm2012, 
+     control = lmerControl(optimizer = "bobyqa"))
+
+summary(fm_mod)
+```
+
+## All data
+
+Let's try the same model with all the data. 
+
+```{r}
+d_growth <- d_sub |>
+  filter(!is.na(prod), subject_id %in% longitudinal$subject_id) |>
+  group_by(subject_id) |>
+  arrange(age) |>
+  mutate(rt_t0 = log_rt[1]) |>
+  ungroup() |>
+  mutate(rt_t0_group = ifelse(rt_t0 < median(rt_t0, na.rm=TRUE), "low", "high"))
+
+ggplot(filter(d_growth, !is.na(rt_t0)), 
+              aes(x = age, y= prod)) +
+  geom_line(alpha = .2, aes(group = subject_id)) +
+  geom_smooth(aes(col = rt_t0_group), method = "lm", formula = y ~ x + I(x^2))
+```
+
+```{r}
+ggplot(filter(d_growth, !is.na(rt_t0)), 
+              aes(x = age, y= prod)) +
+  geom_line(alpha = .2, aes(group = subject_id)) +
+  geom_smooth(aes(col = rt_t0_group), method = "lm", formula = y ~ x + I(x^2))
+```
+
+Linear. 
+
+```{r}
+d_growth$age_15 <- d_growth$age - 15
+all_mod <- lmer(prod ~ age_15 *rt_t0 +  (age  | subject_id) + (age | dataset_name), 
+     data = d_growth, 
+     control = lmerControl(optimizer = "bobyqa"))
+
+summary(all_mod)
+```
+
+Again better with quadratics. (Won't converge with nested quadratics in random effects). 
+
+```{r}
+d_growth$age_15 <- d_growth$age - 15
+all_mod <- lmer(prod ~ age_15 *rt_t0  + I(age_15^2) * rt_t0 + (age  | subject_id) + (age | dataset_name), 
+     data = d_growth, 
+     control = lmerControl(optimizer = "bobyqa"))
+
+summary(all_mod)
+```
+
+So what we see here is that RT at t0 is very predictive of something about growth. 
+
+On the other hand, these models don't take into account RT at t1 or t2. So they don't tell us if RT is a stable trait that's associated with growth...
+
+# Draft 2: Two-time points
+
+So we try fitting two factor analyses and looking at coupling over time. 
 
 ```{r}
 d_sub_s <- d_sub |>
   ungroup() |>
   select(dataset_name, subject_id, administration_id, age, 
-         time_since_t0, delta_t,
+         time_since_t0, delta_t, admin_num,
          log_rt, log_rt_var, 
          long_window_accuracy, long_window_acc_var, prod, comp, ) |>
   rename(acc = long_window_accuracy, 
@@ -93,8 +164,6 @@ d_sub_s <- d_sub |>
 
 Check on amount of data.
 
-
-# Two-time point
 
 ```{r}
 d_sub_wide <- d_sub_s |> 
@@ -167,8 +236,6 @@ speed_t2 ~~ NA*speed_t2
 fit3_long <- sem(fa3_model_long, d_sub_wide, std.lv=TRUE, missing='fiml')
 
 summary(fit3_long, fit.measures=TRUE, standardize=TRUE)
-
-
 ```
 ```{r}
 layout_long = matrix(nrow=7, ncol = 7,
@@ -184,7 +251,7 @@ graph_sem(model = fit3_long, text_size = 2, layout = t(layout_long))
 ```
 
 
-# Full longitudinal model
+# Draft 3: Full longitudinal model
 
 ```{r}
 d_sub_wide <- d_sub_s |> 
@@ -210,6 +277,129 @@ d_sub_wide |>
   summarise(across(log_rt_t1:comp_t4, 
                    ~sum(!is.na(.x))))
 ```
+## with just the observed variables
+
+
+```{r}
+slopes_model_long <- "
+
+# regressions
+accuracy_intercept =~ 1*acc_t1 + 1*acc_t2 + 1*acc_t3 + 1*acc_t4 
+accuracy_slope =~ 1*acc_t1 + 2*acc_t2 + 3*acc_t3 + 4*acc_t4
+speed_intercept =~ 1*log_rt_t1 + 1*log_rt_t2 + 1*log_rt_t3 + 1*log_rt_t4 
+speed_slope =~ 1*log_rt_t1 + 2*log_rt_t2 + 3*log_rt_t3 + 4*log_rt_t4
+vocab_intercept =~ 1*prod_t1 + 1*prod_t2 + 1*prod_t3 + 1*prod_t4 
+vocab_slope =~ 1*prod_t1 + 2*prod_t2 + 3*prod_t3 + 4*prod_t4
+"
+
+slopes_long <- growth(slopes_model_long, d_sub_wide, std.lv=TRUE, missing='fiml')
+
+summary(slopes_long, fit.measures=TRUE, standardize=TRUE)
+
+```
+
+
+```{r}
+layout <- read.csv(here("misc/layout_slopes.csv"), header = FALSE)
+
+
+graph_sem(model = slopes_long, text_size = 3, layout=t(layout))
+
+```
+
+This is still linear. We can add quadratic?
+
+
+```{r}
+d_sub_wide |>
+  select(subject_id, prod_t1, prod_t2, prod_t3, prod_t4) |>
+  pivot_longer(starts_with("prod"), names_to = "variable", values_to = "prod") |>
+  mutate(t = as.numeric(str_sub(variable, -1))) |>
+  ggplot(aes(x = t, y = prod)) + 
+  geom_line(aes(group = subject_id), alpha = .1) + 
+  geom_smooth(aes(group = 1), method = "lm") + 
+  geom_smooth(aes(group = 1), method = "lm", formula = y ~ poly(x, 2), col = "green")
+```
+
+But it seems unnecessary for this view of the data. Arguably we're losing a lot by doing it this way. 
+
+## try finer-grained rebinning
+
+Let's try putting prod back to its natural units?
+
+```{r}
+d_sub_wide_fine <- d_sub_s |>
+  mutate(t = cut(time_since_t0, breaks = c(0, 2, 4, 6, 8, 10, 12, 14, 16, 30), 
+                 include.lowest = TRUE)) |>
+  filter(t != "(12,30]") |>
+  mutate(t = as.numeric(t)) |>
+  group_by(subject_id, dataset_name, t) |>
+  summarise(across(all_of(c("log_rt", "log_rt_sd", "acc",
+                            "acc_sd", "prod", "comp")),
+                   ~ mean(.x, na.rm=TRUE))) |> 
+  mutate(across(all_of(c("log_rt", "log_rt_sd", "acc",
+                         "acc_sd", "prod", "comp")),
+                ~ ifelse(is.nan(.x), NA, .x))) |>
+  pivot_wider(id_cols = c("subject_id","dataset_name"), 
+              names_from = "t",
+              values_from = c("log_rt", "log_rt_sd", "acc", 
+                              "acc_sd", "prod", "comp"), 
+              names_prefix = "t")
+
+d_sub_wide_fine |>
+  ungroup() |>
+  summarise(across(log_rt_t1:comp_t4, 
+                   ~sum(!is.na(.x))))
+```
+
+```{r}
+d_sub_wide_fine |>
+  select(subject_id, starts_with("prod")) |>
+  pivot_longer(starts_with("prod"), names_to = "variable", values_to = "prod") |>
+  mutate(t = as.numeric(str_sub(variable, -1))) |>
+  ggplot(aes(x = t, y = prod)) + 
+  geom_line(aes(group = subject_id), alpha = .1) 
+```
+
+```{r}
+slopes_model_long <- "
+
+# regressions
+accuracy_intercept =~ 1*acc_t1 + 1*acc_t2 + 1*acc_t3 + 1*acc_t4 + 1*acc_t5 
+accuracy_slope =~ 1*acc_t1 + 2*acc_t2 + 3*acc_t3 + 4*acc_t4 + 5*acc_t5 
+speed_intercept =~ 1*log_rt_t1 + 1*log_rt_t2 + 1*log_rt_t3 + 1*log_rt_t4 + 1*log_rt_t5 
+speed_slope =~ 1*log_rt_t1 + 2*log_rt_t2 + 3*log_rt_t3 + 4*log_rt_t4 + 5*log_rt_t5
+vocab_intercept =~ 1*prod_t1 + 1*prod_t2 + 1*prod_t3 + 1*prod_t4 + 1*prod_t5 
+vocab_slope =~ 1*prod_t1 + 2*prod_t2 + 3*prod_t3 + 4*prod_t4 + 5*prod_t5 
+
+# let variances of each latent vary
+accuracy_intercept ~~ NA*accuracy_intercept
+accuracy_slope ~~ NA*accuracy_slope
+speed_intercept ~~ NA*speed_intercept
+speed_slope ~~ NA*speed_slope
+vocab_intercept ~~ NA*vocab_intercept
+vocab_slope ~~ NA*vocab_slope
+"
+
+slopes_long <- growth(slopes_model_long, d_sub_wide_fine, std.lv=TRUE, missing='fiml')
+
+summary(slopes_long, fit.measures=TRUE, standardize=TRUE)
+
+```
+
+
+```{r}
+layout <- read.csv(here("misc/layout_slopes_5.csv"), header = FALSE)
+
+graph_sem(model = slopes_long, text_size = 3, layout=t(layout))
+
+```
+
+
+
+## with lots of latent factor structure
+
+This one still seems not quite right. 
 
 ```{r}
 fa3_model_long <- "
@@ -230,36 +420,30 @@ vocab_t4 =~ 1*prod_t4
 accuracy_t4 =~ 1*acc_t4 + s2*acc_sd_t4
 speed_t4 =~ 1*log_rt_t4 + s3*log_rt_sd_t4
 
-# factor covariances
-vocab_t1 ~~ accuracy_t1
-vocab_t1 ~~ speed_t1
-accuracy_t1 ~~ speed_t1
-
-vocab_t2 ~~ accuracy_t2
-vocab_t2 ~~ speed_t2
-accuracy_t2 ~~ speed_t2
-
-vocab_t3 ~~ accuracy_t3
-vocab_t3 ~~ speed_t3
-accuracy_t3 ~~ speed_t3
-
-vocab_t4 ~~ accuracy_t4
-vocab_t4 ~~ speed_t4
-accuracy_t4 ~~ speed_t4
-
 # means for the latents
-vocab_t1 ~ 1
-vocab_t2 ~ 1
-vocab_t3 ~ 1
-vocab_t4 ~ 1
-accuracy_t1 ~ 1
-accuracy_t2 ~ 1
-accuracy_t3 ~ 1
-accuracy_t4 ~ 1
-speed_t1 ~ 1
-speed_t2 ~ 1
-speed_t3 ~ 1
-speed_t4 ~ 1
+# vocab_t1 ~ 1
+# vocab_t2 ~ 1
+# vocab_t3 ~ 1
+# vocab_t4 ~ 1
+# accuracy_t1 ~ 1
+# accuracy_t2 ~ 1
+# accuracy_t3 ~ 1
+# accuracy_t4 ~ 1
+# speed_t1 ~ 1
+# speed_t2 ~ 1
+# speed_t3 ~ 1
+# speed_t4 ~ 1
+
+# autoregression for the latents
+# vocab_t2 ~ 1 * vocab_t1
+# vocab_t3 ~ 1 * vocab_t2
+# vocab_t4 ~ 1 * vocab_t3
+# accuracy_t2 ~ 1 * accuracy_t1
+# accuracy_t3 ~ 1 * accuracy_t2
+# accuracy_t4 ~ 1 * accuracy_t3
+# speed_t2 ~ 1 * speed_t1
+# speed_t3 ~ 1 * speed_t2
+# speed_t4 ~ 1 * speed_t3
 
 # regressions
 accuracy_intercept =~ 1*accuracy_t1 + 1*accuracy_t2 + 1*accuracy_t3 + 1*accuracy_t4 
@@ -277,13 +461,50 @@ accuracy_slope ~ 1
 speed_intercept ~ 1
 speed_slope ~ 1
 
-# # residual variance for the latents
-# vocab_t1 ~~ NA*vocab_t1
-# vocab_t2 ~~ NA*vocab_t2
-# accuracy_t1 ~~ NA*accuracy_t1
-# accuracy_t2 ~~ NA*accuracy_t2
-# speed_t1 ~~ NA*speed_t1
-# speed_t2 ~~ NA*speed_t2
+# residual variance for the latents
+vocab_t1 ~~ NA*vocab_t1
+vocab_t2 ~~ NA*vocab_t2
+vocab_t3 ~~ NA*vocab_t3
+vocab_t4 ~~ NA*vocab_t4
+accuracy_t1 ~~ NA*accuracy_t1
+accuracy_t2 ~~ NA*accuracy_t2
+accuracy_t3 ~~ NA*accuracy_t3
+accuracy_t4 ~~ NA*accuracy_t4
+speed_t1 ~~ NA*speed_t1
+speed_t2 ~~ NA*speed_t2
+speed_t3 ~~ NA*speed_t3
+speed_t4 ~~ NA*speed_t4
+
+# residual variance for the other latents
+vocab_intercept ~~ NA*vocab_intercept
+vocab_slope ~~ NA*vocab_slope
+accuracy_intercept ~~ NA*accuracy_intercept
+accuracy_slope ~~ NA*accuracy_slope
+speed_intercept ~~ NA*speed_intercept
+speed_slope ~~ NA*speed_slope
+
+# set observed intercepts to zero - these should go into the latents
+prod_t1 ~ 0
+prod_t2 ~ 0
+prod_t3 ~ 0
+prod_t4 ~ 0
+comp_t1 ~ 0 
+log_rt_t1 ~ 0
+log_rt_t2 ~ 0
+log_rt_t3 ~ 0
+log_rt_t4 ~ 0
+log_rt_sd_t1 ~ 0 
+log_rt_sd_t2 ~ 0
+log_rt_sd_t3 ~ 0 
+log_rt_sd_t4 ~ 0 
+acc_t1 ~ 0 
+acc_t2 ~ 0 
+acc_t3 ~ 0 
+acc_t4 ~ 0 
+acc_sd_t1 ~ 0
+acc_sd_t2 ~ 0
+acc_sd_t3 ~ 0
+acc_sd_t4 ~ 0
 "
 
 fit3_long <- sem(fa3_model_long, d_sub_wide, std.lv=TRUE, missing='fiml')
@@ -294,22 +515,269 @@ summary(fit3_long, fit.measures=TRUE, standardize=TRUE)
 
 
 ```{r}
-layout_dt = matrix(nrow=11, ncol = 7,
-                   data = c("prod_t1", "prod_t2", "prod_t3", "prod_t4", "vocab_intercept", NA, NA,
-                            NA, NA, NA, NA, NA, NA, NA,
-                            "comp_t1", NA, NA, NA, "vocab_slope", NA,NA,
-                            NA, NA, NA, NA, NA, NA, NA,
-                            "accuracy_t1", "accuracy_t2", "accuracy_t3", "accuracy_t4", "accuracy_intercept", NA, NA,
-                            NA, NA, NA, NA, NA, NA, NA,
-                            "acc_sd_t1", "acc_sd_t2", "acc_sd_t3", "accuracy_sd_t4", "accuracy_slope", NA, NA,
-                            NA, NA, NA, NA, NA, NA, NA,
-                            "log_rt_t1", "log_rt_t2", "log_rt_t3", "log_rt_t4", "speed_int", NA, NA,
-                            NA, NA, NA, NA, NA, NA, NA,
-                            "log_rt_sd_t1", "log_rt_sd_t2", "log_rt_sd_t3", "log_rt_sd_t4", "speed_slope", NA, NA),
-                   byrow = TRUE)
+layout <- read.csv(here("misc/layout_dt3.csv"), header = FALSE)
 
 
-graph_sem(model = fit3_long, text_size = 3, layout = layout_dt)
+graph_sem(model = fit3_long, text_size = 3, layout=t(layout))
 
+```
+
+
+# Draft 4: Multi-level modeling of a single variable
+
+Let's try NLME. 
+
+```{r}
+d_sub_prod <- filter(d_sub, !is.na(prod)) |>
+  group_by(subject_id) |>
+  mutate(log_rt_0 = log_rt[1],
+         acc_0 = long_window_accuracy[1])
+
+library(nlme)
+
+mod1 <- lme(prod ~ age, 
+            random = ~ 1 | dataset_name / subject_id,
+            na.action = na.omit, 
+            data = d_sub_prod)
+
+summary(mod1)
+```
+
+Plotting model. 
+
+```{r}
+ages <- seq(min(d_sub_prod$age), max(d_sub_prod$age), .1)
+datasets <- unique(d_sub_prod$dataset_name)
+
+# fixed effects with CIs
+newdata_global <- tibble(age = ages) 
+global_preds <- emmeans(mod1, ~ age, at = newdata_global, CIs = TRUE) |> 
+  summary() |>
+  tibble()
+
+# random effects
+dataset_preds <- d_sub |>
+  filter(!is.na(prod)) |> # filter on predictor
+  group_by(dataset_name) |>
+  summarise(min_age = min(age), 
+            max_age = max(age)) |>
+  group_by(dataset_name) |>
+  mutate(df = map2(min_age, max_age, ~expand_grid(age = seq(.x, .y, .1)))) |>
+  select(-min_age, -max_age) |>
+  unnest(col = "df") |>
+  ungroup()
+  
+dataset_preds$pred <- predict(mod1, 
+                              newdata = dataset_preds, 
+                              level = c(0,1))$predict.dataset_name 
+
+ggplot(d_sub_prod, aes(x = age, y = prod, col = dataset_name)) + 
+  geom_point(alpha = .1) + 
+  geom_line(data = global_preds, aes(y = emmean), col = "blue", size = 1.5) +
+  geom_ribbon(data = global_preds, 
+              aes(ymin = lower.CL, ymax = upper.CL, y = emmean), col = NA,
+              fill = "blue",alpha = .1) + 
+  geom_line(data = dataset_preds, aes(y = pred))
+```
+
+
+## Logistics
+
+So I guess we need good parameters.
+
+```{r}
+d_sub$logistic = SSlogis(d_sub$age, Asym = 1, xmid = 0, scal = 3)
+
+ggplot(d_sub, aes(x = age, y = prod)) + 
+  geom_point(alpha = 1.) + 
+  geom_line(aes(x = age, y = logistic))
+
+```
+
+Use a logistic growth model. 
+
+```{r}
+mod2 <- nlme(model = prod ~ SSlogis(age, Asym = 1, xmid, scale),
+             data = d_sub,
+             fixed = xmid + scale ~ 1,
+             random = xmid + scale ~ 1,
+             groups = ~ dataset_name,
+             start = c(xmid = 20, scale = 3),
+             na.action = na.exclude, 
+             control = list(maxIter = 1000, tolerance = 10))
+
+summary(mod2)
+
+# fixed effects (no CIs)
+global_preds <- expand_grid(age = seq(min(d_sub_prod$age), 
+                                      max(d_sub_prod$age), .1))
+global_preds$pred <- predict(mod2, newdata = global_preds, level = 0)
+
+
+# random effects
+dataset_preds <- d_sub |>
+  filter(!is.na(prod)) |> # filter on predictor
+  group_by(dataset_name) |>
+  summarise(min_age = min(age), 
+            max_age = max(age)) |>
+  group_by(dataset_name) |>
+  mutate(df = map2(min_age, max_age, ~expand_grid(age = seq(.x, .y, .1)))) |>
+  select(-min_age, -max_age) |>
+  unnest(col = "df") |>
+  ungroup()
+  
+dataset_preds$pred <- predict(mod2, 
+                              newdata = dataset_preds, 
+                              level = c(0,1))$predict.dataset_name 
+
+ggplot(d_sub_prod, aes(x = age, y = prod, col = dataset_name)) + 
+  geom_point(alpha = .1) + 
+  geom_line(data = global_preds, aes(y = pred), col = "blue", size = 1.5) +
+  geom_line(data = dataset_preds, aes(y = pred))
+```
+## Interaction with t0 RT
+
+Now let's use t0 processing attributes in a regression. 
+
+```{r}
+d_sub_prod <- d_sub_prod |>
+  group_by(subject_id) |>
+  mutate(log_rt_0 = log_rt[1],
+         acc_0 = long_window_accuracy[1])
+
+mod3 <- nlme(model = prod ~ SSlogis(age, Asym = 1, xmid, scale),
+             data = d_sub_prod,
+             fixed = xmid + scale ~ log_rt_0,
+             random = xmid + scale ~ 1,
+             groups = ~ dataset_name,
+             start = c(xmid = 20, scale = 3, `xmid:log_rt_0` = 0, `scale:log_rt_0` = 3),
+             na.action = na.exclude, 
+             control = list(maxIter = 1000, tolerance = 10))
+
+summary(mod3)
+```
+
+```{r}
+# fixed effects (no CIs)
+global_preds <- expand_grid(age = seq(min(d_sub_prod$age), 
+                                      max(d_sub_prod$age), .1), 
+                            log_rt_0 = c(quantile(d_sub_prod$log_rt, 
+                                                  c(.1,.25,.5,.75,.9), 
+                                                  na.rm=TRUE)))
+global_preds$pred <- predict(mod3, newdata = global_preds, level = 0)
+
+
+# random effects
+# dataset_preds <- d_sub |>
+#   filter(!is.na(prod)) |> # filter on predictor
+#   group_by(dataset_name) |>
+#   summarise(min_age = min(age), 
+#             max_age = max(age)) |>
+#   group_by(dataset_name) |>
+#   mutate(df = map2(min_age, max_age, ~expand_grid(age = seq(.x, .y, .1)))) |>
+#   select(-min_age, -max_age) |>
+#   unnest(col = "df") |>
+#   ungroup()
+#   
+# dataset_preds$pred <- predict(mod3, 
+#                               newdata = dataset_preds, 
+#                               level = c(0,1))$predict.dataset_name 
+
+ggplot(d_sub_prod, aes(x = age, y = prod)) + 
+  geom_point(alpha = .1) + 
+  geom_line(data = global_preds, aes(y = pred, group = log_rt_0, col = as.factor(log_rt_0)))
+# +
+#   geom_line(data = dataset_preds, aes(y = pred))
+```
+
+## Interaction with accuracy
+
+```{r}
+mod4 <- nlme(model = prod ~ SSlogis(age, Asym = 1, xmid, scale),
+             data = d_sub_prod,
+             fixed = xmid + scale ~ log_rt_0 + acc_0,
+             random = xmid + scale ~ 1,
+             groups = ~ dataset_name,
+             start = c(xmid = 20, scale = 3, `xmid:log_rt_0` = 0, `scale:log_rt_0` = 3, 
+                       `xmid:acc_0` = 0, `scale:acc_0` = 3),
+             na.action = na.exclude, 
+             control = list(maxIter = 1000, tolerance = 10))
+
+summary(mod4)
+```
+## power function with offset
+
+So I guess we need good parameters.
+
+```{r}
+power_growth <- function(X, a, b, c)
+{
+  return((a * (X-c)^b))
+}
+
+d_sub_prod$power = power_growth(d_sub_prod$age, a = 1, b = 2.3, c = 12)
+
+ggplot(d_sub_prod, aes(x = age, y = prod*680)) + 
+  geom_point(alpha = 1.) + 
+  geom_line(aes(x = age, y = power))
+
+```
+
+Now model. 
+
+```{r}
+d_sub_prod$prod_680 <- d_sub_prod$prod * 680
+mod5 <- nlme(model = prod_680 ~ power_growth(age, a, b, c),
+             data = d_sub_prod,
+             fixed = a + b + c ~ 1,
+             random = a + b + c ~ 1,
+             groups = ~ dataset_name,
+             start = c(a = 1, b = 2.3, c = 12),
+             na.action = na.exclude)
+
+summary(mod5)
+
+# fixed effects (no CIs)
+global_preds <- expand_grid(age = seq(min(d_sub_prod$age), 
+                                      max(d_sub_prod$age), .1))
+global_preds$pred <- predict(mod5, newdata = global_preds, level = 0)
+
+
+# random effects
+dataset_preds <- d_sub |>
+  filter(!is.na(prod)) |> # filter on predictor
+  group_by(dataset_name) |>
+  summarise(min_age = min(age), 
+            max_age = max(age)) |>
+  group_by(dataset_name) |>
+  mutate(df = map2(min_age, max_age, ~expand_grid(age = seq(.x, .y, .1)))) |>
+  select(-min_age, -max_age) |>
+  unnest(col = "df") |>
+  ungroup()
+  
+dataset_preds$pred <- predict(mod5, 
+                              newdata = dataset_preds, 
+                              level = c(0,1))$predict.dataset_name 
+
+ggplot(d_sub_prod, aes(x = age, y = prod_680, col = dataset_name)) + 
+  geom_point(alpha = .1) + 
+  geom_line(data = global_preds, aes(y = pred), col = "blue", size = 1.5) +
+  geom_line(data = dataset_preds, aes(y = pred))
+```
+
+Having trouble fitting this model - throws an error sadly. 
+
+```{r eval=FALSE}
+d_sub_prod$prod_681 <- d_sub_prod$prod_680 + 1
+mod5 <- nlme(model = prod_681 ~ power_growth(age, a, b, c),
+             data = d_sub_prod,
+             fixed = a + b + c ~ log_rt_0,
+             random = a + b + c ~ 1,
+             groups = ~ dataset_name,
+             start = c(a = 1, b = 2.3, c = 12, 
+                       `a:log_rt_0` = 0.1, `b:log_rt_0` = 0.1, `c:log_rt_0` = 0.1),
+             na.action = na.exclude)
+
+summary(mod5)
 ```
 
