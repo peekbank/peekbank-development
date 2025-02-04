@@ -226,29 +226,35 @@ datasets_with_age_variation <- d_trial |>
 d_sub_agevar <- d_sub |>
   filter(dataset_name %in% datasets_with_age_variation$dataset_name)
 
+#library(RColorBrewer)
+
+  mycolors = c("#1B9E77", "#D95F02", "#E7298A", "#66A61E", "#1B9E77", "#D95F02", "#E7298A", "#66A61E", "#1B9E77", "#D95F02", "#E7298A", "#66A61E","#1B9E77", "#D95F02")
+  # 4 colors from brewer scale "Dark2" that I thought had decent contrast against the grey/black background dots
+  
+
 a <- ggplot(d_sub,
        aes(x = age, y = long_window_accuracy)) + 
-  geom_point(alpha = .05) + 
-  geom_smooth(method = "lm") +
+  geom_point(alpha = .02) + 
   geom_smooth(data = d_sub_agevar,
               aes(group = dataset_name, col = dataset_name), se=FALSE,
-              alpha = .1, method = "lm", size = .5, lty = 2) + 
+              alpha = 1, method = "lm", size = .5, lty = 2) + 
+    geom_smooth(method = "lm") +
   geom_hline(yintercept = .5, lty = 2) + 
   scale_x_log10() +
-  scale_color_discrete(guide = FALSE) + 
+  scale_color_manual(values=mycolors, guide = FALSE) + 
   ylab("Accuracy") + 
   xlab("Age (months)")
 
 b <- ggplot(d_sub,
        aes(x = age, y = rt)) + 
-  geom_point(alpha = .05) + 
-  geom_smooth(method = "lm") +
+  geom_point(alpha = .02) + 
   geom_smooth(data = d_sub_agevar,
               aes(group = dataset_name, col = dataset_name), se=FALSE,
               alpha = .1, method = "lm", size = .5, lty = 2) + 
+    geom_smooth(method = "lm") +
   scale_x_log10() +
   scale_y_log10() +
-  scale_color_discrete(guide = FALSE) + 
+  scale_color_manual(values=mycolors, guide = FALSE) + 
   theme(legend.position = "bottom") + 
   ylab("Reaction Time (log)") + 
   xlab("Age (months)")
@@ -272,27 +278,29 @@ rt_var_mod <- lmer(log_rt_var ~ log_age_s + (log_age_s | dataset_name) +
 One further hallmark of increasing skill is a decrease in task-relevant variability [@todorov2002optimal]. Both within and across datasets, variation in accuracy and reaction time decreased across datasets, again relatively continuously across the developmental range we examined (Figure \ref{fig:variance}). We fit mixed effects models to the standard deviation of both accuracy and reaction time for each testing session for each participant, including random slopes of log age by dataset and random intercepts for each participant. For both speed and accuracy, variability decreased with age (RT: `r papaja::apa_print(rt_var_mod)$full_result$log_age_s`; accuracy: `r papaja::apa_print(acc_var_mod)$full_result$log_age_s`). Thus, as well as being faster and more accurate, older children appear to be more consistent in their online word recognition.
 
 ```{r variance, fig.cap="Participant-level variability in accuracy and reaction time (log RT), plotted by age (log). Plotting conventions are as in Figure 1.", fig.env="figure*", fig.height = 2.5}
+  mycolors = c("#1B9E77", "#D95F02", "#E7298A", "#66A61E", "#1B9E77", "#D95F02", "#E7298A", "#66A61E", "#1B9E77", "#D95F02", "#E7298A", "#66A61E","#1B9E77", "#D95F02")
+
 c <- ggplot(d_sub,
        aes(x = age, y = long_window_acc_var)) + 
-  geom_point(alpha = .05) + 
-  geom_smooth(method = "lm") +
+  geom_point(alpha = .02) + 
   geom_smooth(data = d_sub_agevar,
               aes(group = dataset_name, col = dataset_name), se=FALSE,
               alpha = .1, method = "lm", size = .5, lty = 2) + 
+    geom_smooth(method = "lm") +
   scale_x_log10() +
-  scale_color_discrete(guide = FALSE) + 
+  scale_color_manual(values=mycolors, guide = FALSE) + 
   ylab("SD of Accuracy)") + 
   xlab("Age (months)")
 
 d <- ggplot(d_sub,
        aes(x = age, y = log_rt_var)) + 
-  geom_point(alpha = .05) + 
-  geom_smooth(method = "lm") +
+  geom_point(alpha = .02) + 
   geom_smooth(data = d_sub_agevar,
               aes(group = dataset_name, col = dataset_name), se=FALSE,
               alpha = .1, method = "lm", size = .5, lty = 2) + 
+    geom_smooth(method = "lm") +
   scale_x_log10() +
-  scale_color_discrete(guide = FALSE) + 
+  scale_color_manual(values=mycolors, guide = FALSE) + 
   theme(legend.position = "bottom") + 
   ylab("SD of log RT)") + 
   xlab("Age (months)")
@@ -366,6 +374,19 @@ layout_age = matrix(nrow=5, ncol = 6,
                 byrow = TRUE)
 
 graph_sem(model = fit3_age, text_size = 2, layout = t(layout_age))
+
+nodes <- get_nodes(fit3_age)
+
+edges <- get_edges(fit3_age) |> filter(label!="1.00") |> 
+
+graph_sem(edges=edges, nodes=nodes, text_size = 2, layout = t(layout_age),
+          rect_width=2,
+          rect_height=1.2,
+          ellipses_width=1.5,
+          ellipses_height=1.5,
+          variance_diameter=.9,
+          spacing_x=2
+)
 ```
 
 Figure \ref{fig:age_regression} shows a regression model fit to this confirmatory factor analysis, with log age predicting each latent variable. This regression model allows interpretation of the covariances between latent factors as partial correlations (controlling for age). All three latent factors were significantly related to one another, with speed and accuracy showing strong negative covariance ($\beta=$ `r round(fit3_age_summary$pe[21,"est"],3)`, SE = `r round(fit3_age_summary$pe[21,"se"],3)`, $p < .0001$) and weaker but significant covariation between speed and vocabulary ($\beta=$ `r round(fit3_age_summary$pe[20,"est"],3)`, SE = `r round(fit3_age_summary$pe[20,"se"],3)`, $p < .0001$) and accuracy and vocabulary ($\beta=$ `r round(fit3_age_summary$pe[19,"est"],3)`, SE = `r round(fit3_age_summary$pe[19,"se"],3)`, $p < .0001$). This model supports the idea that individual variation in speed and accuracy of word recognition is concurrently related to vocabulary beyond effects of age. 
@@ -504,8 +525,10 @@ In sum, these findings provide further evidence consistent with the claim that f
 
 
 ```{r longitudinal, fig.env="figure*", height = 3.5, fig.cap = "Structural equation model showing longitudinal couplings between growth parameters. "}
-layout <- read.csv(here("misc/layout_slopes_observed_growth.csv"), header = FALSE)
-graph_sem(model = slopes_long, text_size = 2, layout=t(layout))
+#layout <- read.csv(here("misc/layout_slopes_observed_growth.csv"), header = FALSE)
+#graph_sem(model = slopes_long, text_size = 2, layout=t(layout))
+graph_sem(model = slopes_long, text_size = 2)
+
 ```
 
 
