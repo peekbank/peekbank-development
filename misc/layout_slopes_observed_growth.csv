@@ -1,0 +1,5 @@
+foo,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,
+vocab_intercept,,vocab_slope,,,speed_intercept,,speed_slope,,,accuracy_intercept,,accuracy_slope,,
+,,,,,,,,,,,,,,
+prod_t0,prod_t1,prod_t2,prod_t3,prod_t4,log_rt_t0,log_rt_t1,log_rt_t2,log_rt_r3,log_rt_t4,acc_t0,acc_t1,acc_t2,acc_t3,acc_t4

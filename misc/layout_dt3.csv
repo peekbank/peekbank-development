@@ -1,0 +1,7 @@
+foo,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,
+vocab_slope,,vocab_intercept,,,speed_slope,,speed_intercept,,,,,,accuracy_slope,,accuracy_intercept,,,,,
+,,,,,,,,,,,,,,,,,,,,
+vocab_t1,,vocab_t2,vocab_t3,vocab_t4,speed_t1,,speed_t2,,speed_t3,,speed_t4,,accuracy_t1,,accuracy_t2,,accuracy_t3,,accuracy_t4,
+,,,,,,,,,,,,,,,,,,,,
+prod_t1,comp_t1,prod_t2,prod_t3,prod_t4,log_rt_t1,log_rt_sd_t1,log_rt_t2,log_rt_sd_t2,log_rt_t3,log_rt_sd_t3,log_rt_t4,log_rt_sd_t4,acc_t1,acc_sd_t1,acc_t2,acc_sd_t2,acc_t3,acc_sd_t3,acc_t4,acc_sd_t4
