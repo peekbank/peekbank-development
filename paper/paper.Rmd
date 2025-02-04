@@ -124,6 +124,8 @@ suppressPackageStartupMessages(library(papaja))
 
 source(here("helper","common.R"))
 
+source(here("helper/modified_sem_plot.R"))
+
 d_trial <- readRDS(here("cached_intermediates","1_d_trial.Rds")) |>
   mutate(log_age = log(age))
 d_sub <- readRDS(here("cached_intermediates","1_d_sub.Rds")) |>
@@ -373,20 +375,29 @@ layout_age = matrix(nrow=5, ncol = 6,
                          "acc_sd", "prod","comp"), 
                 byrow = TRUE)
 
-graph_sem(model = fit3_age, text_size = 2, layout = t(layout_age))
 
-nodes <- get_nodes(fit3_age)
+node_text <- tibble(name=c("acc", "acc_sd", "accuracy", "comp", "log_age", "log_rt", "log_rt_sd", "prod", "speed", "vocab"), pretty=c("Accuracy", "Accuracy (sd)", "Accuracy", "Comprehension", "Age (log months)", "log RT", "log RT (SD)", "Production", "Speed", "Vocabulary"))
 
-edges <- get_edges(fit3_age) |> filter(label!="1.00") |> 
+nodes <- get_nodes(fit3_age) |> tibble() |> left_join(node_text) |> mutate(label=ifelse(shape=="oval",pretty, str_c(pretty, "\n", est_sig)))
 
-graph_sem(edges=edges, nodes=nodes, text_size = 2, layout = t(layout_age),
-          rect_width=2,
-          rect_height=1.2,
-          ellipses_width=1.5,
-          ellipses_height=1.5,
-          variance_diameter=.9,
-          spacing_x=2
-)
+
+edges <- get_edges(fit3_age) |> filter(label!="1.00") |> mutate(label_location=.5)
+
+edges[17,"curvature"]=50
+edges[17,"label_location"]=.6
+
+source(here("helper/modified_sem_plot.R"))
+
+#View(edges)
+prepare_graph(edges=edges, nodes=nodes, text_size = 2.5, layout = t(layout_age),
+          rect_width=4.2,
+          rect_height=3,
+          ellipses_width=3,
+          ellipses_height=3,
+          variance_diameter=2,
+          spacing_y=4,
+          spacing_x=4,
+          fix_coord=FALSE) |> plot_happy_arrows()
 ```
 
 Figure \ref{fig:age_regression} shows a regression model fit to this confirmatory factor analysis, with log age predicting each latent variable. This regression model allows interpretation of the covariances between latent factors as partial correlations (controlling for age). All three latent factors were significantly related to one another, with speed and accuracy showing strong negative covariance ($\beta=$ `r round(fit3_age_summary$pe[21,"est"],3)`, SE = `r round(fit3_age_summary$pe[21,"se"],3)`, $p < .0001$) and weaker but significant covariation between speed and vocabulary ($\beta=$ `r round(fit3_age_summary$pe[20,"est"],3)`, SE = `r round(fit3_age_summary$pe[20,"se"],3)`, $p < .0001$) and accuracy and vocabulary ($\beta=$ `r round(fit3_age_summary$pe[19,"est"],3)`, SE = `r round(fit3_age_summary$pe[19,"se"],3)`, $p < .0001$). This model supports the idea that individual variation in speed and accuracy of word recognition is concurrently related to vocabulary beyond effects of age. 
@@ -525,10 +536,95 @@ In sum, these findings provide further evidence consistent with the claim that f
 
 
 ```{r longitudinal, fig.env="figure*", height = 3.5, fig.cap = "Structural equation model showing longitudinal couplings between growth parameters. "}
-#layout <- read.csv(here("misc/layout_slopes_observed_growth.csv"), header = FALSE)
-#graph_sem(model = slopes_long, text_size = 2, layout=t(layout))
-graph_sem(model = slopes_long, text_size = 2)
+layout <- read.csv(here("misc/layout_slopes_observed_growth.csv"), header = FALSE)
 
+
+node_text <- tribble(~name, ~ pretty,
+                     "acc_t0", "t0 Accuracy",
+                     "acc_t1", "t1 Accuracy",
+                     "acc_t2", "t2 Accuracy",
+                     "acc_t3", "t3 Accuracy",
+                     "acc_t4", "t4 Accuracy",
+                     "accuracy_intercept", "Accuracy intercept",
+                     "accuracy_slope", "Accuracy slope",
+                     "log_rt_t0", "t0 log RT",
+                     "log_rt_t1", "t1 log RT",
+                     "log_rt_t2", "t2 log RT",
+                     "log_rt_t3", "t3 log RT",
+                     "log_rt_t4", "t4 log RT",
+                     "prod_t0" , "t0 Production",
+                     "prod_t1" , "t1 Production",
+                     "prod_t2" , "t2 Production" ,
+                     "prod_t3", "t3 Production",         
+                     "prod_t4", "t4 Production" ,
+                     "speed_intercept" , "Speed intercept" ,  
+                     "speed_slope" , "Speed slope",
+                     "vocab_intercept", "Vocabulary intercept",
+                     "vocab_slope", "Vocabulary slope" )
+
+nodes <- get_nodes(slopes_long) |> tibble() |> left_join(node_text) |> mutate(label=pretty)
+
+
+edges <- get_edges(slopes_long) |> mutate(label_location=.5) |> mutate(label=ifelse(arrow=="last", NA, label)) |>  mutate(connect_from=ifelse(to==from, "right",NA),
+                    connect_to=connect_from) |> 
+  mutate(color="black")
+
+edges[52,"curvature"]=85
+edges[52,"color"]="blue"
+edges[61,"curvature"]=85
+edges[61,"color"]="blue"
+edges[66,"curvature"]=85
+edges[66,"color"]="blue"
+
+
+edges[54,"curvature"]=85
+edges[63,"curvature"]=85
+
+
+edges[53,"curvature"]=80
+edges[53,"color"]="red"
+edges[55,"curvature"]=82
+edges[55,"color"]="red"
+edges[62,"curvature"]=80
+edges[62,"color"]="red"
+
+
+
+edges[58,"curvature"]=80
+edges[58,"color"]="green"
+edges[60,"curvature"]=82
+edges[60,"color"]="green"
+edges[65,"curvature"]=80
+edges[65,"color"]="green"
+
+
+
+
+edges[59,"curvature"]=77
+
+edges[64,"curvature"]=75
+edges[56,"curvature"]=75
+edges[57,"curvature"]=75
+
+
+source(here("helper/modified_sem_plot.R"))
+#View(edges)
+prepare_graph(edges=edges, nodes=nodes, text_size = 2, layout = t(layout),angle=0,
+          rect_width=1.5,
+          rect_height=2,
+          ellipses_width=1.5,
+          ellipses_height=4,
+          variance_diameter=1,
+          spacing_y=3,
+          spacing_x=2,
+          fix_coord=FALSE) |> 
+  edit_edges({connect_from=case_when(
+    (to==from & from %in% c("accuracy_intercept","accuracy_slope","speed_slope",
+                          "speed_intercept", "vocab_slope", "vocab_intercept"))~"bottom",
+    to==from ~ "right",
+    !is.na(curvature)~"left",
+    T ~ "right")}) |> 
+  plot_happy_arrows()
 ```
 
 
