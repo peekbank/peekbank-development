@@ -614,43 +614,55 @@ In sum, these findings provide further evidence consistent with the claim that f
 ```{r longitudinal, fig.env="figure*", height = 3.5, fig.cap = "Structural equation model showing longitudinal couplings between growth parameters. "}
 layout <- read.csv(here("misc/layout_slopes_observed_growth.csv"), header = FALSE)
 
+acc_color <- "#B2DF8A"
+rt_color <- "#FB9A99"
+prod_color <- "#FFFF99"
+
+intercept_color <- "#1F78B4"
+intercept_background <- "#A6CEE3"
+slope_color <- "#FF7F00"
+slope_background <- "#FDBF6F"
+
+#"#A6CEE3" "#1F78B4" "#B2DF8A" "#33A02C"
+# [5] "#FB9A99" "#E31A1C" "#FDBF6F" "#FF7F00"
+# [9] "#CAB2D6" "#6A3D9A" "#FFFF99" "#B15928"
 node_text <- tribble(~name, ~ pretty, ~fill, 
-                     "acc_t0", "t0 Accuracy", "lightblue",
-                     "acc_t1", "t1 Accuracy", "lightblue",
-                     "acc_t2", "t2 Accuracy","lightblue",
-                     "acc_t3", "t3 Accuracy","lightblue",
-                     "acc_t4", "t4 Accuracy","lightblue",
-                     "accuracy_intercept", "Accuracy intercept","lightblue",
-                     "accuracy_slope", "Accuracy slope","lightblue",
-                     "log_rt_t0", "t0 log RT","pink",
-                     "log_rt_t1", "t1 log RT","pink",
-                     "log_rt_t2", "t2 log RT","pink",
-                     "log_rt_t3", "t3 log RT","pink",
-                     "log_rt_t4", "t4 log RT","pink",
-                     "prod_t0" , "t0 Production", "lightgreen",
-                     "prod_t1" , "t1 Production",  "lightgreen",
-                     "prod_t2" , "t2 Production" ,  "lightgreen",
-                     "prod_t3", "t3 Production",          "lightgreen",
-                     "prod_t4", "t4 Production" , "lightgreen",
-                     "speed_intercept" , "Speed intercept" ,  "pink",
-                     "speed_slope" , "Speed slope","pink",
-                     "vocab_intercept", "Vocabulary intercept", "lightgreen",
-                     "vocab_slope", "Vocabulary slope",  "lightgreen" ) |> 
-  mutate(alpha=.5)
+                     "acc_t0", "t0 Accuracy", acc_color,
+                     "acc_t1", "t1 Accuracy", acc_color,
+                     "acc_t2", "t2 Accuracy",acc_color,
+                     "acc_t3", "t3 Accuracy",acc_color,
+                     "acc_t4", "t4 Accuracy",acc_color,
+                     "accuracy_intercept", "Accuracy intercept",acc_color,
+                     "accuracy_slope", "Accuracy slope",acc_color,
+                     "log_rt_t0", "t0 log RT",rt_color,
+                     "log_rt_t1", "t1 log RT",rt_color,
+                     "log_rt_t2", "t2 log RT",rt_color,
+                     "log_rt_t3", "t3 log RT",rt_color,
+                     "log_rt_t4", "t4 log RT",rt_color,
+                     "prod_t0" , "t0 Production", prod_color,
+                     "prod_t1" , "t1 Production",  prod_color,
+                     "prod_t2" , "t2 Production" ,  prod_color,
+                     "prod_t3", "t3 Production",         prod_color,
+                     "prod_t4", "t4 Production" , prod_color,
+                     "speed_intercept" , "Speed intercept" , rt_color,
+                     "speed_slope" , "Speed slope",rt_color,
+                     "vocab_intercept", "Vocabulary intercept", prod_color,
+                     "vocab_slope", "Vocabulary slope",  prod_color ) |> 
+  mutate(alpha=.1)
 
 nodes <- get_nodes(slopes_long) |> tibble() |> left_join(node_text) |> mutate(label=pretty)
 
 
 edges <- get_edges(slopes_long) |> mutate(label_location=.5) |> mutate(label=ifelse(arrow=="last", NA, label)) |>  mutate(connect_from=ifelse(to==from, "right",NA),
                     connect_to=connect_from) |> 
-  mutate(color="black", label_hjust=.5, label_location=.5)
+  mutate(color="black", label_hjust=.5, label_location=.5, label_fill="white")
 
 edges[52,"curvature"]=85
-edges[52,"color"]="blue"
+#edges[52,"color"]="blue"
 edges[61,"curvature"]=85
-edges[61,"color"]="blue"
+#edges[61,"color"]="blue"
 edges[66,"curvature"]=85
-edges[66,"color"]="blue"
+#edges[66,"color"]="blue"
 edges[52, "label_hjust"]=0
 edges[61, "label_hjust"]=0
 edges[66, "label_hjust"]=0
@@ -665,25 +677,34 @@ edges[63, "label_hjust"]=0
 
 
 edges[53,"curvature"]=80
-edges[53,"color"]="red"
+edges[53,"color"]=intercept_color
+edges[53, "label_fill"]=intercept_background
 edges[55,"curvature"]=82
 edges[55,"label_location"]=.55
 
-edges[55,"color"]="red"
+edges[55,"color"]=intercept_color
+edges[55, "label_fill"]=intercept_background
+
 edges[62,"curvature"]=80
-edges[62,"color"]="red"
+edges[62,"color"]=intercept_color
+edges[62, "label_fill"]=intercept_background
+
 edges[53, "label_location"]=.6
 edges[53, "label_hjust"]=0.4
 
 
 
 edges[58,"curvature"]=80
-edges[58,"color"]="darkgreen"
+edges[58,"color"]=slope_color
+edges[58, "label_fill"]=slope_background
+
 edges[60,"curvature"]=82
-edges[60,"color"]="darkgreen"
+edges[60,"color"]=slope_color
+edges[60, "label_fill"]=slope_background
 edges[60,"label_location"]=.45
 edges[65,"curvature"]=80
-edges[65,"color"]="darkgreen"
+edges[65,"color"]=slope_color
+edges[65, "label_fill"]=slope_background
 edges[65, "label_location"]=.4
 edges[53, "label_hjust"]=0.4
 

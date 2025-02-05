@@ -990,7 +990,7 @@ match.call.defaults <- function(...) {
     names(df) <- gsub("^label_", "", names(df))
     # Prepare aesthetics ------------------------------------------------------
     if(!"fill" %in% names(df)){
-      df$fill = "white"
+      df$fill = NA
     }
     if(!"size" %in% names(df)){
       df$size <- text_size
