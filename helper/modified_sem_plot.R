@@ -20,7 +20,12 @@ plot_happy_arrows <- function(x, y, ...){
   rect_height <- x$rect_height
   ellipses_width <- x$ellipses_width
   ellipses_height <- x$ellipses_height
-  variance_diameter <- x$variance_diameter
+  variance_width <- x$variance_width
+  variance_height <- x$variance_height
+  arrow_angle <- x$arrow_angle
+  arrow_length <- x$arrow_length
+  var_arrow_angle <- x$var_arrow_angle
+  var_arrow_length <- x$var_arrow_length
   spacing_x <- x$spacing_x
   spacing_y <- x$spacing_y
   text_size <- x$text_size
@@ -44,10 +49,11 @@ plot_happy_arrows <- function(x, y, ...){
   p <- ggplot(NULL)
 
   if(any(df_edges$from == df_edges$to)){
-    p <- .plot_variances(p, df = df_edges[df_edges$from == df_edges$to, ], text_size = text_size, diameter = variance_diameter)
+    p <- .plot_variances(p, df = df_edges[df_edges$from == df_edges$to, ], text_size = text_size, height = variance_height, width=variance_width,
+                         arrow_angle=var_arrow_angle, arrow_length=var_arrow_length)
   }
   if(any(!df_edges$from == df_edges$to)){
-    p <- .plot_edges(p, df_edges[!df_edges$from == df_edges$to, ], text_size)
+    p <- .plot_edges(p, df_edges[!df_edges$from == df_edges$to, ], text_size = text_size, arrow_angle= arrow_angle, arrow_length=arrow_length)
   }
 
   p <- .plot_nodes(p, df = df_nodes, text_size = text_size, ellipses_width = ellipses_width, ellipses_height = ellipses_height)
@@ -583,30 +589,31 @@ match.call.defaults <- function(...) {
   match.call(sys.function(sys.parent()), call)
 }
 
-.plot_variances <- function(p, df, text_size, diameter, ...) {
+.plot_variances <- function(p, df, text_size, width, height, arrow_angle, arrow_length, ...) {
   npoints <- 20
-  radius <- diameter / 2
   xlabel <- xcenter <- df$edge_xmin
   ylabel <- ycenter <- df$edge_ymin
+  
   offset <- rep(1.5, length(xcenter))
+  
   ycenter[df$connect_from == "top"] <-
-    ycenter[df$connect_from == "top"] + radius
+    ycenter[df$connect_from == "top"] + height/2
   ylabel[df$connect_from == "top"] <-
-    ylabel[df$connect_from == "top"] + diameter
+    ylabel[df$connect_from == "top"] + height
   ycenter[df$connect_from == "bottom"] <-
-    ycenter[df$connect_from == "bottom"] - radius
+    ycenter[df$connect_from == "bottom"] - height/2
   ylabel[df$connect_from == "bottom"] <-
-    ylabel[df$connect_from == "bottom"] - diameter
+    ylabel[df$connect_from == "bottom"] - height
   offset[df$connect_from == "bottom"] <- .5
   xcenter[df$connect_from == "left"] <-
-    xcenter[df$connect_from == "left"] - radius
+    xcenter[df$connect_from == "left"] - width/2
   xlabel[df$connect_from == "left"] <-
-    xlabel[df$connect_from == "left"] - diameter
+    xlabel[df$connect_from == "left"] - width
   offset[df$connect_from == "left"] <- 0
   xcenter[df$connect_from == "right"] <-
-    xcenter[df$connect_from == "right"] + radius
+    xcenter[df$connect_from == "right"] + width/2
   xlabel[df$connect_from == "right"] <-
-    xlabel[df$connect_from == "right"] + diameter
+    xlabel[df$connect_from == "right"] + width
   offset[df$connect_from == "right"] <- 1
   df_label <- data.frame(df,
                          x = xlabel,
@@ -616,12 +623,12 @@ match.call.defaults <- function(...) {
   df_ellipse <-
     data.frame(do.call(rbind, lapply(1:nrow(df), function(this_var) {
       point_seq <-
-        seq((offset[[this_var]] * pi), (2 + offset[[this_var]]) * pi, length.out = npoints) %% (2 *
+        seq((offset[[this_var]] * pi +.4), (2 + offset[[this_var]]) * pi -.4, length.out = npoints) %% (2 *
                                                                                                   pi)
       matrix(
         c(
-          xcenter[[this_var]] + radius * cos(point_seq),
-          ycenter[[this_var]] + radius * sin(point_seq),
+          xcenter[[this_var]] + width/2 * cos(point_seq),
+          ycenter[[this_var]] + height/2 * sin(point_seq),
           rep(this_var, npoints)
         ),
         nrow = npoints,
@@ -633,7 +640,7 @@ match.call.defaults <- function(...) {
   df$id <- 1:nrow(df)
   df_ellipse <- merge(df_ellipse, df, by = "id")
 
-  p <- .plot_edges_internal(p, df_ellipse)
+  p <- .plot_edges_internal(p, df_ellipse, arrow_angle=arrow_angle, arrow_length=arrow_length)
   .plot_label_internal(p, df_label, text_size)
 }
 
@@ -860,7 +867,7 @@ match.call.defaults <- function(...) {
 #' @importFrom stats dist
 #' @importFrom ggplot2 scale_linetype_manual aes_string
 #' @importFrom ggplot2 arrow
-.plot_edges <- function(p, df, text_size = 5, npoints = 101, ...) {
+.plot_edges <- function(p, df, text_size = 5, npoints = 101,arrow_angle, arrow_length, ...) {
   df_edges <- data.frame(do.call(rbind, lapply(1:nrow(df), function(rownum){
     this_row <- df[rownum, ]
     if(is.na(this_row[["curvature"]])){
@@ -931,13 +938,13 @@ match.call.defaults <- function(...) {
     #df_edges$linetype[is.na(df_edges$curvature)] <- 1
   }
   if(!all(df_edges$arrow %in% c("first", "last", "both", "none"))) stop("Illicit 'arrow' value; acceptable values are c('first', 'last', 'both', 'none').")
-  p <- .plot_edges_internal(p, df_edges)
+  p <- .plot_edges_internal(p, df_edges, arrow_angle, arrow_length)
   # Add label and return ----------------------------------------------------
   .plot_label_internal(p, df_label, text_size)
 }
 
 #' @importFrom ggplot2 arrow
-.plot_edges_internal <- function(p, df){
+.plot_edges_internal <- function(p, df, arrow_angle=20, arrow_length=.7,...){
   # Prepare aesthetics ------------------------------------------------------
   if(!"linetype" %in% names(df)){
     df$linetype <- 1#2
@@ -950,7 +957,7 @@ match.call.defaults <- function(...) {
     Args <- list(
       data = df_path[, c("x", "y", "id")],
       mapping = aes(x = .data[["x"]], y = .data[["y"]], group = .data[["id"]]),
-      arrow = quote(ggplot2::arrow(angle = 20, length = unit(.07, "inches"), ends = "last", type = "closed")))
+      arrow = quote(ggplot2::arrow(angle = arrow_angle, length = unit(arrow_length, "inches"), ends = "last", type = "closed")))
     for(this_path in unique(df_path$id)){
       Args$data <- df_path[df_path$id == this_path, ]
       Args$arrow[[4]] <- force(aes_args$arrow[aes_args$id == this_path])
@@ -1072,41 +1079,6 @@ bind_list <- function(L, ...){
   m4 <- rbind(t(points), 1)
   out <- m1 %*% m2 %*% m3 %*% m4
   t(out)[,1:2]
-}
-
-
-.error_arrow <- function(p, x, y, diameter, orientation, npoints = 20){
-  radius <- diameter / 2
-  switch(orientation,
-         "up" = {
-           xmean = x
-           ymean = y + radius
-           offset = 1.5
-         },
-         "down" = {
-           xmean = x
-           ymean = y - radius
-           offset = .5
-         },
-         "left" = {
-           xmean = x+ radius
-           ymean = y
-           offset = 0
-         },
-         "right" = {
-           xmean = x- radius
-           ymean = y
-           offset = 1
-         })
-  
-  point_seq <- seq((offset*pi),(2+offset)*pi,length.out = npoints) %% (2*pi)
-  
-  df_ellipse <- data.frame(matrix(
-    c(xmean + radius * cos(point_seq), ymean + radius * sin(point_seq)),
-    nrow = npoints, ncol = 2, dimnames = list(NULL, c("x", "y"))
-  )
-  )
-  p + geom_path(data = df_ellipse, aes(x = .data[["x"]], y = .data[["y"]]), linetype = 1, arrow = ggplot2::arrow(angle = 25, length = unit(.1, "inches"), ends = "both", type = "closed"))
 }
 
 #' @importFrom ggplot2 geom_path geom_polygon
