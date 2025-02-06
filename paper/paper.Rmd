@@ -4,22 +4,50 @@ title: Continuous developmental changes in word recognition support language lea
 # Use letters for affiliations, numbers to show equal authorship (if applicable) and to indicate the corresponding author
 author:
   - name: Michael C. Frank
+    affiliation: a, 1
+  - name: Virginia A. Marchman
     affiliation: a
-  - name: Other peekbankers to be added
+  - name: Claire Augusta Bergey
     affiliation: b
-  - name: Martin Zettersten
+  - name: Veronica Boyce
+    affiliation: a
+  - name: Mika Braginsky
+    affiliation: a
+  - name: Jess Mankewitz
     affiliation: c
+  - name: Stephan Meylan
+    affiliation: d
+  - name: Ben Prystawski
+    affiliation: a
+  - name: Nilam Ram
+    affiliation: a, e
+  - name: Robert Z. Sparks
+    affiliation: a
+  - name: Adrian Steffan
+    affiliation: f
+  - name: Alvin Wei Ming Tan
+    affiliation: a
+  - name: Martin Zettersten
+    affiliation: f
 address:
   - code: a
     address: Department of Psychology, Stanford University, Stanford, CA, USA
   - code: b
-    address: Many other peekbankers affiliations
+    address: Department of Linguistics, Stanford University, Stanford, CA, USA
   - code: c
-    address: Department of Cognitive Science, University of California, San Diego, CA, USA
+    address: Department of Psychology, University of Wisconsin, Madison, WI, USA
+  - code: d
+    address: Department of Linguistics, University of California, Berkeley, CA, USA
+  - code: e
+    address: Department of Communication, Stanford University, Stanford, CA, USA
+  - code: f
+    address: Department of Communication, Stanford University, Stanford, CA, USA
+  - code: g
+    address: Department of Psychology, Ludwig Maximilian University, Munich, Germany
 
 corresponding_author:
-  code: 2
-  text: "To whom correspondence should be addressed. E-mail: bob@email.com"
+  code: 1
+  text: "To whom correspondence should be addressed. E-mail: mcfrank@stanford.edu"
 
 # For footer text
 lead_author_surname: Anonymous
@@ -28,11 +56,11 @@ author_contributions: |
   Please provide details of author contributions here.
 
 abstract: |
-  Being a fluent language user involves understanding language as it unfolds in time. How does this skill develop over the course of early childhood?  And how does facility in word recognition relate to the growth of vocabulary knowledge?  We address these questions using data from Peekbank, an open database of eye-tracking experiments on children's early word recognition.  Combining 24 datasets from almost 2,000 children ages 1--6 years, we show that word recognition becomes faster, more accurate, and less variable across development, both within and across studies. Factor analysis reveals a cross-sectional coupling of word recognition speed and accuracy to parent-reported vocabulary. Across a range of models, speed, accuracy, and vocabulary also show coupled growth such that children with faster initial language processing tend to show larger vocabulary growth. Together, these findings support the view that language processing is a skill and that this skill plays a role in supporting early language learning. 
+  Being a fluent language user involves recognizing words as they unfold in time. How does this skill develop over the course of early childhood?  And how does facility in word recognition relate to the growth of vocabulary knowledge?  We address these questions using data from Peekbank, an open database of experiments measuring children's eye-movements during early word recognition.  Combining 24 datasets from almost 2,000 children ages 1--6 years, we show that word recognition becomes faster, more accurate, and less variable across development. Factor analysis reveals a cross-sectional coupling of word recognition speed and accuracy with parent-reported vocabulary. Across a range of models, speed, accuracy, and vocabulary also show coupled growth such that children with faster initial word recognition tend to show faster vocabulary growth. Together, these findings support the view that word recognition is a skill that develops gradually across early childhood and that this skill plays a role in supporting early language learning. 
 
 
 significance: |
-  Early language development is a key part of children's development that also sets the stage for later academic success. The efficiency with which children recognize words provides a measurement of their real-time language processing, which has been argued to be a key part of the learning process. Her, we use a large dataset of eye-tracking data from many different experiments to map out the development of word recognition, finding that this process becomes faster, more accurate, and less variable in the period between one and six years of age, and that children who are better at word recognition tend to have larger and faster growing vocabularies. These data suggest that understanding language is a skill that improves gradually with practice.
+  The efficiency with which children recognize words provides a measurement of their real-time language processing, which has been argued to be a key part of the language learning process. Her, we use a large dataset of eye-tracking data from many different experiments to map out the development of word recognition, finding that this process becomes faster, more accurate, and less variable in the period between one and six years of age, and that children who are better at word recognition tend to have larger and faster growing vocabularies. These data suggest that understanding language is a skill that improves gradually with practice.
 
 acknowledgements: |
   This work was supported by a grant from the Jacobs Foundation. 
@@ -57,12 +85,16 @@ output: rticles::pnas_article
 ---
 
 
-\dropcap{C}hildren acquiring a language are learning a body of knowledge -- a set of words and the ways they are combined -- but they are also learning to deploy this knowledge in the myriad complex, noisy, and fast-moving environments in which language is used. As children enter their second year, language explodes onto the scene; both vocabulary and grammatical abilities grow rapidly and in tandem [@bates1994developmental;@frank2021]. This growth in knowledge is also accompanied by changes in  language processing: children become quicker and more accurate in recognizing words and matching them with their referents [@fernald1998;@peter2019;@bergelson2020comprehension].
+\dropcap{C}hildren acquiring a language are learning a body of knowledge -- a set of words and the ways they are combined -- but they are also learning to deploy this knowledge in the myriad complex, noisy, and fast-moving environments in which language is used. As children enter their second year, language explodes onto the scene; both vocabulary and grammatical abilities grow rapidly and in tandem [@bates1994developmental;@frank2021]. This growth in knowledge is also accompanied by changes in language processing efficiency: children become quicker and more accurate in recognizing words and matching them with their referents [@fernald1998;@peter2019;@bergelson2020comprehension].
 
-Yet unlike language production, which is manifest via overt behavior, evidence for word recognition is often more subtle. Very young children with incomplete knowledge may not be able to point to the correct referent of a word, but they may still have some representation of word meaning [@bergelson2012]. Eye tracking has thus emerged as a key method that allows the measurement of language comprehension with high temporal resolution: both adults and children reliably fixate the referent of a word soon after it is used [@tanenhaus1995integration;@altmann1999incremental;@fernald1998;@fernald2008;@macdonald2018]. The relative timecourse of fixation then can provide an index of both the comprehender's ability and the properties of the stimulus. 
+Yet unlike language production, which is manifest via overt behavior, evidence for word recognition is often more subtle. Very young children with incomplete knowledge may not be able to point to the correct referent of a word, but they may still have some representation of word meaning [@bergelson2012]. Eye tracking has thus emerged as a key method that allows the measurement of language comprehension with high temporal resolution: both adults and children reliably fixate the referent of a word soon after it is used [@tanenhaus1995integration;@altmann1999incremental;@fernald1998;@fernald2008;@macdonald2018]. The relative timecourse of fixation then can provide an index of the comprehender's ability or the difference between two stimulus conditions. 
+
+The version of this method that is used with children goes by many names, including the intermodal preferential looking paradigm and the "looking while listening" paradigm (LWL, the name we adopt here) [@hirsh1996intermodal;@reznick1990visual;@fernald2008]. In LWL experiments, children are typically shown a series of trials in which two images are displayed side by side and they are asked to find one of them. For example, a ball and a book might be shown, and the child might hear "Look at the ball! Can you find it?". Accuracy is then computed as the proportion of time they fixate the correct image within a fixed window after the onset of the noun ("ball" in this case). Reaction time is computed only on trials in which the child is fixating on the distractor image (the book) before word onset; in these cases, the average time it takes until the child shifts fixation from the distractor to the target is used as an index of processing speed. Early work using this method showed that both children's speed and accuracy increase rapidly across the second year [@fernald1998;@reznick1990visual]. Related methods have provided a window into how children process phonological [@mani2011], syntactic [@trueswell1999kindergarten], and semantic [@mani2010;@bergelson2017] information as well as how their lexical representations develop [@Swingley2002].
+
+Word recognition ability, as measured by LWL, is hypothesized to play a key role in language learning. Each word that a child experiences is an opportunity to learn; measurements of children's language input at home are consistently associated with their vocabulary size [@hart1995meaningful;@anderson2021linking]. Recognizing incoming words and linking them with their referents is a prerequisite for learning. Consider a child hearing the utterance "Can you put the ball in the box?" The faster and more accurately the child can recognize that the ball is a referent, the better they can use this evidence to help infer the speaker's intended meaning, perhaps making inferences about the meaning of "put" or "box" [@frank2009using]. Consistent with this idea, one important study found that children's word recognition speed mediated the relationship between home language input and vocabulary growth [@Weisleder2013].
 
 
-\begin{table*}[h!]
+\begin{table*}[ht]
 \centering
 \begin{tabular}{rlrrrrrrrll}
   \hline
@@ -70,47 +102,42 @@ Yet unlike language production, which is manifest via overt behavior, evidence f
   \hline
 1 & reflook\_v4 & 310 & 310 & 36.82 & 12.24 & 60.00 & 6.21 & 2.87 &  &  \\ 
   2 & yurovsky\_2017 & 282 & 282 & 25.64 & 12.59 & 58.65 & 5.95 & 2.79 &  &  \\ 
-  3 & weaver\_zettersten\_2024 & 141 & 248 & 15.73 & 13.50 & 23.60 & 18.10 & 6.72 & x & x \\ 
-  4 & fernald\_marchman\_2012 & 122 & 678 & 23.92 & 17.00 & 32.00 & 16.78 & 7.17 & x & x \\ 
+  3 & weaver\_zettersten\_2024 & 141 & 248 & 15.73 & 13.50 & 23.60 & 18.10 & 6.72 &  & x \\ 
+  4 & fernald\_marchman\_2012 & 122 & 678 & 23.92 & 17.00 & 32.00 & 16.89 & 7.21 & x & x \\ 
   5 & sander-montant\_2022 & 122 & 122 & 21.94 & 12.02 & 31.11 & 10.07 & 4.20 & x &  \\ 
   6 & frank\_tablet\_2016 & 104 & 104 & 33.89 & 12.13 & 59.84 & 5.87 & 2.74 &  &  \\ 
   7 & baumgartner\_2014 & 100 & 100 & 12.01 & 12.00 & 13.00 & 4.00 & 2.31 & x &  \\ 
   8 & fmw\_2013 &  80 & 179 & 20.04 & 17.00 & 26.00 & 21.26 & 8.44 & x & x \\ 
-  9 & adams\_marchman\_2018 &  69 & 711 & 23.57 & 12.00 & 38.00 & 18.44 & 7.92 & x & x \\ 
+  9 & adams\_marchman\_2018 &  69 & 711 & 23.58 & 13.00 & 38.00 & 18.44 & 7.92 & x & x \\ 
   10 & potter\_canine &  67 &  67 & 23.76 & 21.00 & 27.00 & 10.38 & 3.80 & x &  \\ 
-  11 & fernald\_totlot &  63 & 229 & 19.68 & 15.00 & 25.00 & 15.22 & 6.05 & x & x \\ 
+  11 & fernald\_totlot &  63 & 229 & 19.68 & 15.00 & 25.00 & 15.25 & 6.06 & x & x \\ 
   12 & pomper\_prime &  63 &  63 & 39.73 & 37.90 & 42.00 & 12.98 & 5.34 &  &  \\ 
   13 & pomper\_saffran\_2016 &  60 &  60 & 44.27 & 41.00 & 47.00 & 7.55 & 3.30 &  &  \\ 
   14 & swingley\_aslin\_2002 &  50 &  50 & 15.09 & 14.13 & 16.00 & 11.74 & 3.79 & x &  \\ 
   15 & pomper\_salientme &  44 &  44 & 40.11 & 38.00 & 43.00 & 5.30 & 2.34 &  &  \\ 
-  16 & perry\_cowpig &  42 &  42 & 20.45 & 19.00 & 22.00 & 14.88 & 5.43 &  &  \\ 
+  16 & perry\_cowpig &  42 &  42 & 20.45 & 19.00 & 22.00 & 14.88 & 5.43 & x &  \\ 
   17 & ronfard\_2021 &  40 &  40 & 19.95 & 18.00 & 24.00 & 18.54 & 7.62 & x &  \\ 
   18 & bacon\_gendercues &  38 &  38 & 22.87 & 22.00 & 24.00 & 18.16 & 8.00 & x &  \\ 
-  19 & garrison\_bergelson\_2020 &  35 &  35 & 14.46 & 12.00 & 18.00 & 27.94 & 9.59 & x &  \\ 
+  19 & garrison\_bergelson\_2020 &  35 &  35 & 14.46 & 12.00 & 18.00 & 27.47 & 9.41 & x &  \\ 
   20 & pomper\_yumme &  32 &  32 & 26.38 & 25.00 & 28.00 & 7.62 & 2.31 &  &  \\ 
   21 & mahr\_coartic &  29 &  29 & 20.83 & 18.10 & 23.80 & 24.38 & 8.86 & x &  \\ 
   22 & ferguson\_eyetrackingr &  28 &  28 & 19.71 & 18.02 & 21.86 & 5.54 & 2.33 & x &  \\ 
   23 & potter\_remix &  23 &  44 & 22.59 & 18.00 & 29.00 & 6.07 & 2.58 & x & x \\ 
   24 & newman\_genderdistractor &  19 &  19 & 30.12 & 29.23 & 30.84 & 13.11 & 4.94 &  &  \\ 
+  \hline
+    & Total & 1963 & 3554 & 24.73 & 12.00 & 60.00 & 12.74 & 5.05 & 15 & 6 \\ 
    \hline
 \end{tabular}
-\caption{Characteristics of included datasets from Peekbank. `Admins` denotes separate experimental sessions.\label{tab:datasets}} 
+\caption{Characteristics of included datasets from Peekbank. `Admins` denotes separate experimental sessions. `CDIs` refers to whether the dataset contains parent report vocabulary data from the MacArthur-Bates Communicative Development Inventory.} 
 \end{table*}
 
-The version of this method that is used with children goes by many names, including the intermodal preferential looking paradigm and the "looking while listening" paradigm (LWL, the name we adopt here) [@hirsh1996intermodal;@reznick1990visual;@fernald2008]. In LWL experiments, children are typically shown a series of trials in which two images are displayed side by side and they are asked to find one of them. For example, a ball and a book might be shown, and the child might hear "Look at the ball! Can you find it?". Accuracy is then computed as the proportion of time they fixate the correct image within a fixed window after the onset of the noun ("ball" in this case). Reaction time is computed only on trials in which the child is fixating the distractor image (the book); in these cases, the average time it takes to shift fixation to the target is used as an index of processing speed. Early work using this method showed that children's speed and accuracy both increase rapidly across the second year [@fernald1998;@reznick1990visual]. Related methods have provided a window into how children process phonological [@mani2011], syntactic [@trueswell1999kindergarten], and semantic [@mani2010;@bergelson2017] competition as well as how their lexical representations develop [@Swingley2002].
+Word recognition speed has been used as an index of individual differences in early childhood [@fernald2006;@marchman2008;@peter2019;@fernald2012;@newbury2016interrelationships] and beyond [@colby2023efficiency;@jeppsen2022development;@mcmurray2022slow]. Over and above measures of vocabulary size, word recognition speed at 18 months predicts children's standardized test scores years later [@marchman2008], though these predictions may be limited to particular ages or processing assessments [@peter2019]. Further, faster processing at 18 months is predictive of whether "late talkers" catch up to their peers or require further intervention [@fernald2012].  Critically, all of these assessments use words that children are reported to understand and produce -- they are not indices of vocabulary size but rather of how quickly and accurately they can recognize a spoken word and use it to guide their visual attention to a referent. 
 
-Word recognition ability, as measured by LWL, is hypothesized to play a key role in language learning. Each word that a child experiences is an opportunity to learn; measurements of children's language input at home are consistently associated with their vocabulary size [@hart1995meaningful;@anderson2021linking]. 
-<!-- These learning opportunities are likely helpful to different degrees, however [@kachergis2022toward;@mcmurray2007defusing].  -->
-<!-- Language input is more helpful for learning if it focused on the child's own interest and grounded in the particulars of their current environment -- for example, in a game, routine, or object -- and if it uses vocabulary and syntax that they know [@tomasello2001perceiving;@roy2015predicting;@cartmill2013quality].  -->
-Recognizing incoming words and linking them with their referents is a prerequisite for learning. Consider a child hearing the utterance "can you put the ball in the box?" The faster and more accurately the child can recognize that the ball is a referent, the better they can use this evidence to help infer the speaker's intended meaning, perhaps making inferences about the meaning of "put" or "box" [@frank2009using]. Consistent with this idea, one important study found that children's word recognition speed mediated the relationship between home language input and vocabulary growth [@Weisleder2013].
+Yet individual experiments measuring processing with young children typically recruit relatively small samples in a restricted range of ages. These samples provide neither the breadth of ages nor the number of participants needed to estimate the broader dynamics of how word recognition changes developmentally and how it connects with other aspects of language [as has been done with school-aged children; @colby2023efficiency; @mcmurray2022slow]. Here we investigate two hypotheses. 
 
-Speed of word recognition has been used as an index of individual differences in early childhood [@fernald2006;@marchman2008;@peter2019;@fernald2012;@newbury2016interrelationships] and beyond [@colby2023efficiency;@jeppsen2022development;@mcmurray2022slow]. Word recognition speed at 18 months can predict children's later language ability over and above measures of vocabulary size [@marchman2008], though these predictions may be limited to particular ages or processing assessments [@peter2019]. Further, faster processing at age two is predictive of whether "late talkers" catch up to their peers or require further intervention [@fernald2012].  Critically, all of these assessments use words that children are reported to understand and produce -- they are not indices of vocabulary size but rather of how quickly and accurately they can recognize a spoken word and use it to guide their visual attention to a referent. 
+First, one influential theory characterizes language learning as a process of learning the skill of real-time processing [@christiansen2016;@chater2018]. Based on this theory, we should expect to see the signatures of expertise and skill learning in word recognition. Accuracy should change linearly with the logarithm of age, reflecting gradual asymptotic convergence to mature levels of accuracy. In addition, the logarithm of processing speed should decrease with the logarithm of age, potentially reflecting the  "power law of practice" [@snoddy1926;@kail1991;@anderson1982; cf @heathcote2000]. Finally, trial-to-trial variability in both speed and accuracy should decrease with increasing expertise [@todorov2002optimal]. 
 
-Yet individual experiments measuring processing with young children typically recruit relatively small samples in a restricted range of ages. These samples provide neither the breadth of ages nor the number of participants to estimate the broader dynamics of how word recognition changes developmentally and how it connects with other aspects of language [as has been done with school-aged children; @mcmurray2022slow;@colby2023efficiency]. Here we investigate two hypotheses. 
-
-First, one influential recent theory characterizes language learning more broadly as a process of learning the skill of real-time processing  [@christiansen2016;@chater2018]. Based on this theory, we should expect to see the signatures of expertise and skill learning in word recognition. Accuracy should change linearly with the logarithm of age, reflecting gradual asymptotic convergence to mature levels of accuracy. In addition, the logarithm of processing speed should decrease with the logarithm of age, potentially reflecting the  "power law of practice" [@snoddy1926;@kail1991;@anderson1982; cf @heathcote2000]. Finally, trial-to-trial variability in both speed and accuracy should decrease with increasing expertise [@todorov2002optimal]. 
-
-Second, previous findings have provided limited and sometimes conflicting evidence on the concurrent and predictive relations between word recognition and language learning. Initial reports showed strong predictive relationships between both speed and accuracy and later vocabulary growth [@fernald2006]. Two other studies extended this result to infants born preterm [@fernald2012] and to late talkers [@marchman2016]. Subsequent studies have primarily focused on speed of processing and found more mixed results, with reaction time measures only inconsistently predictive of later vocabulary outcomes [@peter2019;@newbury2016interrelationships;@lany2017]. To the extent that there are consistent relations between vocabulary and word recognition, these should be visible in a larger dataset. Further, by examining the relationship between speed, accuracy, and vocabulary, it should be possible to assess the extent to which processing speed specifically plays a role in vocabulary growth.
+Second, previous findings have provided limited and sometimes conflicting evidence on the concurrent and predictive relations between word recognition and language learning. Initial reports showed strong predictive relationships between both speed and accuracy and later vocabulary growth [@fernald2006], with replications in infants born preterm [@marchman2016] and late talkers [@fernald2012]. Subsequent studies have primarily focused on speed of processing and found more mixed results, with reaction time measures found to be only inconsistently predictive of later vocabulary outcomes [@peter2019;@newbury2016interrelationships;@lany2018]. To the extent that there are consistent relations between vocabulary and word recognition, these should be visible in a larger dataset. Further, by examining the relationship between speed, accuracy, and vocabulary, it should be possible to assess the extent to which processing speed specifically plays a role in vocabulary growth.
 
 
 ```{r loading, echo=FALSE, message=FALSE, warning=FALSE}
@@ -148,9 +175,9 @@ knitr::opts_chunk$set(echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE)
 
 # Results {.unnumbered}
 
-To address these questions, we made use of a new release of data in Peekbank, an open database of LWL from young children, stored in a harmonized format [@zettersten2023peekbank]. We retrieved data from children ages 1--6 years. Although experiments in Peekbank include a variety of different experimental manipulations, we analyzed data only from simple word recognition trials in which children were shown two pictures of concrete objects and heard a word (typically embedded in a simple carrier phrase such as "look at the ..."); these trials often constituted control conditions for experiments. We focus here on English purely for practical reasons -- the Peekbank dataset contains limited data from other languages. 
+To address these questions, we made use of a new release of data in Peekbank, an open database of LWL from young children, stored in a harmonized format [@zettersten2023peekbank]. We retrieved data from children ages 1--6 years. Although experiments in Peekbank include a variety of different experimental manipulations, we analyzed data only from simple word recognition trials in which children were shown two pictures of concrete objects and heard a label for an object (typically embedded in a simple carrier phrase such as "Look at the ..."); these trials often constituted control conditions for experiments. We focus here on English purely for practical reasons -- the Peekbank dataset contains limited data from other languages. 
 
-These criteria yielded `r length(unique(d_sub$dataset_name))` datasets, including `r length(unique(d_sub$subject_id))` children and `r length(unique(d_sub$administration_id))` administrations of the LWL procedure (some datasets were longitudinal or involved multiple closely-spaced testing sessions). Table \ref{tab:datasets} shows the characteristics of individual datasets (see also Figures S1 and S2). The size of the combined dataset, the unified data processing pipeline, and the fact that individual studies used very similar implementations of the LWL experimental paradigm, all allowed us to make a more detailed  study of the development of word recognition than has previously been possible. While our analysis is exploratory in nature, it is guided by the two hypotheses outlined above: the presence of signatures of skill learning in word recognition, and 2) linkages between word recognition and vocabulary.
+These criteria yielded `r length(unique(d_sub$dataset_name))` datasets, including `r length(unique(d_sub$subject_id))` children and `r length(unique(d_sub$administration_id))` administrations of the LWL procedure (some datasets were longitudinal or involved multiple closely-spaced testing sessions). Table \ref{tab:datasets} shows the characteristics of individual datasets (see also Figures S1 and S2). The size of the combined dataset, the unified data processing pipeline, and the fact that individual studies used very similar implementations of the LWL experimental paradigm, all allowed us to make a more detailed study of the development of word recognition than has previously been possible. While our analysis is exploratory in nature, it is guided by the two hypotheses outlined above: the presence of 1) signatures of skill learning in word recognition, and 2) linkages between word recognition and vocabulary.
 
 
 ```{r dataset_table}
@@ -166,6 +193,18 @@ dataset_characteristics <- d_sub |>
             `CDIs` = ifelse(!is.na(any(prod)), "x", ""), 
             `longitudinal` = ifelse(any(duplicated(subject_id)), "x", "")) |>
   arrange(desc(`N subjects`)) 
+
+dataset_characteristics <- dataset_characteristics |>
+  bind_rows(tibble(dataset_name = "Total", 
+                       `N subjects` = sum(dataset_characteristics$`N subjects`),
+                       `N admins` = sum(dataset_characteristics$`N admins`), 
+                       `Mean Age` = mean(dataset_characteristics$`Mean Age`),
+                       `Min Age` = min(dataset_characteristics$`Min Age`), 
+                       `Max Age` = max(dataset_characteristics$`Max Age`), 
+                       `Avg Trials` = mean(dataset_characteristics$`Avg Trials`),
+                       `Avg RT Trials` = mean(dataset_characteristics$`Avg RT Trials`),
+                       `CDIs` = as.character(sum(dataset_characteristics$CDIs != "")),
+                       `longitudinal` = as.character(sum(dataset_characteristics$longitudinal != ""))))
 ```
 
 ```{r eval=FALSE}
@@ -211,14 +250,14 @@ rt_mods_lmer_summary <- map_df(rt_mods_lmer, ~broom.mixed::glance(.x)) |>
          r2 = map_dbl(rt_mods_lmer, ~performance::r2_nakagawa(.x)$R2_conditional))
 ```
 
-We began by characterizing developmental changes in speed and accuracy. We computed both reaction times and accuracies following standard practices in the literature [@fernald2008]. Because there is no consensus about the length of time windows for the computation of accuracy, we considered both a shorter window (from 200 -- 2200 ms after noun onset) and a longer window (from 200 -- 4000 ms). 
+We began by characterizing developmental changes in speed and accuracy. We computed both RTs (reaction times) and accuracies following standard practices in the literature [@fernald2008]. Because there is no consensus about the length of time windows for the computation of accuracy, we considered both a shorter window (from 200 -- 2200 ms after noun onset) and a longer window (from 200 -- 4000 ms). For each window, we averaged all fixation within the window to compute a continuous proportion between 0 (no fixation on the target during the window) and 1 (total fixation on the target during the window) on every trial. 
 
-Our first question was about the functional form of the relationships between age, speed, and accuracy (see SI for raw correlations between variables). To investigate this question, we fit linear mixed effects models predicting accuracy and reaction time on each trial across the full dataset with random slopes of age by study and random intercepts by participant. We compared models that included both long and short accuracy windows, as well as logarithmic and linear effects of age, and logarithmic and linear transformations of reaction time. The best fitting model of accuracy predicted long window accuracy as a function of the logarithm of age,^[This longer window yielded overall higher cross-trial reliability as well, and so we report long window results in the main text. All findings reported here hold for both window sizes, however (see SI).] and the best fitting model of speed predicted log reaction time as a function of log age as well (see SI). 
+Our first question was about the functional form of the relationships between age, speed, and accuracy (see SI for raw correlations between variables). To investigate this question, we fit linear mixed effects models predicting accuracy and RT on each trial across the full dataset with random slopes of child age by study and random intercepts by participant. We compared models that included both long and short accuracy windows, as well as logarithmic and linear effects of age, and logarithmic and linear transformations of RT. The best fitting model of accuracy predicted long window accuracy as a function of the logarithm of age,^[This longer window yielded overall higher cross-trial reliability as well, and so we report long window results in the main text. All findings reported here hold for both window sizes, however (see SI).] and the best fitting model of speed predicted log RT as a function of log age as well (see SI). 
 
-Figure \ref{fig:devchange} shows these relationships. Log reaction time decreased significantly with age (`r papaja::apa_print(rt_mods_lmer[[2]])$full_result$log_age_s`) and accuracy increased significantly with age  (`r papaja::apa_print(acc_mods_lmer[[2]])$full_result$log_age_s`). In sum, we see continuing improvements in word recognition across the full age range in our dataset that appear roughly linear in the logarithm of age.  These logarithmic relationships follow theoretical expectations that both speed and accuracy should gradually asymptote to mature levels of performance as in skill learning more generally [@anderson1982,@snoddy1926]. 
+Figure \ref{fig:devchange} shows these relationships. Log RT decreased significantly with age (`r papaja::apa_print(rt_mods_lmer[[2]])$full_result$log_age_s`) and accuracy increased significantly with age  (`r papaja::apa_print(acc_mods_lmer[[2]])$full_result$log_age_s`). In sum, we see continuing improvements in word recognition across the full age range in our dataset that appear roughly linear in the logarithm of age.  These logarithmic relationships follow theoretical expectations that both speed and accuracy should gradually asymptote to mature levels of performance as in skill learning more generally [@anderson1982,@snoddy1926]. 
 <!-- With our current dataset we cannot specifically determine whether within-individual patterns of change conform to power law or exponential forms [@kail1991,@heathcote2000], but regardless we see clear patterns of developmental change related to skill acquisition. -->
 
-```{r devchange, fig.cap="Participant-level accuracy and reaction time (log), plotted by age (log). The solid green line shows a linear fit and associated confidence interval. Individual dotted lines show linear fits for those datasets spanning six or more months of age. The dashed line for accuracy shows chance-level looking (.5)", fig.env="figure*", fig.height = 2.5}
+```{r devchange, fig.cap="Participant-level accuracy and reaction time (log), plotted by age (log). The solid blue line shows a linear fit and associated confidence interval. Individual dotted lines show linear fits for those datasets spanning six or more months of age. The dashed line for accuracy shows chance-level looking (.5)", fig.env="figure*", fig.height = 2.5}
 
 datasets_with_age_variation <- d_trial |>
   group_by(dataset_name) |>
@@ -242,7 +281,7 @@ a <- ggplot(d_sub,
               alpha = 1, method = "lm", size = .5, lty = 2) + 
     geom_smooth(method = "lm") +
   geom_hline(yintercept = .5, lty = 2) + 
-  scale_x_log10() +
+  scale_x_log10(breaks = c(12,24,36,48,60)) +
   scale_color_manual(values=mycolors, guide = FALSE) + 
   ylab("Accuracy") + 
   xlab("Age (months)")
@@ -254,7 +293,7 @@ b <- ggplot(d_sub,
               aes(group = dataset_name, col = dataset_name), se=FALSE,
               alpha = .1, method = "lm", size = .5, lty = 2) + 
     geom_smooth(method = "lm") +
-  scale_x_log10() +
+  scale_x_log10(breaks = c(12,24,36,48,60)) +
   scale_y_log10() +
   scale_color_manual(values=mycolors, guide = FALSE) + 
   theme(legend.position = "bottom") + 
@@ -265,7 +304,7 @@ cowplot::plot_grid(a,b)
 ```
 
 
-```{r growth, fig.cap="TODO veronica messing around. Dark blue is fastest RT, dark red is slowest RT -- not sure what the ideal legend is.", fig.env="figure*", fig.height = 2.5, fig.width=4, out.width=".5\\textwidth"}
+```{r growth, fig.cap="TODO veronica messing around. Dark blue is fastest RT, dark red is slowest RT -- not sure what the ideal legend is.", fig.env="figure*", fig.height = 2.5, fig.width=4, out.width=".5\\textwidth", include=FALSE}
 
 library(nlme)
 
@@ -342,7 +381,7 @@ rt_var_mod <- lmer(log_rt_var ~ log_age_s + (log_age_s | dataset_name) +
                data = d_sub)
 ```
 
-One further hallmark of increasing skill is a decrease in task-relevant variability [@todorov2002optimal]. Both within and across datasets, variation in accuracy and reaction time decreased across datasets, again relatively continuously across the developmental range we examined (Figure \ref{fig:variance}). We fit mixed effects models to the standard deviation of both accuracy and reaction time for each testing session for each participant, including random slopes of log age by dataset and random intercepts for each participant. For both speed and accuracy, variability decreased with age (RT: `r papaja::apa_print(rt_var_mod)$full_result$log_age_s`; accuracy: `r papaja::apa_print(acc_var_mod)$full_result$log_age_s`). Thus, as well as being faster and more accurate, older children appear to be more consistent in their online word recognition.
+One further hallmark of increasing skill is a decrease in task-relevant variability [@todorov2002optimal]. Both within and across datasets, within-individual variation in accuracy and RT decreased smoothly  across the developmental range we examined (Figure \ref{fig:variance}). We fit mixed effects models to the standard deviation of both accuracy and RT for each testing session for each participant, including random slopes of log age by dataset and random intercepts for each participant. For both speed and accuracy, within-individual variability decreased with age (RT: `r papaja::apa_print(rt_var_mod)$full_result$log_age_s`; accuracy: `r papaja::apa_print(acc_var_mod)$full_result$log_age_s`). Thus, as well as being faster and more accurate, older children were more consistent in their online word recognition.
 
 ```{r variance, fig.cap="Participant-level variability in accuracy and reaction time (log RT), plotted by age (log). Plotting conventions are as in Figure 1.", fig.env="figure*", fig.height = 2.5}
   mycolors = c("#1B9E77", "#D95F02", "#E7298A", "#66A61E", "#1B9E77", "#D95F02", "#E7298A", "#66A61E", "#1B9E77", "#D95F02", "#E7298A", "#66A61E","#1B9E77", "#D95F02")
@@ -354,9 +393,9 @@ c <- ggplot(d_sub,
               aes(group = dataset_name, col = dataset_name), se=FALSE,
               alpha = .1, method = "lm", size = .5, lty = 2) + 
     geom_smooth(method = "lm") +
-  scale_x_log10() +
+  scale_x_log10(breaks = c(12,24,36,48,60)) +
   scale_color_manual(values=mycolors, guide = FALSE) + 
-  ylab("SD of Accuracy)") + 
+  ylab("SD of Accuracy") + 
   xlab("Age (months)")
 
 d <- ggplot(d_sub,
@@ -366,10 +405,10 @@ d <- ggplot(d_sub,
               aes(group = dataset_name, col = dataset_name), se=FALSE,
               alpha = .1, method = "lm", size = .5, lty = 2) + 
     geom_smooth(method = "lm") +
-  scale_x_log10() +
+  scale_x_log10(breaks = c(12,24,36,48,60)) +
   scale_color_manual(values=mycolors, guide = FALSE) + 
   theme(legend.position = "bottom") + 
-  ylab("SD of log RT)") + 
+  ylab("SD of log RT") + 
   xlab("Age (months)")
 
 cowplot::plot_grid(c,d)
@@ -378,7 +417,7 @@ cowplot::plot_grid(c,d)
 
 ## Speed and accuracy relate to vocabulary size {.unnumbered}
 
-We were next interested in whether the various different aspects of word recognition -- including accuracy, reaction time, and the variability of each of these -- were related to other aspects of early language ability. Of the studies in our database, `r sum(str_length(dataset_characteristics$CDIs)>0)` gathered parent reports about children's early vocabulary using the MacArthur-Bates Communicative Development Inventory (CDI), a popular survey instrument that provides a reliable and valid holistic picture of children's early language [@marchman2023;@frank2021]. Different forms of the CDI can be used to measure either receptive and expressive vocabulary (for children up to 18 months) or expressive vocabulary only (for children 16 -- 30 months). 
+We were next interested in whether the various aspects of word recognition -- including accuracy, RT, and the variability of each of these -- were related to other aspects of early language ability. Of the studies in our database, `r sum(str_length(dataset_characteristics$CDIs)>0)` gathered parent reports about children's early vocabulary using the MacArthur-Bates Communicative Development Inventory (CDI), a popular survey instrument that provides a reliable and valid estimate of children's early vocabulary [@marchman2023;@frank2021]. Different forms of the CDI can be used to measure either receptive and expressive vocabulary (for children up to 18 months) or expressive vocabulary only (for children 16 -- 30 months). 
 
 ```{r efa}
 d_sub_mat <- d_sub |>
@@ -406,7 +445,7 @@ fit3 <- cfa(fa3_model, d_sub_mat_s, std.lv=TRUE, missing='fiml')
 fit_stats <- suppressMessages(summary(fit3, fit.measures=TRUE, standardize=TRUE))
 ```
 
-We fit a series of factor analytic models to explore the dimensionality of the data. Initial exploratory factor analysis using parallel analysis suggested that three factors explained substantial variance in the data (see SI: Factor Analysis). Due to missingness of data, we used confirmatory factory analysis with full information maximum likelihood to find the best set of loadings. The best fitting model was a three-factor model with factors for speed (reaction time and reaction time variability), accuracy (accuracy and accuracy variability), and vocabulary (comprehension and production from the CDI). Fit statistics for this model were generally good (Confirmatory fit index: `r round(fit_stats$fit["cfi"], 3)`, RMSE: `r round(fit_stats$fit["rmsea"], 3)`)`; see SI: Alternative Factor Structures). 
+We fit a series of factor analytic models to explore the dimensionality of the data. Initial exploratory factor analysis using parallel analysis suggested that three factors explained substantial variance in the data (see SI: Factor Analysis). Due to missingness of data, we used confirmatory factor analysis with full information maximum likelihood to find the best set of loadings. The best fitting model was a three-factor model with factors for speed (RT and RT variability), accuracy (accuracy and accuracy variability), and vocabulary (comprehension and production from the CDI). Fit statistics for this model were generally good (Confirmatory fit index: `r round(fit_stats$fit["cfi"], 3)`, RMSE: `r round(fit_stats$fit["rmsea"], 3)`); see SI: Alternative Factor Structures). 
 
 
 ```{r age_regression, fig.env="figure*", fig.cap="Structural equation model showing the three-factor factor analysis with a regression of each latent variable on the logarithm of age. Observed variables are notated as squares and latent variables are notated as circles Factor loadings and regression coefficients are shown with straight, solid lines; covariances are shown with dashed lines; residual variances are shown as solid circular connections. Stars show conventional levels of statistical significance, e.g. * indicates p < .05, ** indicates p < .01, and *** indicates p < .001. Covariances reflect age-residualized correlations between variables. Abbreviations: acc = accuracy, prod = production vocabulary, comp = comprehension vocabulary.", fig.height = 3}
@@ -441,7 +480,7 @@ layout_age = matrix(nrow=5, ncol = 6,
                 byrow = TRUE)
 
 
-node_text <- tibble(name=c("acc", "acc_sd", "accuracy", "comp", "log_age", "log_rt", "log_rt_sd", "prod", "speed", "vocab"), pretty=c("Accuracy", "Accuracy (sd)", "Accuracy", "Comprehension", "Age (log months)", "log RT", "log RT (SD)", "Production", "Speed", "Vocabulary"))
+node_text <- tibble(name=c("acc", "acc_sd", "accuracy", "comp", "log_age", "log_rt", "log_rt_sd", "prod", "speed", "vocab"), pretty=c("Accuracy", "Accuracy (SD)", "Accuracy", "Comprehension", "Age (log months)", "log RT", "log RT (SD)", "Production", "Speed", "Vocabulary"))
 
 nodes <- get_nodes(fit3_age) |> tibble() |> left_join(node_text) |> mutate(label=ifelse(shape=="oval",pretty, str_c(pretty, "\n", est_sig)))
 
@@ -456,6 +495,7 @@ edges[16, "label_hjust"]=0
 
 edges[17,"curvature"]=50
 edges[17,"label_location"]=.6
+edges[, "label_fill"]="white"
 
 source(here("helper/modified_sem_plot.R"))
 
@@ -476,7 +516,7 @@ prepare_graph(edges=edges, nodes=nodes, text_size = 2.5, layout = t(layout_age),
           fix_coord=FALSE) |> plot_happy_arrows()
 ```
 
-Figure \ref{fig:age_regression} shows a regression model fit to this confirmatory factor analysis, with log age predicting each latent variable. This regression model allows interpretation of the covariances between latent factors as partial correlations (controlling for age). All three latent factors were significantly related to one another, with speed and accuracy showing strong negative covariance ($\beta=$ `r round(fit3_age_summary$pe[21,"est"],3)`, SE = `r round(fit3_age_summary$pe[21,"se"],3)`, $p < .0001$) and weaker but significant covariation between speed and vocabulary ($\beta=$ `r round(fit3_age_summary$pe[20,"est"],3)`, SE = `r round(fit3_age_summary$pe[20,"se"],3)`, $p < .0001$) and accuracy and vocabulary ($\beta=$ `r round(fit3_age_summary$pe[19,"est"],3)`, SE = `r round(fit3_age_summary$pe[19,"se"],3)`, $p < .0001$). This model supports the idea that individual variation in speed and accuracy of word recognition is concurrently related to vocabulary beyond effects of age. 
+Figure \ref{fig:age_regression} shows a regression model fit to this confirmatory factor analysis, with log age predicting each latent variable. This regression model allows interpretation of the covariances between latent factors as partial correlations (controlling for age). All three latent factors were significantly related to one another, with RT and accuracy showing strong negative covariance ($\beta=$ `r round(fit3_age_summary$pe[21,"est"],3)`, SE = `r round(fit3_age_summary$pe[21,"se"],3)`, $p < .0001$) and weaker but significant covariation between RT and vocabulary ($\beta=$ `r round(fit3_age_summary$pe[20,"est"],3)`, SE = `r round(fit3_age_summary$pe[20,"se"],3)`, $p < .0001$) and accuracy and vocabulary ($\beta=$ `r round(fit3_age_summary$pe[19,"est"],3)`, SE = `r round(fit3_age_summary$pe[19,"se"],3)`, $p < .0001$). This model supports the idea that individual variation in speed and accuracy of word recognition is concurrently related to vocabulary beyond the effects of age. 
 
 
 ## Speed of processing relates to vocabulary growth {.unnumbered}
@@ -537,6 +577,7 @@ d_growth <- d_sub |>
   mutate(rt_t0_group = ifelse(rt_t0 < median(rt_t0, na.rm=TRUE), "low", "high"))
 
 d_growth$age_15 <- d_growth$age - 15
+
 growth_mod <- lmer(prod ~ poly(age_15,2) *rt_t0 + (age  | subject_id) + (age | dataset_name), 
      data = d_growth, 
      control = lmerControl(optimizer = "bobyqa"))
@@ -544,7 +585,7 @@ growth_mod <- lmer(prod ~ poly(age_15,2) *rt_t0 + (age  | subject_id) + (age | d
 # summary(growth_mod)
 ```
 
-Given this relatively low reliability in our longitudinal datasets (which also tended to be from younger children), we chose to measure relationships between LWL and vocabulary using longitudinal growth models. We began by reproducing the analysis reported in @fernald2012, in which longitudinal growth in productive vocabulary was predicted based on reaction time at study initiation. We fit a mixed effects model predicting growth in vocabulary as a quadratic function of age, reaction time at initiation ($t_0$), and their interaction (as well as random effects of age by participant and by dataset). This model revealed a significant effect of $t_0$ reaction time (`r papaja::apa_print(growth_mod)$full_result$rt_t0`) and an interaction between $t_0$ reaction time and the quadratic age predictor (`r papaja::apa_print(acc_var_mod)$full_result$polyage_15_22_rt_t0`). This analysis suggests that children with faster reaction times show both larger vocabularies and faster vocabulary growth over time, confirming that findings from @fernald2012 were robust across the full dataset. 
+Given this relatively low reliability in our longitudinal datasets (which also tended to be from younger children), we chose to measure relationships between LWL and vocabulary using longitudinal growth models. We began by reproducing the analysis reported in @fernald2012, in which longitudinal growth in productive vocabulary was predicted based on RT during the initial session of the study. We fit a mixed effects model predicting growth in vocabulary as a quadratic function of age, RT at study initiation ($t_0$), and their interaction (as well as random effects of age by participant and by dataset). This model revealed a significant effect of $t_0$ RT (`r papaja::apa_print(growth_mod)$full_result$rt_t0`) and an interaction between $t_0$ RT and the quadratic age predictor (`r papaja::apa_print(growth_mod)$full_result$polyage_15_22_rt_t0`). This analysis suggests that children with faster initial RTs show both larger vocabularies and faster vocabulary growth over time, confirming that findings from @fernald2012 were robust across the full dataset. 
 
 ```{r prep_long_data}
 # rename and scale variables
@@ -604,9 +645,9 @@ slopes_long <- growth(slopes_model_long, d_sub_wide_fine, std.lv=TRUE, missing='
 slopes_long_summary <- suppressMessages(summary(slopes_long, fit.measures=TRUE, standardize=TRUE))
 ```
 
-On the other hand, it is possible that differences in predicted growth trajectories is due to overall coupling between vocabulary size and language processing, rather than a specifically predictive relationship between $t_0$ reaction time and vocabulary growth. To test this relationship, we used longitudinal structural equation models. We separated the longitudinal speed, accuracy, and vocabulary data into two-month bins spanning up to 10 months ($t_0 ... t_4$) and fit individual growth across each of these variables. We used full-information maximum likelihood to handle the substantial missing data caused by the different longitudinal sampling schemes of studies in our dataset. (We present a model of coupled growth in the observed variables here for simplicity; see SI for a comparable model using growth in the latent factors). The fitted longitudinal model is shown in Figure \ref{fig:longitudinal}. Overall fit statistics were generally acceptable (Confirmatory fit index: `r round(slopes_long_summary$fit["cfi"], 3)`, RMSE: `r round(slopes_long_summary$fit["rmsea"], 3)`, RMSE $p$-value: `r round(slopes_long_summary$fit["rmsea.pvalue"], 3)`). 
+On the other hand, it is possible that differences in predicted growth trajectories are due to overall coupling between vocabulary size and language processing, rather than a specifically predictive relationship between $t_0$ RT and vocabulary growth. To test this relationship, we used longitudinal structural equation models. We separated the longitudinal speed, accuracy, and vocabulary data into two-month bins spanning up to 10 months ($t_0 ... t_4$) and fit individual growth across each of these variables. We used full-information maximum likelihood to handle the substantial missing data caused by the different longitudinal sampling schemes of studies in our dataset. (We present a model of coupled growth in the observed variables here for simplicity; see SI for a comparable model using growth in the latent factors). The fitted longitudinal model is shown in Figure \ref{fig:longitudinal}. Overall fit statistics were generally acceptable (Confirmatory fit index: `r round(slopes_long_summary$fit["cfi"], 3)`, RMSE: `r round(slopes_long_summary$fit["rmsea"], 3)`, RMSE $p$-value: `r round(slopes_long_summary$fit["rmsea.pvalue"], 3)`). 
 
-Our key question of interest concerned coupling between the parameters of these growth models. Consistent with the idea that overall faster processing is related to vocabulary growth, we saw significant coupling between processing speed intercepts and vocabulary growth slopes ($\beta=$ `r round(slopes_long_summary$pe[63,"est"],3)`, SE = `r round(slopes_long_summary$pe[63,"se"],3)`, $p =$ `r round(slopes_long_summary$pe[63,"pvalue"],3)`) as well as a variety of other couplings. There was not significant coupling between growth in reaction time and growth in vocabulary ($\beta=$ `r round(slopes_long_summary$pe[65,"est"],3)`, SE = `r round(slopes_long_summary$pe[65,"se"],3)`, $p =$ `r round(slopes_long_summary$pe[65,"pvalue"],3)`). These abilities might grow independently, but we cannot rule out other possibilities. First, the longitudinal data we had might not allow sufficiently precise estimates of growth slopes, or second, since vocabulary growth is non-linear, the linear model we used here might not be as sensitive to non-linear changes. 
+Our key question of interest concerned coupling between the parameters of these growth models. Consistent with the idea that overall faster processing is related to vocabulary growth, we saw significant coupling between processing speed intercepts and vocabulary growth slopes ($\beta=$ `r round(slopes_long_summary$pe[63,"est"],3)`, SE = `r round(slopes_long_summary$pe[63,"se"],3)`, $p =$ `r round(slopes_long_summary$pe[63,"pvalue"],3)`) as well as a variety of other couplings. There was not significant coupling between growth in RT and growth in vocabulary ($\beta=$ `r round(slopes_long_summary$pe[65,"est"],3)`, SE = `r round(slopes_long_summary$pe[65,"se"],3)`, $p =$ `r round(slopes_long_summary$pe[65,"pvalue"],3)`). These abilities might grow independently, but we cannot rule out other possibilities. First, the longitudinal data we had might not allow sufficiently precise estimates of growth slopes, or second, since vocabulary growth is non-linear, the linear model we used here might not be as sensitive to non-linear changes. 
 
 In sum, these findings provide further evidence consistent with the claim that faster processing is related to longitudinal growth in vocabulary [@fernald2006;@Weisleder2013]. Children with greater skill in word recognition learn words faster.
 
@@ -746,15 +787,15 @@ prepare_graph(edges=edges, nodes=nodes, text_size = 2, layout = t(layout),angle=
 
 # Discussion {.unnumbered}
 
-How does word recognition change across early childhood, and how does it relate to language learning? We investigated these questions using a new dataset of developmental eye-tracking measurements. We found continuous developmental changes from ages 1 -- 6 years. Speed and accuracy both improved asymptotically, with evidence that recognition speed showed the log-log relationship associated with the "power law of practice", that is, gradually converging on mature levels of processing efficiency. Further, trial-to-trial variability decreased, consistent with both the literature on skill learning [@todorov2002optimal] and other work on developmental changes in variability [@judd2021working;@galeano2018variability;@kautto2023introducing]. Speed and accuracy were both related to vocabulary size concurrently, and processing speed was also related to later vocabulary growth. 
+How does word recognition change across early childhood and how does it relate to language learning? We investigated these questions using a new, large-scale dataset of developmental eye-tracking measurements compiled across many prior studies. We found continuous developmental changes from ages 1 -- 6 years. Speed and accuracy both improved asymptotically, with evidence that recognition speed showed the log-log relationship associated with the "power law of practice", that is, gradually converging on mature levels of processing efficiency. Further, trial-to-trial variability decreased, consistent with both the literature on skill learning [@todorov2002optimal] and other work on developmental changes in variability [@judd2021working;@galeano2018variability;@kautto2023introducing]. Speed and accuracy were both related to vocabulary size concurrently and processing speed was also related to later vocabulary growth. 
 
 Together, our findings are consistent with theories that posit that language learning is a process of skill acquisition, in which children become adept at quickly converting ephemeral signals into meaning [@christiansen2016]. This skill develops gradually over the course of early childhood and supports word learning. Further, our results point to consistency between skill development in early childhood and the continued refinement of language processing and language knowledge during middle childhood [@mcmurray2022slow;@colby2023efficiency].
 
-By aggregating data from many pre-existing studies, we were able to overcome the limitations of prior investigations, which typically had samples sizes at least an order of magnitude smaller than ours. In contrast to individual studies, which typically only have statistical power to test specific contrasts, our "big data" approach provided the sample sizes necessary to fit complex structural equation models and to compare different functional forms for developmental change. Because early language is so variable [@frank2021], these kinds of samples -- thousands, rather than dozens of children -- are likely to be required to gain further insight into the psychometrics of early language learning. 
+By aggregating data from many pre-existing studies, we were able to overcome the limitations of prior investigations, which typically had sample sizes at least an order of magnitude smaller than ours. In contrast to individual studies, which typically have at best the statistical power to test one or two specific contrasts, our "big data" approach provided the sample sizes necessary to fit complex structural equation models and to compare different functional forms for developmental change. Because early language is so variable [@frank2021], these kinds of samples -- with thousands, rather than dozens of children -- are likely to be required to gain further insight into the psychometrics of early language learning [bergelson2023;@frank2017;@frank2021;@manybabies2020]. 
 
-At the same time, our approach is both observational and exploratory. Thus, we cannot untangle a variety of different causal models for the variation we observed. Early word recognition skill could lead to faster word learning, due to skilled children gleaning more information from the same signal [@fernald2006]. But faster children could also be faster due to their larger vocabulary and stronger lexical representations. These two causal directions could also interact reciprocally, leading to a "rich get richer process" in which children with larger vocabularies process faster, and their faster processing helps them increase their vocabulary size more rapidly. Or a third shared factor -- perhaps general cognitive ability -- could underpin both processes. Our cross-sectional data cannot distinguish these hypotheses even in principle [@vanderweele2023dimensional], and our longitudinal data are likely too sparse to distinguish such complex causal models. Thus, these questions remain an open target for dense longitudinal data collection.
+At the same time, our approach is both observational and exploratory. Thus, we cannot untangle the range of different causal models that explain the variation we observed. First, early word recognition skill could lead to faster word learning, due to skilled children gleaning more information from the same signal [@fernald2006]. But second, faster children could also be faster due to their larger vocabulary and stronger lexical representations. These two causal directions could also interact reciprocally, leading to a "rich get richer" process in which children with larger vocabularies process faster, and their faster processing helps them increase their vocabulary size more rapidly. Finally, a third shared factor -- perhaps general cognitive ability -- could underpin both processes. Our cross-sectional data cannot distinguish these hypotheses even in principle [@vanderweele2023dimensional], and our longitudinal data are likely too sparse to distinguish such complex causal models. Thus, these questions remain an open target for dense longitudinal data collection.
 
-Our findings here are limited in their generalizability by the convenience samples that were used in the individual studies in the Peekbank database. These studies typically (but not always) represent children from well-educated parents living in university-adjacent communities. We would not expect that specific numerical parameters estimated in this aggregate convenience sample would generalize to other samples. Nevertheless, the consistency of the trends we observed across datasets suggest that our qualitative conclusions are robust to some significant sociodemographic variation.
+Our findings here are limited in their generalizability by the convenience samples that were used in the individual studies in the Peekbank database. These studies typically (but not always) represent children from well-educated parents living in university-adjacent communities. We would not expect that specific numerical parameters estimated in this aggregate convenience sample would generalize to other samples. Nevertheless, the consistency of the trends we observed across datasets suggests that our qualitative conclusions are robust to some significant sociodemographic variation.
 
 More broadly, our results here suggest the continued importance of the looking-while-listening paradigm as an index of children's language processing abilities. If language learning is, at least in part, a process of skill learning, then measurement of this skill is a critical window into understanding the remarkable process of language learning.
 
