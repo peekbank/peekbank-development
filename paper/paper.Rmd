@@ -124,6 +124,8 @@ suppressPackageStartupMessages(library(papaja))
 
 source(here("helper","common.R"))
 
+source(here("helper/modified_sem_plot.R"))
+
 d_trial <- readRDS(here("cached_intermediates","1_d_trial.Rds")) |>
   mutate(log_age = log(age))
 d_sub <- readRDS(here("cached_intermediates","1_d_sub.Rds")) |>
@@ -226,35 +228,106 @@ datasets_with_age_variation <- d_trial |>
 d_sub_agevar <- d_sub |>
   filter(dataset_name %in% datasets_with_age_variation$dataset_name)
 
+#library(RColorBrewer)
+
+  mycolors = c("#1B9E77", "#D95F02", "#E7298A", "#66A61E", "#1B9E77", "#D95F02", "#E7298A", "#66A61E", "#1B9E77", "#D95F02", "#E7298A", "#66A61E","#1B9E77", "#D95F02")
+  # 4 colors from brewer scale "Dark2" that I thought had decent contrast against the grey/black background dots
+  
+
 a <- ggplot(d_sub,
        aes(x = age, y = long_window_accuracy)) + 
-  geom_point(alpha = .05) + 
-  geom_smooth(method = "lm") +
+  geom_point(alpha = .02) + 
   geom_smooth(data = d_sub_agevar,
               aes(group = dataset_name, col = dataset_name), se=FALSE,
-              alpha = .1, method = "lm", size = .5, lty = 2) + 
+              alpha = 1, method = "lm", size = .5, lty = 2) + 
+    geom_smooth(method = "lm") +
   geom_hline(yintercept = .5, lty = 2) + 
   scale_x_log10() +
-  scale_color_discrete(guide = FALSE) + 
+  scale_color_manual(values=mycolors, guide = FALSE) + 
   ylab("Accuracy") + 
   xlab("Age (months)")
 
 b <- ggplot(d_sub,
        aes(x = age, y = rt)) + 
-  geom_point(alpha = .05) + 
-  geom_smooth(method = "lm") +
+  geom_point(alpha = .02) + 
   geom_smooth(data = d_sub_agevar,
               aes(group = dataset_name, col = dataset_name), se=FALSE,
               alpha = .1, method = "lm", size = .5, lty = 2) + 
+    geom_smooth(method = "lm") +
   scale_x_log10() +
   scale_y_log10() +
-  scale_color_discrete(guide = FALSE) + 
+  scale_color_manual(values=mycolors, guide = FALSE) + 
   theme(legend.position = "bottom") + 
   ylab("Reaction Time (log)") + 
   xlab("Age (months)")
 
 cowplot::plot_grid(a,b)
 ```
+
+
+```{r growth, fig.cap="TODO veronica messing around. Dark blue is fastest RT, dark red is slowest RT -- not sure what the ideal legend is.", fig.env="figure*", fig.height = 2.5, fig.width=4, out.width=".5\\textwidth"}
+
+library(nlme)
+
+datasets_with_age_variation <- d_trial |>
+  group_by(dataset_name) |>
+  summarise(age_range = max(age) - min(age)) |>
+  filter(age_range >= AGEVAR_CUTOFF)
+
+  d_sub_prod <- filter(d_sub, !is.na(prod)) |>
+  group_by(subject_id) |>
+  mutate(log_rt_0 = log_rt[1],
+         acc_0 = long_window_accuracy[1]) |> 
+  filter(!is.na(log_rt_0))
+
+mod3 <- nlme(model = prod ~ SSlogis(age, Asym = 1, xmid, scale),
+             data = d_sub_prod,
+             fixed = xmid + scale ~ log_rt_0,
+             random = xmid + scale ~ 1,
+             groups = ~ dataset_name,
+             start = c(xmid = 20, scale = 3, `xmid:log_rt_0` = 1, `scale:log_rt_0` = 3),
+             na.action = na.exclude, 
+             control = list(maxIter = 1000, tolerance = 10))
+
+# fixed effects (no CIs)
+global_preds <- expand_grid(age = seq(min(d_sub_prod$age), 
+                                      max(d_sub_prod$age), .1), 
+                            log_rt_0 = c(quantile(d_sub_prod$log_rt, 
+                                                  c(.1,.25,.5,.75,.9), 
+                                                  na.rm=TRUE)))
+global_preds$pred <- predict(mod3, newdata = global_preds, level = 0)
+
+
+#random effects
+dataset_preds <- d_sub |>
+  filter(!is.na(prod)) |> # filter on predictor
+  group_by(dataset_name) |>
+  summarise(min_age = min(age),
+            max_age = max(age)) |>
+  group_by(dataset_name) |>
+  mutate(df = map2(min_age, max_age, ~expand_grid(age = seq(.x, .y, .1), log_rt_0 = c(quantile(d_sub_prod$log_rt, 
+                                                  c(.1,.25,.5,.75,.9), 
+                                                  na.rm=TRUE))))) |>
+  select(-min_age, -max_age) |>
+  unnest(col = "df") |>
+  ungroup()
+
+library(viridis)
+dataset_preds$pred <- predict(mod3,
+                              newdata = dataset_preds,
+                              level = c(0,1))$predict.dataset_name
+
+ggplot(d_sub_prod, aes(x = age, y = prod, col = as.factor(log_rt_0))) + 
+  geom_point(alpha = .02, color="black") + 
+  geom_line(data = dataset_preds |>   filter(dataset_name %in% datasets_with_age_variation$dataset_name), aes(y = pred, group = interaction(log_rt_0, dataset_name)), lty="dashed", alpha=.5)+
+    geom_line(data = global_preds, aes(y = pred, group = log_rt_0, col = as.factor(log_rt_0)), size=1)+
+  scale_color_viridis(discrete=T, option="H")+
+  theme(legend.position = "none")+
+  labs(y="Production", x="Age in months")
+# +
+#   geom_line(data = dataset_preds, aes(y = pred))
+```
+
 
 ## Variability of word recognition decreases {.unnumbered}
 
@@ -272,27 +345,29 @@ rt_var_mod <- lmer(log_rt_var ~ log_age_s + (log_age_s | dataset_name) +
 One further hallmark of increasing skill is a decrease in task-relevant variability [@todorov2002optimal]. Both within and across datasets, variation in accuracy and reaction time decreased across datasets, again relatively continuously across the developmental range we examined (Figure \ref{fig:variance}). We fit mixed effects models to the standard deviation of both accuracy and reaction time for each testing session for each participant, including random slopes of log age by dataset and random intercepts for each participant. For both speed and accuracy, variability decreased with age (RT: `r papaja::apa_print(rt_var_mod)$full_result$log_age_s`; accuracy: `r papaja::apa_print(acc_var_mod)$full_result$log_age_s`). Thus, as well as being faster and more accurate, older children appear to be more consistent in their online word recognition.
 
 ```{r variance, fig.cap="Participant-level variability in accuracy and reaction time (log RT), plotted by age (log). Plotting conventions are as in Figure 1.", fig.env="figure*", fig.height = 2.5}
+  mycolors = c("#1B9E77", "#D95F02", "#E7298A", "#66A61E", "#1B9E77", "#D95F02", "#E7298A", "#66A61E", "#1B9E77", "#D95F02", "#E7298A", "#66A61E","#1B9E77", "#D95F02")
+
 c <- ggplot(d_sub,
        aes(x = age, y = long_window_acc_var)) + 
-  geom_point(alpha = .05) + 
-  geom_smooth(method = "lm") +
+  geom_point(alpha = .02) + 
   geom_smooth(data = d_sub_agevar,
               aes(group = dataset_name, col = dataset_name), se=FALSE,
               alpha = .1, method = "lm", size = .5, lty = 2) + 
+    geom_smooth(method = "lm") +
   scale_x_log10() +
-  scale_color_discrete(guide = FALSE) + 
+  scale_color_manual(values=mycolors, guide = FALSE) + 
   ylab("SD of Accuracy)") + 
   xlab("Age (months)")
 
 d <- ggplot(d_sub,
        aes(x = age, y = log_rt_var)) + 
-  geom_point(alpha = .05) + 
-  geom_smooth(method = "lm") +
+  geom_point(alpha = .02) + 
   geom_smooth(data = d_sub_agevar,
               aes(group = dataset_name, col = dataset_name), se=FALSE,
               alpha = .1, method = "lm", size = .5, lty = 2) + 
+    geom_smooth(method = "lm") +
   scale_x_log10() +
-  scale_color_discrete(guide = FALSE) + 
+  scale_color_manual(values=mycolors, guide = FALSE) + 
   theme(legend.position = "bottom") + 
   ylab("SD of log RT)") + 
   xlab("Age (months)")
@@ -365,7 +440,40 @@ layout_age = matrix(nrow=5, ncol = 6,
                          "acc_sd", "prod","comp"), 
                 byrow = TRUE)
 
-graph_sem(model = fit3_age, text_size = 2, layout = t(layout_age))
+
+node_text <- tibble(name=c("acc", "acc_sd", "accuracy", "comp", "log_age", "log_rt", "log_rt_sd", "prod", "speed", "vocab"), pretty=c("Accuracy", "Accuracy (sd)", "Accuracy", "Comprehension", "Age (log months)", "log RT", "log RT (SD)", "Production", "Speed", "Vocabulary"))
+
+nodes <- get_nodes(fit3_age) |> tibble() |> left_join(node_text) |> mutate(label=ifelse(shape=="oval",pretty, str_c(pretty, "\n", est_sig)))
+
+
+edges <- get_edges(fit3_age) |> filter(label!="1.00") |> mutate(label_location=.5) |> mutate(label_hjust=.5, label_vjust=.5, label_lineheight=1.5)
+
+edges[9, "label_hjust"]=1
+edges[7, "label_hjust"]=1
+
+edges[18, "label_hjust"]=0
+edges[16, "label_hjust"]=0
+
+edges[17,"curvature"]=50
+edges[17,"label_location"]=.6
+
+source(here("helper/modified_sem_plot.R"))
+
+#View(edges)
+prepare_graph(edges=edges, nodes=nodes, text_size = 2.5, layout = t(layout_age),
+          rect_width=4.2,
+          rect_height=3,
+          ellipses_width=3,
+          ellipses_height=3,
+          variance_height=2,
+          variance_width=1.5,
+          arrow_angle=15,
+          arrow_length=.1,
+          var_arrow_angle=15,
+          var_arrow_length=.1,
+          spacing_y=4,
+          spacing_x=4,
+          fix_coord=FALSE) |> plot_happy_arrows()
 ```
 
 Figure \ref{fig:age_regression} shows a regression model fit to this confirmatory factor analysis, with log age predicting each latent variable. This regression model allows interpretation of the covariances between latent factors as partial correlations (controlling for age). All three latent factors were significantly related to one another, with speed and accuracy showing strong negative covariance ($\beta=$ `r round(fit3_age_summary$pe[21,"est"],3)`, SE = `r round(fit3_age_summary$pe[21,"se"],3)`, $p < .0001$) and weaker but significant covariation between speed and vocabulary ($\beta=$ `r round(fit3_age_summary$pe[20,"est"],3)`, SE = `r round(fit3_age_summary$pe[20,"se"],3)`, $p < .0001$) and accuracy and vocabulary ($\beta=$ `r round(fit3_age_summary$pe[19,"est"],3)`, SE = `r round(fit3_age_summary$pe[19,"se"],3)`, $p < .0001$). This model supports the idea that individual variation in speed and accuracy of word recognition is concurrently related to vocabulary beyond effects of age. 
@@ -505,7 +613,134 @@ In sum, these findings provide further evidence consistent with the claim that f
 
 ```{r longitudinal, fig.env="figure*", height = 3.5, fig.cap = "Structural equation model showing longitudinal couplings between growth parameters. "}
 layout <- read.csv(here("misc/layout_slopes_observed_growth.csv"), header = FALSE)
-graph_sem(model = slopes_long, text_size = 2, layout=t(layout))
+
+acc_color <- "#B2DF8A"
+rt_color <- "#FB9A99"
+prod_color <- "#FFFF99"
+
+intercept_color <- "#1F78B4"
+intercept_background <- "#A6CEE3"
+slope_color <- "#FF7F00"
+slope_background <- "#FDBF6F"
+
+#"#A6CEE3" "#1F78B4" "#B2DF8A" "#33A02C"
+# [5] "#FB9A99" "#E31A1C" "#FDBF6F" "#FF7F00"
+# [9] "#CAB2D6" "#6A3D9A" "#FFFF99" "#B15928"
+node_text <- tribble(~name, ~ pretty, ~fill, 
+                     "acc_t0", "t0 Accuracy", acc_color,
+                     "acc_t1", "t1 Accuracy", acc_color,
+                     "acc_t2", "t2 Accuracy",acc_color,
+                     "acc_t3", "t3 Accuracy",acc_color,
+                     "acc_t4", "t4 Accuracy",acc_color,
+                     "accuracy_intercept", "Accuracy intercept",acc_color,
+                     "accuracy_slope", "Accuracy slope",acc_color,
+                     "log_rt_t0", "t0 log RT",rt_color,
+                     "log_rt_t1", "t1 log RT",rt_color,
+                     "log_rt_t2", "t2 log RT",rt_color,
+                     "log_rt_t3", "t3 log RT",rt_color,
+                     "log_rt_t4", "t4 log RT",rt_color,
+                     "prod_t0" , "t0 Production", prod_color,
+                     "prod_t1" , "t1 Production",  prod_color,
+                     "prod_t2" , "t2 Production" ,  prod_color,
+                     "prod_t3", "t3 Production",         prod_color,
+                     "prod_t4", "t4 Production" , prod_color,
+                     "speed_intercept" , "Speed intercept" , rt_color,
+                     "speed_slope" , "Speed slope",rt_color,
+                     "vocab_intercept", "Vocabulary intercept", prod_color,
+                     "vocab_slope", "Vocabulary slope",  prod_color ) |> 
+  mutate(alpha=.1)
+
+nodes <- get_nodes(slopes_long) |> tibble() |> left_join(node_text) |> mutate(label=pretty)
+
+
+edges <- get_edges(slopes_long) |> mutate(label_location=.5) |> mutate(label=ifelse(arrow=="last", NA, label)) |>  mutate(connect_from=ifelse(to==from, "right",NA),
+                    connect_to=connect_from) |> 
+  mutate(color="black", label_hjust=.5, label_location=.5, label_fill="white")
+
+edges[52,"curvature"]=85
+#edges[52,"color"]="blue"
+edges[61,"curvature"]=85
+#edges[61,"color"]="blue"
+edges[66,"curvature"]=85
+#edges[66,"color"]="blue"
+edges[52, "label_hjust"]=0
+edges[61, "label_hjust"]=0
+edges[66, "label_hjust"]=0
+
+
+
+edges[54,"curvature"]=85
+edges[54, "label_hjust"]=0
+
+edges[63,"curvature"]=85
+edges[63, "label_hjust"]=0
+
+
+edges[53,"curvature"]=80
+edges[53,"color"]=intercept_color
+edges[53, "label_fill"]=intercept_background
+edges[55,"curvature"]=82
+edges[55,"label_location"]=.55
+
+edges[55,"color"]=intercept_color
+edges[55, "label_fill"]=intercept_background
+
+edges[62,"curvature"]=80
+edges[62,"color"]=intercept_color
+edges[62, "label_fill"]=intercept_background
+
+edges[53, "label_location"]=.6
+edges[53, "label_hjust"]=0.4
+
+
+
+edges[58,"curvature"]=80
+edges[58,"color"]=slope_color
+edges[58, "label_fill"]=slope_background
+
+edges[60,"curvature"]=82
+edges[60,"color"]=slope_color
+edges[60, "label_fill"]=slope_background
+edges[60,"label_location"]=.45
+edges[65,"curvature"]=80
+edges[65,"color"]=slope_color
+edges[65, "label_fill"]=slope_background
+edges[65, "label_location"]=.4
+edges[53, "label_hjust"]=0.4
+
+
+
+edges[59,"curvature"]=77
+
+edges[64,"curvature"]=75
+edges[56,"curvature"]=75
+edges[57,"curvature"]=75
+
+
+source(here("helper/modified_sem_plot.R"))
+#View(edges)
+prepare_graph(edges=edges, nodes=nodes, text_size = 2, layout = t(layout),angle=0,
+          rect_width=1.5,
+          rect_height=2,
+          ellipses_width=1.5,
+          ellipses_height=3,
+          variance_width= .5,
+          variance_height=1.3,
+          var_arrow_angle=10,
+          var_arrow_length=.05,
+          arrow_angle=15,
+          arrow_length=.07,
+          variance_diameter=1,
+          spacing_y=2.5,
+          spacing_x=1.5,
+          fix_coord=FALSE) |> 
+  edit_edges({connect_from=case_when(
+    (to==from & from %in% c("accuracy_intercept","accuracy_slope","speed_slope",
+                          "speed_intercept", "vocab_slope", "vocab_intercept"))~"bottom",
+    to==from ~ "right",
+    !is.na(curvature)~"left",
+    T ~ "right")}) |> 
+  plot_happy_arrows()
 ```
 
 

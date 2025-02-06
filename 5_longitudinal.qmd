@@ -643,18 +643,18 @@ Now let's use t0 processing attributes in a regression.
 d_sub_prod <- d_sub_prod |>
   group_by(subject_id) |>
   mutate(log_rt_0 = log_rt[1],
-         acc_0 = long_window_accuracy[1])
+         acc_0 = long_window_accuracy[1]) |> 
+  filter(!is.na(log_rt_0))
 
 mod3 <- nlme(model = prod ~ SSlogis(age, Asym = 1, xmid, scale),
              data = d_sub_prod,
              fixed = xmid + scale ~ log_rt_0,
              random = xmid + scale ~ 1,
              groups = ~ dataset_name,
-             start = c(xmid = 20, scale = 3, `xmid:log_rt_0` = 0, `scale:log_rt_0` = 3),
+             start = c(xmid = 20, scale = 3, `xmid:log_rt_0` = 1, `scale:log_rt_0` = 3),
              na.action = na.exclude, 
              control = list(maxIter = 1000, tolerance = 10))
 
-summary(mod3)
 ```
 
 ```{r}
