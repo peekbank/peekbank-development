@@ -1,5 +1,5 @@
 ---
-title: Continuous developmental changes in word recognition across early childhood support early language learning
+title: Continuous developmental changes in word recognition support language learning across early childhood 
 
 # Use letters for affiliations, numbers to show equal authorship (if applicable) and to indicate the corresponding author
 author:
@@ -28,11 +28,11 @@ author_contributions: |
   Please provide details of author contributions here.
 
 abstract: |
-  Being a fluent language user involves understanding language as it unfolds in time. How does this skill develop over the course of early childhood?  And how does facility in word recognition relate to the growth of vocabulary?  We address these questions using data from Peekbank, an open database of eye-tracking experiments on children's early word recognition.  Combining 24 datasets with data from almost 2,000 children ages 1--6 years, we show that word recognition becomes faster, more accurate, and less variable across development, both within and across studies. Factor analysis reveals a cross-sectional coupling of word recognition speed and accuracy to parent-reported vocabulary. Across a range of models, speed, accuracy, and vocabulary also show coupled growth such that children with faster initial language processing tend to show larger vocabulary growth. Together, these findings support the view that language processing is a skill, and that this skill plays a role in early language learning. 
+  Being a fluent language user involves understanding language as it unfolds in time. How does this skill develop over the course of early childhood?  And how does facility in word recognition relate to the growth of vocabulary knowledge?  We address these questions using data from Peekbank, an open database of eye-tracking experiments on children's early word recognition.  Combining 24 datasets from almost 2,000 children ages 1--6 years, we show that word recognition becomes faster, more accurate, and less variable across development, both within and across studies. Factor analysis reveals a cross-sectional coupling of word recognition speed and accuracy to parent-reported vocabulary. Across a range of models, speed, accuracy, and vocabulary also show coupled growth such that children with faster initial language processing tend to show larger vocabulary growth. Together, these findings support the view that language processing is a skill and that this skill plays a role in supporting early language learning. 
 
 
 significance: |
-  Early language development is a key part of children's development that also sets the stage for later academic success. The efficiency with which children recognize words provides a measurement of their real-time language processing, which has been argued to be a key part of the learning process. Here we use a large dataset of eye-tracking data from many different experiments to map out the development of word recognition, finding that this process becomes faster, more accurate, and less variable in the period between one and six years of age, and that children who are better at word recognition tend to have larger and faster growing vocabularies. These data suggest that understanding language is a skill that improves gradually with practice.
+  Early language development is a key part of children's development that also sets the stage for later academic success. The efficiency with which children recognize words provides a measurement of their real-time language processing, which has been argued to be a key part of the learning process. Her, we use a large dataset of eye-tracking data from many different experiments to map out the development of word recognition, finding that this process becomes faster, more accurate, and less variable in the period between one and six years of age, and that children who are better at word recognition tend to have larger and faster growing vocabularies. These data suggest that understanding language is a skill that improves gradually with practice.
 
 acknowledgements: |
   This work was supported by a grant from the Jacobs Foundation. 
