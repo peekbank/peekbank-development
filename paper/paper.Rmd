@@ -128,13 +128,13 @@ Word recognition ability, as measured by LWL, is hypothesized to play a key role
     & Total & 1963 & 3554 & 24.73 & 12.00 & 60.00 & 12.74 & 5.05 & 15 & 6 \\ 
    \hline
 \end{tabular}
-\caption{Characteristics of included datasets from Peekbank. `Admins` denotes separate experimental sessions. `CDIs` refers to whether the dataset contains parent report vocabulary data from the MacArthur-Bates Communicative Development Inventory.} 
+\caption{Characteristics of included datasets from Peekbank. `Admins` denotes separate experimental sessions. `CDIs` refers to whether the dataset contains parent report vocabulary data from the MacArthur-Bates Communicative Development Inventory. \label{tab:datasets}} 
 \end{table*}
 
 Word recognition speed has been used as an index of individual differences in early childhood [@fernald2006;@marchman2008;@peter2019;@fernald2012;@newbury2016interrelationships] and beyond [@colby2023efficiency;@jeppsen2022development;@mcmurray2022slow]. Over and above measures of vocabulary size, word recognition speed at 18 months predicts children's standardized test scores years later [@marchman2008], though these predictions may be limited to particular ages or processing assessments [@peter2019]. Further, faster processing at 18 months is predictive of whether "late talkers" catch up to their peers or require further intervention [@fernald2012].  Critically, all of these assessments use words that children are reported to understand and produce -- they are not indices of vocabulary size but rather of how quickly and accurately they can recognize a spoken word and use it to guide their visual attention to a referent. 
 Yet individual experiments measuring processing with young children typically recruit relatively small samples in a restricted range of ages. These samples provide neither the breadth of ages nor the number of participants needed to estimate the broader dynamics of how word recognition changes developmentally and how it connects with other aspects of early language development (see [@colby2023efficiency; @mcmurray2022slow] for examples of these analyses in school-aged children). To overcome this limitation, we turned to Peekbank, an open database of LWL data from young children, stored in a harmonized format [@zettersten2023peekbank]. This resource allows us to gain an unprecedented view of the development of word recognition across a large sample of children. 
 
-Here we investigate two specific hypotheses. First, one influential theory characterizes language learning as a process of learning the skill of real-time processing [@christiansen2016;@chater2018]. Based on this theory, we should expect to see the signatures of expertise and skill learning in word recognition. Accuracy should change linearly with the logarithm of age, reflecting gradual asymptotic convergence to mature levels of accuracy. In addition, the logarithm of processing speed should decrease with the logarithm of age, potentially reflecting the "power law of practice" [@snoddy1926;@kail1991;@anderson1982; cf @heathcote2000]. Finally, trial-to-trial variability in both speed and accuracy should decrease with increasing expertise [@todorov2002optimal]. 
+Here we investigate two specific hypotheses. First, one influential theory posits that language learning is a process of skill learning, in which the primary challenge of the child is learning to converse with others in real time [@christiansen2016;@chater2018]. Based on this theory, we should expect to see the signatures of expertise and skill learning in word recognition. Accuracy should change linearly with the logarithm of age, reflecting gradual asymptotic convergence to mature levels of accuracy. In addition, the logarithm of processing speed should decrease with the logarithm of age, potentially reflecting the "power law of practice" [@snoddy1926;@kail1991;@anderson1982; cf @heathcote2000]. Finally, trial-to-trial variability in both speed and accuracy should decrease with increasing expertise [@todorov2002optimal]. 
 
 Second, previous findings have provided limited and sometimes conflicting evidence on the concurrent and predictive relations between word recognition and language learning. Initial reports showed strong predictive relationships between both speed and accuracy and later vocabulary growth [@fernald2006], with replications in infants born preterm [@marchman2016] and late talkers [@fernald2012]. Subsequent studies have primarily focused on speed of processing and found more mixed results, with reaction time measures found to be only inconsistently predictive of later vocabulary outcomes [@peter2019;@newbury2016interrelationships;@lany2018]. A larger dataset should allow us to make a more definitive test of the presence of these relationships. Further, by examining the relationship between speed, accuracy, and vocabulary, it should be possible to assess the extent to which processing speed specifically plays a role in vocabulary growth.
 
@@ -459,53 +459,13 @@ Figure \ref{fig:age_regression} shows a regression model fit to this confirmator
 
 ## Speed of processing relates to vocabulary growth {.unnumbered}
 
-```{r reliability}
-MONTH_CUTOFF <- 3
-
+```{r}
 longitudinal <- d_sub |>
   group_by(dataset_name, subject_id) |>
   count() |>
   filter(n > 1)
 
-d_long <- d_sub |>
-  filter(subject_id %in% longitudinal$subject_id) |>
-  group_by(subject_id) |>
-  arrange(age) |>
-  mutate(admin_num = 1:n(), 
-         time_since_t0 = age - age[1],
-         delta_t = c(0, diff(age)))
 
-
-d_reliability <- d_long |>
-  filter(time_since_t0 <= MONTH_CUTOFF, 
-         admin_num <= 2) |>
-  pivot_wider(id_cols = c("subject_id","dataset_name"), 
-              names_from = "admin_num",
-              values_from = c("log_rt", "log_rt_var", "long_window_accuracy", 
-                              "long_window_acc_var", "prod", "comp"))
-
-dataset_reliabilities <- d_reliability |>
-  group_by(dataset_name) |>
-  summarise(rt = cor(log_rt_1, log_rt_2, use = "pairwise.complete.obs"),
-            acc = cor(long_window_accuracy_1, 
-                          long_window_accuracy_2, use = "pairwise.complete.obs")) 
-
-
-# note this is not correct for CDIs because some CDIs can get grouped with two admins, inflating correlations
-global_reliabilities <- d_reliability |>
-  ungroup() |>
-  summarise(rt = cor(log_rt_1, log_rt_2, use = "pairwise.complete.obs"),
-            acc = cor(long_window_accuracy_1, 
-                          long_window_accuracy_2, use = "pairwise.complete.obs"))
-```
-
-
-
-To probe within-person changes, we first examined test-retest reliability for our primary variables of interest by calculating Pearson correlations between pairs of administrations given no more than three months apart. Test-retest correlations were significant but relatively modest ($\rho_{acc} = `r round(global_reliabilities[2], 3)`$, $\rho_{rt} =  `r round(global_reliabilities[1],3)`$), suggesting that, across studies, LWL measures from individual sessions provide relatively noisy measurements of individual children even if individual studies are able to achieve higher reliability by averaging across measurement occasions [e.g., @marchman2008].
-
-
-
-```{r}
 d_growth <- d_sub |>
   filter(!is.na(prod), subject_id %in% longitudinal$subject_id) |>
   group_by(subject_id) |>
@@ -524,7 +484,8 @@ growth_mod <- lmer(prod ~ poly(age_15,2) *rt_t0 + (age  | subject_id) + (1 | dat
 # summary(growth_mod)
 ```
 
-Given this relatively low reliability in our longitudinal datasets (which also tended to be from younger children), we chose to measure relationships between LWL and vocabulary using longitudinal growth models. We began by reproducing the analysis reported in @fernald2012, in which between-person differences in longitudinal growth in productive vocabulary were predicted based on between-person differences in RT during the initial session of the study. We fit a mixed effects model predicting growth in vocabulary as a quadratic function of age, RT at study initiation ($t_0$), and their interaction (as well as random effects of age by participant and by dataset). This model revealed a significant effect of $t_0$ RT (`r papaja::apa_print(growth_mod)$full_result$rt_t0`) and an interaction between $t_0$ RT and the quadratic age predictor (`r papaja::apa_print(growth_mod)$full_result$polyage_15_22_rt_t0`). This analysis suggests that children with faster initial RTs show both larger vocabularies and faster vocabulary growth over time, confirming that findings from @fernald2012 were robust across the full dataset. We confirmed this analysis using a non-linear growth model with a logistic shape, which shows a better fit to vocabulary size than the quadratic model (see SI: Non-Linear Growth Model). Figure \ref{fig:growth} shows predictions from this model, confirming the differentiation of growth curves for children with higher and lower initial reaction time. 
+
+We began investigating relationships between LWL and vocabulary by using longitudinal growth models. We first reproduced the analysis reported in @fernald2012, in which between-person differences in longitudinal growth in productive vocabulary were predicted based on between-person differences in RT during the initial session of the study. We fit a mixed effects model predicting growth in vocabulary as a quadratic function of age, RT at study initiation ($t_0$), and their interaction (as well as random effects of age by participant and by dataset). This model revealed a significant effect of $t_0$ RT (`r papaja::apa_print(growth_mod)$full_result$rt_t0`) and an interaction between $t_0$ RT and the quadratic age predictor (`r papaja::apa_print(growth_mod)$full_result$polyage_15_22_rt_t0`). This analysis suggests that children with faster initial RTs show both larger vocabularies and faster vocabulary growth over time, confirming that findings from @fernald2012 were robust across the full dataset. We confirmed this analysis using a non-linear growth model with a logistic shape, which shows a better fit to vocabulary size than the quadratic model (see SI: Non-Linear Growth Model). Figure \ref{fig:growth} shows predictions from this model, confirming the differentiation of growth curves for children with higher and lower initial reaction time. 
 
 
 ```{r growth, fig.cap="Growth curves from a logistic growth model showing predicted vocabulary growth for the 25th and 75th percentile on initial reaction times. Solid lines show global model estimates and dashed lines show estimates for individual datasets with sufficient age variation as above.", fig.env="figure", fig.height = 2.5, fig.width=4, out.width=".5\\textwidth", include=TRUE}

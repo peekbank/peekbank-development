@@ -25,10 +25,6 @@ ggplot(d_sub, aes(x = age))+
 ```
 
 ```{r, fig.cap="Number of administrations for datasets with repeated measurements."}
-longitudinal <- d_sub |>
-  group_by(dataset_name, subject_id) |>
-  count() |>
-  filter(n > 1)
 
 d_sub_long <- d_sub |>
   filter(subject_id %in% longitudinal$subject_id) |>
@@ -43,6 +39,52 @@ ggplot(d_sub_long,
   # facet_wrap(~dataset_name) + 
   xlab("Age since first test")
 ```
+# Test retest reliability
+
+
+
+```{r reliability}
+MONTH_CUTOFF <- 3
+
+longitudinal <- d_sub |>
+  group_by(dataset_name, subject_id) |>
+  count() |>
+  filter(n > 1)
+
+d_long <- d_sub |>
+  filter(subject_id %in% longitudinal$subject_id) |>
+  group_by(subject_id) |>
+  arrange(age) |>
+  mutate(admin_num = 1:n(), 
+         time_since_t0 = age - age[1],
+         delta_t = c(0, diff(age)))
+
+
+d_reliability <- d_long |>
+  filter(time_since_t0 <= MONTH_CUTOFF, 
+         admin_num <= 2) |>
+  pivot_wider(id_cols = c("subject_id","dataset_name"), 
+              names_from = "admin_num",
+              values_from = c("log_rt", "log_rt_var", "long_window_accuracy", 
+                              "long_window_acc_var", "prod", "comp"))
+
+dataset_reliabilities <- d_reliability |>
+  group_by(dataset_name) |>
+  summarise(rt = cor(log_rt_1, log_rt_2, use = "pairwise.complete.obs"),
+            acc = cor(long_window_accuracy_1, 
+                          long_window_accuracy_2, use = "pairwise.complete.obs")) 
+
+
+# note this is not correct for CDIs because some CDIs can get grouped with two admins, inflating correlations
+global_reliabilities <- d_reliability |>
+  ungroup() |>
+  summarise(rt = cor(log_rt_1, log_rt_2, use = "pairwise.complete.obs"),
+            acc = cor(long_window_accuracy_1, 
+                          long_window_accuracy_2, use = "pairwise.complete.obs"))
+```
+
+
+We examined test-retest reliability for our primary variables of interest by calculating Pearson correlations between pairs of administrations given no more than three months apart. Test-retest correlations were significant but relatively modest ($\rho_{acc} = `r round(global_reliabilities[2], 3)`$, $\rho_{rt} =  `r round(global_reliabilities[1],3)`$). These reliabilities were biased downwards by three factors, however. First, longitudinal assessments sometimes use variable items between testing sessions, leading to item-related variance in measurement. Second, even three months can lead to substantial change in some children's language abilities, thus correlations are attenuated by true change as well as measurement error. Third, longitudinal data in the dataset come primarily from the youngest children and hence are likely to show overall higher measurement error due to variability in children's behavior and an overall lower number of trials. 
 
 # Speed and accuracy
 
