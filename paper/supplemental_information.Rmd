@@ -12,8 +12,8 @@ source(here("helper","common.R"))
 ```
 
 ```{r, echo=FALSE}
-knitr::purl("paper.Rmd", documentation = 0)
-suppressMessages(source("paper.R"))
+knitr::purl(here("paper","paper.Rmd"), documentation = 0)
+suppressMessages(source(here("paper.R")))
 ```
 
 # Dataset description
