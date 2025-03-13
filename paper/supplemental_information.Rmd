@@ -16,7 +16,7 @@ knitr::purl(here("paper","paper.Rmd"), documentation = 0)
 suppressMessages(source(here("paper.R")))
 ```
 
-# Dataset description
+# Dataset Description
 
 ```{r, fig.env="figure*"}
 ggplot(d_sub, aes(x = age))+ 
@@ -39,7 +39,7 @@ ggplot(d_sub_long,
   # facet_wrap(~dataset_name) + 
   xlab("Age since first test")
 ```
-# Test retest reliability
+# Test-Retest Reliability
 
 
 
@@ -86,9 +86,7 @@ global_reliabilities <- d_reliability |>
 
 We examined test-retest reliability for our primary variables of interest by calculating Pearson correlations between pairs of administrations given no more than three months apart. Test-retest correlations were significant but relatively modest ($\rho_{acc} = `r round(global_reliabilities[2], 3)`$, $\rho_{rt} =  `r round(global_reliabilities[1],3)`$). These reliabilities were biased downwards by three factors, however. First, longitudinal assessments sometimes use variable items between testing sessions, leading to item-related variance in measurement. Second, even three months can lead to substantial change in some children's language abilities, thus correlations are attenuated by true change as well as measurement error. Third, longitudinal data in the dataset come primarily from the youngest children and hence are likely to show overall higher measurement error due to variability in children's behavior and an overall lower number of trials. 
 
-# Speed and accuracy
-
-Correlations between variables
+# Correlations
 
 ```{r, results = "asis"}
 
@@ -100,6 +98,7 @@ cor(select(d_sub, age, log_age, rt, log_rt,
 
 ```
 
+# Functional Form Model Comparison
 
 ```{r results="asis"}
 papaja::apa_table(acc_mods_lmer_summary)
@@ -114,11 +113,37 @@ papaja::apa_table(rt_mods_lmer_summary)
 
 With our current dataset we cannot specifically determine whether within-individual patterns of change conform to power law or exponential forms [@kail1991,@heathcote2000], but regardless we see clear patterns of developmental change related to skill acquisition.
 
-# Exploratory Factor Analysis 
 
-- Full EFA results
+
+# Factor Analysis 
+
+```{r}
+d_sub_mat <- d_sub |>
+  ungroup() |>
+  select(dataset_name, rt, rt_var, long_window_accuracy, long_window_acc_var, prod, comp, age) 
+
+d_sub_mat_s <- d_sub_mat |>
+  ungroup() |>
+  mutate(across(all_of(c("rt", "rt_var", "long_window_accuracy", 
+                         "long_window_acc_var", "prod", "comp")), 
+                       ~ age_scale(.x, age))) 
+fa.parallel(select(d_sub_mat, -dataset_name, -age), fa = "fa", 
+            use = "pairwise.complete.obs")
+```
+
+```{r}
+fs <- fa(select(d_sub_mat, -dataset_name), nfactor = 3,
+            use = "pairwise", rotate = "varimax")
+
+as.data.frame(unclass(loadings(fs))) |> 
+  kable(caption = "Factor loadings for the exploratory three factor solution using varimax rotation.", digits = 2)
+```
+
 
 # Alternative Factor Structures
+
+
+
 
 - Alternative factor models: variances together, two factor, etc. etc. 
 
@@ -150,23 +175,131 @@ Interpretation of growth in both this model and the linear growth model in the m
 ```
 
 
+# Latent Factor Growth
 
-# Sensitivity Analysis for Longitudinal Models
 
-THIS IS WRONG
+```{r}
+fa3_model_long <- "
+# measurement model
+vocab_t1 =~ 1*prod_t1 + s1*comp_t1
+accuracy_t1 =~ 1*acc_t1 + s2*acc_sd_t1
+speed_t1 =~ 1*log_rt_t1 + s3*log_rt_sd_t1
 
-```{r reliability_table, results="asis"}
-xtable(dataset_reliabilities)
+vocab_t2 =~ 1*prod_t2 
+accuracy_t2 =~ 1*acc_t2 + s2*acc_sd_t2
+speed_t2 =~ 1*log_rt_t2 + s3*log_rt_sd_t2
+
+vocab_t3 =~ 1*prod_t3 
+accuracy_t3 =~ 1*acc_t3 + s2*acc_sd_t3
+speed_t3 =~ 1*log_rt_t3 + s3*log_rt_sd_t3
+
+vocab_t4 =~ 1*prod_t4 
+accuracy_t4 =~ 1*acc_t4 + s2*acc_sd_t4
+speed_t4 =~ 1*log_rt_t4 + s3*log_rt_sd_t4
+
+# means for the latents
+# vocab_t1 ~ 1
+# vocab_t2 ~ 1
+# vocab_t3 ~ 1
+# vocab_t4 ~ 1
+# accuracy_t1 ~ 1
+# accuracy_t2 ~ 1
+# accuracy_t3 ~ 1
+# accuracy_t4 ~ 1
+# speed_t1 ~ 1
+# speed_t2 ~ 1
+# speed_t3 ~ 1
+# speed_t4 ~ 1
+
+# autoregression for the latents
+# vocab_t2 ~ 1 * vocab_t1
+# vocab_t3 ~ 1 * vocab_t2
+# vocab_t4 ~ 1 * vocab_t3
+# accuracy_t2 ~ 1 * accuracy_t1
+# accuracy_t3 ~ 1 * accuracy_t2
+# accuracy_t4 ~ 1 * accuracy_t3
+# speed_t2 ~ 1 * speed_t1
+# speed_t3 ~ 1 * speed_t2
+# speed_t4 ~ 1 * speed_t3
+
+# regressions
+accuracy_intercept =~ 1*accuracy_t1 + 1*accuracy_t2 + 1*accuracy_t3 + 1*accuracy_t4 
+accuracy_slope =~ 1*accuracy_t1 + 2*accuracy_t2 + 3*accuracy_t3 + 4*accuracy_t4
+speed_intercept =~ 1*speed_t1 + 1*speed_t2 + 1*speed_t3 + 1*speed_t4 
+speed_slope =~ 1*speed_t1 + 2*speed_t2 + 3*speed_t3 + 4*speed_t4
+vocab_intercept =~ 1*vocab_t1 + 1*vocab_t2 + 1*vocab_t3 + 1*vocab_t4 
+vocab_slope =~ 1*vocab_t1 + 2*vocab_t2 + 3*vocab_t3 + 4*vocab_t4
+
+# parameters for the regressions
+vocab_intercept ~ 1
+vocab_slope ~ 1
+accuracy_intercept ~ 1
+accuracy_slope ~ 1
+speed_intercept ~ 1
+speed_slope ~ 1
+
+# residual variance for the latents
+vocab_t1 ~~ NA*vocab_t1
+vocab_t2 ~~ NA*vocab_t2
+vocab_t3 ~~ NA*vocab_t3
+vocab_t4 ~~ NA*vocab_t4
+accuracy_t1 ~~ NA*accuracy_t1
+accuracy_t2 ~~ NA*accuracy_t2
+accuracy_t3 ~~ NA*accuracy_t3
+accuracy_t4 ~~ NA*accuracy_t4
+speed_t1 ~~ NA*speed_t1
+speed_t2 ~~ NA*speed_t2
+speed_t3 ~~ NA*speed_t3
+speed_t4 ~~ NA*speed_t4
+
+# residual variance for the other latents
+vocab_intercept ~~ NA*vocab_intercept
+vocab_slope ~~ NA*vocab_slope
+accuracy_intercept ~~ NA*accuracy_intercept
+accuracy_slope ~~ NA*accuracy_slope
+speed_intercept ~~ NA*speed_intercept
+speed_slope ~~ NA*speed_slope
+
+# set observed intercepts to zero - these should go into the latents
+prod_t1 ~ 0
+prod_t2 ~ 0
+prod_t3 ~ 0
+prod_t4 ~ 0
+comp_t1 ~ 0 
+log_rt_t1 ~ 0
+log_rt_t2 ~ 0
+log_rt_t3 ~ 0
+log_rt_t4 ~ 0
+log_rt_sd_t1 ~ 0 
+log_rt_sd_t2 ~ 0
+log_rt_sd_t3 ~ 0 
+log_rt_sd_t4 ~ 0 
+acc_t1 ~ 0 
+acc_t2 ~ 0 
+acc_t3 ~ 0 
+acc_t4 ~ 0 
+acc_sd_t1 ~ 0
+acc_sd_t2 ~ 0
+acc_sd_t3 ~ 0
+acc_sd_t4 ~ 0
+"
+
+fit3_long <- sem(fa3_model_long, d_sub_wide, std.lv=TRUE, missing='fiml')
+
+summary(fit3_long, fit.measures=TRUE, standardize=TRUE)
+
 ```
 
-Sensitivity analysis for age split point (e.g., split at 3 months)
 
-Sensitivity analysis for measurement invariance (e.g., not constraining loadings)
-
-# Analyses using short window accuracy
-
-## Longitudinal factor analysis
-
-## Longitudinal factor analysis
+```{r}
+layout <- read.csv(here("misc/layout_dt3.csv"), header = FALSE)
 
 
+graph_sem(model = fit3_long, text_size = 3, layout=t(layout))
+
+```
+
+
+# Short Window Analysis
+
+Need to redo all figures using short windows ugh. 
