@@ -112,7 +112,7 @@ papaja::apa_table(acc_mods_lmer_summary)
 papaja::apa_table(rt_mods_lmer_summary)
 ```
 
-
+With our current dataset we cannot specifically determine whether within-individual patterns of change conform to power law or exponential forms [@kail1991,@heathcote2000], but regardless we see clear patterns of developmental change related to skill acquisition.
 
 # Exploratory Factor Analysis 
 
