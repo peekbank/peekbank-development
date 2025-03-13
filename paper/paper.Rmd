@@ -132,10 +132,9 @@ Word recognition ability, as measured by LWL, is hypothesized to play a key role
 \end{table*}
 
 Word recognition speed has been used as an index of individual differences in early childhood [@fernald2006;@marchman2008;@peter2019;@fernald2012;@newbury2016interrelationships] and beyond [@colby2023efficiency;@jeppsen2022development;@mcmurray2022slow]. Over and above measures of vocabulary size, word recognition speed at 18 months predicts children's standardized test scores years later [@marchman2008], though these predictions may be limited to particular ages or processing assessments [@peter2019]. Further, faster processing at 18 months is predictive of whether "late talkers" catch up to their peers or require further intervention [@fernald2012].  Critically, all of these assessments use words that children are reported to understand and produce -- they are not indices of vocabulary size but rather of how quickly and accurately they can recognize a spoken word and use it to guide their visual attention to a referent. 
+Yet individual experiments measuring processing with young children typically recruit relatively small samples in a restricted range of ages. These samples provide neither the breadth of ages nor the number of participants needed to estimate the broader dynamics of how word recognition changes developmentally and how it connects with other aspects of early language development (see [@colby2023efficiency; @mcmurray2022slow] for examples of these analyses in school-aged children). To overcome this limitation, we turned to Peekbank, an open database of LWL data from young children, stored in a harmonized format [@zettersten2023peekbank]. This resource allows us to gain an unprecedented view of the development of word recognition across a large sample of children. 
 
-Yet individual experiments measuring processing with young children typically recruit relatively small samples in a restricted range of ages. These samples provide neither the breadth of ages nor the number of participants needed to estimate the broader dynamics of how word recognition changes developmentally and how it connects with other aspects of language [as has been done with school-aged children; @colby2023efficiency; @mcmurray2022slow]. Here we investigate two hypotheses. 
-
-First, one influential theory characterizes language learning as a process of learning the skill of real-time processing [@christiansen2016;@chater2018]. Based on this theory, we should expect to see the signatures of expertise and skill learning in word recognition. Accuracy should change linearly with the logarithm of age, reflecting gradual asymptotic convergence to mature levels of accuracy. In addition, the logarithm of processing speed should decrease with the logarithm of age, potentially reflecting the  "power law of practice" [@snoddy1926;@kail1991;@anderson1982; cf @heathcote2000]. Finally, trial-to-trial variability in both speed and accuracy should decrease with increasing expertise [@todorov2002optimal]. 
+Here we investigate two specific hypotheses. First, one influential theory characterizes language learning as a process of learning the skill of real-time processing [@christiansen2016;@chater2018]. Based on this theory, we should expect to see the signatures of expertise and skill learning in word recognition. Accuracy should change linearly with the logarithm of age, reflecting gradual asymptotic convergence to mature levels of accuracy. In addition, the logarithm of processing speed should decrease with the logarithm of age, potentially reflecting the  "power law of practice" [@snoddy1926;@kail1991;@anderson1982; cf @heathcote2000]. Finally, trial-to-trial variability in both speed and accuracy should decrease with increasing expertise [@todorov2002optimal]. 
 
 Second, previous findings have provided limited and sometimes conflicting evidence on the concurrent and predictive relations between word recognition and language learning. Initial reports showed strong predictive relationships between both speed and accuracy and later vocabulary growth [@fernald2006], with replications in infants born preterm [@marchman2016] and late talkers [@fernald2012]. Subsequent studies have primarily focused on speed of processing and found more mixed results, with reaction time measures found to be only inconsistently predictive of later vocabulary outcomes [@peter2019;@newbury2016interrelationships;@lany2018]. To the extent that there are consistent relations between vocabulary and word recognition, these should be visible in a larger dataset. Further, by examining the relationship between speed, accuracy, and vocabulary, it should be possible to assess the extent to which processing speed specifically plays a role in vocabulary growth.
 
@@ -148,6 +147,8 @@ suppressPackageStartupMessages(library(lavaan))
 suppressPackageStartupMessages(library(tidySEM))
 suppressPackageStartupMessages(library(xtable))
 suppressPackageStartupMessages(library(papaja))
+suppressPackageStartupMessages(library(viridis))
+suppressPackageStartupMessages(library(nlme))
 
 source(here("helper","common.R"))
 
@@ -175,7 +176,7 @@ knitr::opts_chunk$set(echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE)
 
 # Results {.unnumbered}
 
-To address these questions, we made use of a new release of data in Peekbank, an open database of LWL from young children, stored in a harmonized format [@zettersten2023peekbank]. We retrieved data from children ages 1--6 years. Although experiments in Peekbank include a variety of different experimental manipulations, we analyzed data only from simple word recognition trials in which children were shown two pictures of concrete objects and heard a label for an object (typically embedded in a simple carrier phrase such as "Look at the ..."); these trials often constituted control conditions for experiments. We focus here on English purely for practical reasons -- the Peekbank dataset contains limited data from other languages. 
+We retrieved data from Peekbank, focusing on data from children ages 1--6 years. Although experiments in Peekbank include a variety of different experimental manipulations, we analyzed data only from simple word recognition trials in which children were shown two pictures of concrete objects and heard a label for an object (typically embedded in a simple carrier phrase such as "Look at the ..."); these trials often constituted control conditions for experiments. We focus here on English purely for practical reasons -- the Peekbank dataset contains limited data from other languages. 
 
 These criteria yielded `r length(unique(d_sub$dataset_name))` datasets, including `r length(unique(d_sub$subject_id))` children and `r length(unique(d_sub$administration_id))` administrations of the LWL procedure (some datasets were longitudinal or involved multiple closely-spaced testing sessions). Table \ref{tab:datasets} shows the characteristics of individual datasets (see also Figures S1 and S2). The size of the combined dataset, the unified data processing pipeline, and the fact that individual studies used very similar implementations of the LWL experimental paradigm, all allowed us to make a more detailed study of the development of word recognition than has previously been possible. While our analysis is exploratory in nature, it is guided by the two hypotheses outlined above: the presence of 1) signatures of skill learning in word recognition, and 2) linkages between word recognition and vocabulary.
 
@@ -278,9 +279,9 @@ a <- ggplot(d_sub,
   geom_point(alpha = .02) + 
   geom_smooth(data = d_sub_agevar,
               aes(group = dataset_name, col = dataset_name), se=FALSE,
-              alpha = 1, method = "lm", size = .5, lty = 2) + 
+              alpha = 1, method = "lm", size = .5, lty = 3) + 
     geom_smooth(method = "lm") +
-  geom_hline(yintercept = .5, lty = 2) + 
+  geom_hline(yintercept = .5, lty = 3) + 
   scale_x_log10(breaks = c(12,24,36,48,60)) +
   scale_color_manual(values=mycolors, guide = FALSE) + 
   ylab("Accuracy") + 
@@ -291,7 +292,7 @@ b <- ggplot(d_sub,
   geom_point(alpha = .02) + 
   geom_smooth(data = d_sub_agevar,
               aes(group = dataset_name, col = dataset_name), se=FALSE,
-              alpha = .1, method = "lm", size = .5, lty = 2) + 
+              alpha = .1, method = "lm", size = .5, lty = 3) + 
     geom_smooth(method = "lm") +
   scale_x_log10(breaks = c(12,24,36,48,60)) +
   scale_y_log10() +
@@ -303,69 +304,6 @@ b <- ggplot(d_sub,
 cowplot::plot_grid(a,b)
 ```
 
-
-```{r growth, fig.cap="TODO veronica messing around. Dark blue is fastest RT, dark red is slowest RT -- not sure what the ideal legend is.", fig.env="figure*", fig.height = 2.5, fig.width=4, out.width=".5\\textwidth", include=FALSE}
-
-library(nlme)
-
-datasets_with_age_variation <- d_trial |>
-  group_by(dataset_name) |>
-  summarise(age_range = max(age) - min(age)) |>
-  filter(age_range >= AGEVAR_CUTOFF)
-
-  d_sub_prod <- filter(d_sub, !is.na(prod)) |>
-  group_by(subject_id) |>
-  mutate(log_rt_0 = log_rt[1],
-         acc_0 = long_window_accuracy[1]) |> 
-  filter(!is.na(log_rt_0))
-
-mod3 <- nlme(model = prod ~ SSlogis(age, Asym = 1, xmid, scale),
-             data = d_sub_prod,
-             fixed = xmid + scale ~ log_rt_0,
-             random = xmid + scale ~ 1,
-             groups = ~ dataset_name,
-             start = c(xmid = 20, scale = 3, `xmid:log_rt_0` = 1, `scale:log_rt_0` = 3),
-             na.action = na.exclude, 
-             control = list(maxIter = 1000, tolerance = 10))
-
-# fixed effects (no CIs)
-global_preds <- expand_grid(age = seq(min(d_sub_prod$age), 
-                                      max(d_sub_prod$age), .1), 
-                            log_rt_0 = c(quantile(d_sub_prod$log_rt, 
-                                                  c(.1,.25,.5,.75,.9), 
-                                                  na.rm=TRUE)))
-global_preds$pred <- predict(mod3, newdata = global_preds, level = 0)
-
-
-#random effects
-dataset_preds <- d_sub |>
-  filter(!is.na(prod)) |> # filter on predictor
-  group_by(dataset_name) |>
-  summarise(min_age = min(age),
-            max_age = max(age)) |>
-  group_by(dataset_name) |>
-  mutate(df = map2(min_age, max_age, ~expand_grid(age = seq(.x, .y, .1), log_rt_0 = c(quantile(d_sub_prod$log_rt, 
-                                                  c(.1,.25,.5,.75,.9), 
-                                                  na.rm=TRUE))))) |>
-  select(-min_age, -max_age) |>
-  unnest(col = "df") |>
-  ungroup()
-
-library(viridis)
-dataset_preds$pred <- predict(mod3,
-                              newdata = dataset_preds,
-                              level = c(0,1))$predict.dataset_name
-
-ggplot(d_sub_prod, aes(x = age, y = prod, col = as.factor(log_rt_0))) + 
-  geom_point(alpha = .02, color="black") + 
-  geom_line(data = dataset_preds |>   filter(dataset_name %in% datasets_with_age_variation$dataset_name), aes(y = pred, group = interaction(log_rt_0, dataset_name)), lty="dashed", alpha=.5)+
-    geom_line(data = global_preds, aes(y = pred, group = log_rt_0, col = as.factor(log_rt_0)), size=1)+
-  scale_color_viridis(discrete=T, option="H")+
-  theme(legend.position = "none")+
-  labs(y="Production", x="Age in months")
-# +
-#   geom_line(data = dataset_preds, aes(y = pred))
-```
 
 
 ## Variability of word recognition decreases {.unnumbered}
@@ -391,7 +329,7 @@ c <- ggplot(d_sub,
   geom_point(alpha = .02) + 
   geom_smooth(data = d_sub_agevar,
               aes(group = dataset_name, col = dataset_name), se=FALSE,
-              alpha = .1, method = "lm", size = .5, lty = 2) + 
+              alpha = .1, method = "lm", size = .5, lty = 3) + 
     geom_smooth(method = "lm") +
   scale_x_log10(breaks = c(12,24,36,48,60)) +
   scale_color_manual(values=mycolors, guide = FALSE) + 
@@ -403,7 +341,7 @@ d <- ggplot(d_sub,
   geom_point(alpha = .02) + 
   geom_smooth(data = d_sub_agevar,
               aes(group = dataset_name, col = dataset_name), se=FALSE,
-              alpha = .1, method = "lm", size = .5, lty = 2) + 
+              alpha = .1, method = "lm", size = .5, lty = 3) + 
     geom_smooth(method = "lm") +
   scale_x_log10(breaks = c(12,24,36,48,60)) +
   scale_color_manual(values=mycolors, guide = FALSE) + 
@@ -578,14 +516,74 @@ d_growth <- d_sub |>
 
 d_growth$age_15 <- d_growth$age - 15
 
-growth_mod <- lmer(prod ~ poly(age_15,2) *rt_t0 + (age  | subject_id) + (age | dataset_name), 
+# note that it's singular to add an age by dataset random effect
+growth_mod <- lmer(prod ~ poly(age_15,2) *rt_t0 + (age  | subject_id) + (1 | dataset_name), 
      data = d_growth, 
      control = lmerControl(optimizer = "bobyqa"))
 
 # summary(growth_mod)
 ```
 
-Given this relatively low reliability in our longitudinal datasets (which also tended to be from younger children), we chose to measure relationships between LWL and vocabulary using longitudinal growth models. We began by reproducing the analysis reported in @fernald2012, in which longitudinal growth in productive vocabulary was predicted based on RT during the initial session of the study. We fit a mixed effects model predicting growth in vocabulary as a quadratic function of age, RT at study initiation ($t_0$), and their interaction (as well as random effects of age by participant and by dataset). This model revealed a significant effect of $t_0$ RT (`r papaja::apa_print(growth_mod)$full_result$rt_t0`) and an interaction between $t_0$ RT and the quadratic age predictor (`r papaja::apa_print(growth_mod)$full_result$polyage_15_22_rt_t0`). This analysis suggests that children with faster initial RTs show both larger vocabularies and faster vocabulary growth over time, confirming that findings from @fernald2012 were robust across the full dataset. 
+Given this relatively low reliability in our longitudinal datasets (which also tended to be from younger children), we chose to measure relationships between LWL and vocabulary using longitudinal growth models. We began by reproducing the analysis reported in @fernald2012, in which longitudinal growth in productive vocabulary was predicted based on RT during the initial session of the study. We fit a mixed effects model predicting growth in vocabulary as a quadratic function of age, RT at study initiation ($t_0$), and their interaction (as well as random effects of age by participant and by dataset). This model revealed a significant effect of $t_0$ RT (`r papaja::apa_print(growth_mod)$full_result$rt_t0`) and an interaction between $t_0$ RT and the quadratic age predictor (`r papaja::apa_print(growth_mod)$full_result$polyage_15_22_rt_t0`). This analysis suggests that children with faster initial RTs show both larger vocabularies and faster vocabulary growth over time, confirming that findings from @fernald2012 were robust across the full dataset. We confirmed this analysis using a non-linear growth model with a logistic shape, which shows a better fit to vocabulary size than the quadratic model (see SI: Non-Linear Growth Model). Figure \ref{fig:growth} shows predictions from this model, confirming the differentiation of growth curves for children with higher and lower initial reaction time. 
+
+
+```{r growth, fig.cap="Growth curves from a logistic growth model showing predicted vocabulary growth for the 25th and 75th percentile on initial reaction times. Solid lines show global model estimates and dashed lines show estimates for individual datasets with sufficient age variation as above.", fig.env="figure", fig.height = 2.5, fig.width=4, out.width=".5\\textwidth", include=TRUE}
+
+d_sub_prod <- filter(d_sub, !is.na(prod)) |>
+  group_by(subject_id) |>
+  mutate(log_rt_0 = log_rt[1],
+         acc_0 = long_window_accuracy[1]) |> 
+  filter(!is.na(log_rt_0))
+
+mod_nlme <- nlme(model = prod ~ SSlogis(age, Asym = 1, xmid, scale),
+             data = d_sub_prod,
+             fixed = xmid + scale ~ log_rt_0,
+             random = xmid + scale ~ 1,
+             groups = ~ dataset_name,
+             start = c(xmid = 20, scale = 3, `xmid:log_rt_0` = 1, `scale:log_rt_0` = 3),
+             na.action = na.exclude, 
+             control = list(maxIter = 1000, tolerance = 10))
+
+# fixed effects (no CIs)
+global_preds <- expand_grid(age = seq(min(d_sub_prod$age), 
+                                      max(d_sub_prod$age), .1), 
+                            log_rt_0 = c(quantile(d_sub_prod$log_rt, 
+                                                  c(.25,.75), 
+                                                  na.rm=TRUE)))
+global_preds$pred <- predict(mod_nlme, newdata = global_preds, level = 0)
+
+
+#random effects
+dataset_preds <- d_sub |>
+  filter(!is.na(prod)) |> # filter on predictor
+  group_by(dataset_name) |>
+  summarise(min_age = min(age),
+            max_age = max(age)) |>
+  group_by(dataset_name) |>
+  mutate(df = map2(min_age, max_age, ~expand_grid(age = seq(.x, .y, .1), log_rt_0 = c(quantile(d_sub_prod$log_rt, 
+                                                  c(.25,.75), 
+                                                  na.rm=TRUE))))) |>
+  select(-min_age, -max_age) |>
+  unnest(col = "df") |>
+  ungroup()
+
+
+dataset_preds$pred <- predict(mod_nlme,
+                              newdata = dataset_preds,
+                              level = c(0,1))$predict.dataset_name
+
+ggplot(d_sub_prod, aes(x = age, y = prod, col = as.factor(log_rt_0))) + 
+  geom_point(alpha = .02, color="black") + 
+  geom_line(data = dataset_preds |>   
+              filter(dataset_name %in% datasets_with_age_variation$dataset_name), 
+            aes(y = pred, group = interaction(log_rt_0, dataset_name)), lty="dashed", alpha=.5)+
+  geom_line(data = global_preds, aes(y = pred, group = log_rt_0, col = as.factor(log_rt_0)), size=1)+
+  scale_color_viridis(discrete=T, option = "H")+
+  theme(legend.position = "none")+
+  labs(y="Production", x="Age in months")
+# +
+#   geom_line(data = dataset_preds, aes(y = pred))
+```
 
 ```{r prep_long_data}
 # rename and scale variables
@@ -645,11 +643,11 @@ slopes_long <- growth(slopes_model_long, d_sub_wide_fine, std.lv=TRUE, missing='
 slopes_long_summary <- suppressMessages(summary(slopes_long, fit.measures=TRUE, standardize=TRUE))
 ```
 
-On the other hand, it is possible that differences in predicted growth trajectories are due to overall coupling between vocabulary size and language processing, rather than a specifically predictive relationship between $t_0$ RT and vocabulary growth. To test this relationship, we used longitudinal structural equation models. We separated the longitudinal speed, accuracy, and vocabulary data into two-month bins spanning up to 10 months ($t_0 ... t_4$) and fit individual growth across each of these variables. We used full-information maximum likelihood to handle the substantial missing data caused by the different longitudinal sampling schemes of studies in our dataset. (We present a model of coupled growth in the observed variables here for simplicity; see SI for a comparable model using growth in the latent factors). The fitted longitudinal model is shown in Figure \ref{fig:longitudinal}. Overall fit statistics were generally acceptable (Confirmatory fit index: `r round(slopes_long_summary$fit["cfi"], 3)`, RMSE: `r round(slopes_long_summary$fit["rmsea"], 3)`, RMSE $p$-value: `r round(slopes_long_summary$fit["rmsea.pvalue"], 3)`). 
+On the other hand, it is possible that differences in predicted growth trajectories are due to overall coupling between vocabulary size and language processing, rather than a specifically predictive relationship between $t_0$ RT and vocabulary growth. To test this relationship, we used longitudinal structural equation models. We separated the longitudinal speed, accuracy, and vocabulary data into two-month bins spanning up to 10 months ($t_0, ..., t_4$) and fit individual growth across each of these variables. We used full-information maximum likelihood to handle the substantial missing data caused by the different longitudinal sampling schemes of studies in our dataset. (We present a model of coupled growth in the observed variables here for simplicity; see SI for a comparable model using growth in the latent factors). The fitted longitudinal model is shown in Figure \ref{fig:longitudinal}. Overall fit statistics were generally acceptable (Confirmatory fit index: `r round(slopes_long_summary$fit["cfi"], 3)`, RMSE: `r round(slopes_long_summary$fit["rmsea"], 3)`, RMSE $p$-value: `r round(slopes_long_summary$fit["rmsea.pvalue"], 3)`). 
 
-Our key question of interest concerned coupling between the parameters of these growth models. Consistent with the idea that overall faster processing is related to vocabulary growth, we saw significant coupling between processing speed intercepts and vocabulary growth slopes ($\beta=$ `r round(slopes_long_summary$pe[63,"est"],3)`, SE = `r round(slopes_long_summary$pe[63,"se"],3)`, $p =$ `r round(slopes_long_summary$pe[63,"pvalue"],3)`) as well as a variety of other couplings. There was not significant coupling between growth in RT and growth in vocabulary ($\beta=$ `r round(slopes_long_summary$pe[65,"est"],3)`, SE = `r round(slopes_long_summary$pe[65,"se"],3)`, $p =$ `r round(slopes_long_summary$pe[65,"pvalue"],3)`). These abilities might grow independently, but we cannot rule out other possibilities. First, the longitudinal data we had might not allow sufficiently precise estimates of growth slopes, or second, since vocabulary growth is non-linear, the linear model we used here might not be as sensitive to non-linear changes. 
+Our key question of interest concerned coupling between the parameters of these growth models. Consistent with the idea that overall faster processing is related to vocabulary growth, we saw significant coupling between processing speed intercepts and vocabulary growth slopes ($\beta=$ `r round(slopes_long_summary$pe[63,"est"],3)`, SE = `r round(slopes_long_summary$pe[63,"se"],3)`, $p =$ `r round(slopes_long_summary$pe[63,"pvalue"],3)`) as well as a variety of other couplings. On the other hand, there was not significant coupling between *growth* in RT and *growth* in vocabulary ($\beta=$ `r round(slopes_long_summary$pe[65,"est"],3)`, SE = `r round(slopes_long_summary$pe[65,"se"],3)`, $p =$ `r round(slopes_long_summary$pe[65,"pvalue"],3)`). This null effect could be interpreted as being consistent with these abilities growing independently, but we cannot rule out other possibilities. First, the longitudinal data we had might not allow sufficiently precise estimates of growth slopes, or second, since vocabulary growth is non-linear, the linear model we used here might not be as sensitive to non-linear changes. 
 
-In sum, these findings provide further evidence consistent with the claim that faster processing is related to longitudinal growth in vocabulary [@fernald2006;@Weisleder2013]. Children with greater skill in word recognition learn words faster.
+In sum, these findings provide evidence consistent with the claim that faster processing is related to longitudinal growth in vocabulary [@fernald2006;@Weisleder2013]. Children with greater skill in word recognition learn words faster.
 
 
 ```{r longitudinal, fig.env="figure*", height = 3.5, fig.cap = "Structural equation model showing longitudinal couplings between growth parameters. "}

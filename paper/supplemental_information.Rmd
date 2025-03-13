@@ -80,6 +80,35 @@ papaja::apa_table(rt_mods_lmer_summary)
 
 - Alternative factor models: variances together, two factor, etc. etc. 
 
+# Non-linear Growth Models
+
+To test for the differentiation of vocabulary growth based on initial reaction time, we used the package `nlme` to fit a logistic growth model to the production data. This model has two parameters for the logistic curve, a scale and an intercept. Both were allowed to interact with initial reaction time. We also included random effects of logistic intercept and scale by participant and a grouping term across datasets. This model showed a significant effect of initial reaction time on the intercept of the logistic growth curve, but not on its scale (see Table \ref{tab:nlme}). 
+
+% latex table generated in R 4.4.2 by xtable 1.8-4 package
+% Thu Mar 13 13:10:30 2025
+\begin{table}[ht]
+\centering
+\begin{tabular}{rrrrrr}
+  \hline
+ & Value & Std Error & DF & $t$-value & $p$-value \\ 
+  \hline
+Growth Intercept & 2.26 & 2.70 & 1766.00 & 0.84 & 0.40 \\ 
+  Growth Intercept $\times$ $t_0$ RT & 3.30 & 0.38 & 1766.00 & 8.59 & 0.00 \\ 
+  Growth Scale & 2.05 & 2.60 & 1766.00 & 0.79 & 0.43 \\ 
+  Growth Scale $\times$ $t_0$ RT & 0.28 & 0.38 & 1766.00 & 0.75 & 0.46 \\ 
+   \hline
+\end{tabular}
+\caption{Fixed effects estimates from logistic growth model. \label{tab:nlme}}
+\end{table}
+
+Interpretation of growth in both this model and the linear growth model in the main text is complicated by the fact that the CDI form puts a ceiling on the total number of words that can be recorded; both the quadratic growth functions and the logistic functions come together at the form ceiling. Thus, a shift in quadratic growth in the linear model and a shift in intercept in the logistic model both point to the same overall effect, which is faster growth at the point of maximal sensitivity of the CDI. Neither model can estimate whether the overall growth trajectory is different beyond the range of the CDI. Thus, although these models might initially seem to be in conflict, we believe that they actually point to the same phenomenon, which is perhaps better described by the longitudinal SEM model reported in the main text. Children with greater skill in word recognition show an overall positive shift in the growth trajectory of vocabulary development.
+
+```{r}
+# xtable(summary(mod_nlme)$tTable)
+```
+
+
+
 # Sensitivity Analysis for Longitudinal Models
 
 THIS IS WRONG
