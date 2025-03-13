@@ -60,17 +60,17 @@ abstract: |
 
 
 significance: |
-  The efficiency with which children recognize words provides a measurement of their real-time language processing, which has been argued to be a key part of the language learning process. Her, we use a large dataset of eye-tracking data from many different experiments to map out the development of word recognition, finding that this process becomes faster, more accurate, and less variable in the period between one and six years of age, and that children who are better at word recognition tend to have larger and faster growing vocabularies. These data suggest that understanding language is a skill that improves gradually with practice.
+  The efficiency with which children recognize words provides a measurement of their real-time language processing, which has been argued to be a key part of the language learning process. Here, we use a large dataset of eye-tracking data from many different experiments to map out the development of word recognition, finding that this process becomes faster, more accurate, and less variable in the period between one and six years of age, and that children who are better at word recognition tend to have larger and faster growing vocabularies. These data suggest that understanding language is a skill that improves gradually with practice.
 
 acknowledgements: |
   This work was supported by a grant from the Jacobs Foundation. 
 
 keywords:
-  - one
-  - two
-  - optional
-  - optional
-  - optional
+  - language development
+  - word recognition
+  - developmental change
+  - skill acquisition
+  - eye-tracking
 
 ## must be one of: pnasresearcharticle (usual two-column layout), pnasmathematics (one column layout), or pnasinvited (invited submissions only)
 pnas_type: pnasresearcharticle
