@@ -1,5 +1,5 @@
 ---
-title: "Supplemental Information"
+title: "Supplemental Information: Continuous developmental changes in word recognition support language learning across early childhood"
 output: pdf_document
 header-includes:
   - \usepackage{threeparttablex}
@@ -7,24 +7,29 @@ header-includes:
 ---
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE)
 library(here)
 source(here("helper","common.R"))
 ```
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, cache=TRUE, message=FALSE, warning=FALSE}
 knitr::purl(here("paper","paper.Rmd"), documentation = 0)
 suppressMessages(source(here("paper.R")))
 ```
 
 # Dataset Description
 
-```{r, fig.env="figure*"}
+Figure \ref{fig:dataset} gives the age distribution for each paper within our full dataset. 
+
+```{r dataset, fig.env="figure*"}
 ggplot(d_sub, aes(x = age))+ 
   geom_histogram(binwidth = 1) + 
   facet_wrap(~dataset_name, scale = "free_y")
 ```
 
-```{r, fig.cap="Number of administrations for datasets with repeated measurements."}
+Figure \ref{fig:longitudinal_admins} shows the distribution of measurement intervals for longitudinal studies within the dataset.
+
+```{r longitudinal_admins, fig.cap="Number of administrations for datasets with repeated measurements."}
 
 d_sub_long <- d_sub |>
   filter(subject_id %in% longitudinal$subject_id) |>
@@ -88,7 +93,9 @@ We examined test-retest reliability for our primary variables of interest by cal
 
 # Correlations
 
-```{r, results = "asis"}
+Table \ref{tab:corrs} shows pairwise correlations between the primary variables of interest in the dataset.
+
+```{r corrs, results = "asis"}
 
 cor(select(d_sub, age, log_age, rt, log_rt, 
            long_window_accuracy, short_window_accuracy, prod, comp), 
@@ -100,19 +107,52 @@ cor(select(d_sub, age, log_age, rt, log_rt,
 
 # Functional Form Model Comparison
 
-```{r results="asis"}
+Table \ref{tab:accmods} shows model comparison measures between for different models of the functional form for accuracy and Table \ref{tab:rtmods} shows the same for reaction time. Note that all of these comparisons With our current dataset we cannot specifically determine whether within-individual patterns of change conform to linear, power law, or exponential developmental patterns [@heathcote2000].
+
+
+\begin{table}[tbp]
+\begin{center}
+\begin{threeparttable}
+\begin{tabular}{lllllllll}
+\toprule
+n. obs & \multicolumn{1}{c}{sigma} & \multicolumn{1}{c}{logLik} & \multicolumn{1}{c}{AIC} & \multicolumn{1}{c}{BIC} & \multicolumn{1}{c}{REMLcrit} & \multicolumn{1}{c}{df.residual} & \multicolumn{1}{c}{model} & \multicolumn{1}{c}{r2}\\
+\midrule
+48354 & 0.28 & -8,338.83 & 16,691.65 & 16,753.16 & 16,677.65 & 48347 & lwa\_lin & 0.14\\
+48354 & 0.28 & -8,305.39 & 16,624.78 & 16,686.28 & 16,610.78 & 48347 & lwa\_log & 0.12\\
+50244 & 0.31 & -12,486.60 & 24,987.21 & 25,048.98 & 24,973.21 & 50237 & swa\_lin & 0.09\\
+50244 & 0.31 & -12,458.77 & 24,931.54 & 24,993.31 & 24,917.54 & 50237 & swa\_log & 0.08\\
+\bottomrule
+\end{tabular}
+\end{threeparttable}
+\end{center}
+\end{table}
+
+\begin{table}[tbp]
+\begin{center}
+\begin{threeparttable}
+\begin{tabular}{lllllllll}
+\toprule
+n. obs & \multicolumn{1}{c}{sigma} & \multicolumn{1}{c}{logLik} & \multicolumn{1}{c}{AIC} & \multicolumn{1}{c}{BIC} & \multicolumn{1}{c}{REMLcrit} & \multicolumn{1}{c}{df.residual} & \multicolumn{1}{c}{model} & \multicolumn{1}{c}{r2}\\
+\midrule
+18940 & 0.45 & -12,414.69 & 24,843.38 & 24,898.32 & 24,829.38 & 18933 & log\_lin & 0.21\\
+18940 & 0.45 & -12,393.27 & 24,800.53 & 24,855.48 & 24,786.53 & 18933 & log\_log & 0.21\\
+18940 & 570.49 & -147,644.43 & 295,302.87 & 295,357.81 & 295,288.87 & 18933 & lin\_lin & 0.18\\
+18940 & 570.02 & -147,622.67 & 295,259.34 & 295,314.29 & 295,245.34 & 18933 & lin\_log & 0.18\\
+\bottomrule
+\end{tabular}
+\end{threeparttable}
+\end{center}
+\end{table}
+
+
+```{r accmods, results="asis", include = FALSE}
 papaja::apa_table(acc_mods_lmer_summary)
 ```
 
 
-
-
-```{r results="asis"}
+```{r results="asis", include = FALSE}
 papaja::apa_table(rt_mods_lmer_summary)
 ```
-
-With our current dataset we cannot specifically determine whether within-individual patterns of change conform to power law or exponential forms [@kail1991,@heathcote2000], but regardless we see clear patterns of developmental change related to skill acquisition.
-
 
 
 # Factor Analysis 
@@ -284,7 +324,7 @@ acc_sd_t3 ~ 0
 acc_sd_t4 ~ 0
 "
 
-fit3_long <- sem(fa3_model_long, d_sub_wide, std.lv=TRUE, missing='fiml')
+fit3_long <- sem(fa3_model_long, d_sub_wide_fine, std.lv=TRUE, missing='fiml')
 
 summary(fit3_long, fit.measures=TRUE, standardize=TRUE)
 
@@ -293,8 +333,6 @@ summary(fit3_long, fit.measures=TRUE, standardize=TRUE)
 
 ```{r}
 layout <- read.csv(here("misc/layout_dt3.csv"), header = FALSE)
-
-
 graph_sem(model = fit3_long, text_size = 3, layout=t(layout))
 
 ```
