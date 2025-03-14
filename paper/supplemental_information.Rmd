@@ -1,6 +1,9 @@
 ---
 title: "Supplemental Information: Continuous developmental changes in word recognition support language learning across early childhood"
-output: pdf_document
+output: 
+  pdf_document:
+    fig_caption: yes
+    keep_tex: yes
 header-includes:
   - \usepackage{threeparttablex}
   - \usepackage{booktabs}
@@ -13,23 +16,25 @@ source(here("helper","common.R"))
 ```
 
 ```{r, echo=FALSE, cache=TRUE, message=FALSE, warning=FALSE}
-knitr::purl(here("paper","paper.Rmd"), documentation = 0)
-suppressMessages(source(here("paper.R")))
+paper <- suppressMessages(knitr::purl(here("paper","paper.Rmd"), documentation = 0))
+suppressMessages(source(paper))
 ```
 
 # Dataset Description
 
-Figure \ref{fig:dataset} gives the age distribution for each paper within our full dataset. 
+Figure \ref{fig:dataset} gives the age distribution for each separate dataset. 
 
-```{r dataset, fig.env="figure*"}
+```{r dataset, fig.cap="\\label{fig:dataset} Age distribution for each dataset, using three-month bins.", fig.pos="h!"}
 ggplot(d_sub, aes(x = age))+ 
-  geom_histogram(binwidth = 1) + 
-  facet_wrap(~dataset_name, scale = "free_y")
+  geom_histogram(binwidth = 3) + 
+  facet_wrap(~dataset_name, scale = "free_y") +
+  xlab("Number of participants") + 
+  ylab("Age (months)")
 ```
 
-Figure \ref{fig:longitudinal_admins} shows the distribution of measurement intervals for longitudinal studies within the dataset.
+Figure \ref{fig:longitudinal} shows the distribution of measurement intervals for longitudinal studies within the dataset.
 
-```{r longitudinal_admins, fig.cap="Number of administrations for datasets with repeated measurements."}
+```{r longitudinal, fig.cap="\\label{fig:longitudinal} Number of administrations for datasets with repeated measurements, plotted by dataset.", fig.pos="h!"}
 
 d_sub_long <- d_sub |>
   filter(subject_id %in% longitudinal$subject_id) |>
@@ -41,12 +46,14 @@ d_sub_long <- d_sub |>
 ggplot(d_sub_long, 
        aes(x = delta_t, fill = dataset_name)) +
   geom_histogram(binwidth = 1) + 
+  scale_fill_solarized(name = "Dataset") +
+  theme(legend.position = "bottom") + 
   # facet_wrap(~dataset_name) + 
-  xlab("Age since first test")
+  xlab("Age since first test") + 
+  ylab("Number of participants")
 ```
+
 # Test-Retest Reliability
-
-
 
 ```{r reliability}
 MONTH_CUTOFF <- 3
@@ -70,32 +77,57 @@ d_reliability <- d_long |>
          admin_num <= 2) |>
   pivot_wider(id_cols = c("subject_id","dataset_name"), 
               names_from = "admin_num",
-              values_from = c("log_rt", "log_rt_var", "long_window_accuracy", 
-                              "long_window_acc_var", "prod", "comp"))
+              values_from = c("log_rt", "long_window_accuracy", 
+                              "short_window_accuracy"))
 
 dataset_reliabilities <- d_reliability |>
   group_by(dataset_name) |>
   summarise(rt = cor(log_rt_1, log_rt_2, use = "pairwise.complete.obs"),
-            acc = cor(long_window_accuracy_1, 
-                          long_window_accuracy_2, use = "pairwise.complete.obs")) 
+            acc_long = cor(long_window_accuracy_1, 
+                           long_window_accuracy_2, use = "pairwise.complete.obs"),
+            acc_short = cor(short_window_accuracy_1, 
+                            short_window_accuracy_2, use = "pairwise.complete.obs")) 
 
-
-# note this is not correct for CDIs because some CDIs can get grouped with two admins, inflating correlations
 global_reliabilities <- d_reliability |>
   ungroup() |>
   summarise(rt = cor(log_rt_1, log_rt_2, use = "pairwise.complete.obs"),
-            acc = cor(long_window_accuracy_1, 
-                          long_window_accuracy_2, use = "pairwise.complete.obs"))
+            acc_long = cor(long_window_accuracy_1, 
+                           long_window_accuracy_2, use = "pairwise.complete.obs"),
+            acc_short = cor(short_window_accuracy_1, 
+                            short_window_accuracy_2, use = "pairwise.complete.obs"))
 ```
 
 
-We examined test-retest reliability for our primary variables of interest by calculating Pearson correlations between pairs of administrations given no more than three months apart. Test-retest correlations were significant but relatively modest ($\rho_{acc} = `r round(global_reliabilities[2], 3)`$, $\rho_{rt} =  `r round(global_reliabilities[1],3)`$). These reliabilities were biased downwards by three factors, however. First, longitudinal assessments sometimes use variable items between testing sessions, leading to item-related variance in measurement. Second, even three months can lead to substantial change in some children's language abilities, thus correlations are attenuated by true change as well as measurement error. Third, longitudinal data in the dataset come primarily from the youngest children and hence are likely to show overall higher measurement error due to variability in children's behavior and an overall lower number of trials. 
+We examined test-retest reliability for our primary variables of interest by calculating Pearson correlations between pairs of administrations given no more than three months apart. Test-retest correlations were significant but relatively modest: $\rho_{long window acc} = `r round(global_reliabilities[2], 3)`$, $\rho_{short window acc} = `r round(global_reliabilities[3], 3)`$, $\rho_{rt} =  `r round(global_reliabilities[1],3)`$. These reliabilities were biased downwards by three factors, however. First, longitudinal assessments sometimes use variable items between testing sessions, leading to item-related variance in measurement. Second, even three months can lead to substantial change in some children's language abilities, thus correlations are attenuated by true change as well as measurement error. Third, longitudinal data in the dataset come primarily from the youngest children and hence are likely to show overall higher measurement error due to variability in children's behavior and an overall lower number of trials. 
 
 # Correlations
 
 Table \ref{tab:corrs} shows pairwise correlations between the primary variables of interest in the dataset.
 
-```{r corrs, results = "asis"}
+\begin{table}[tbp]
+\begin{center}
+\begin{threeparttable}
+\begin{tabular}{llllllllll}
+\toprule
+& \multicolumn{1}{l}{age} & \multicolumn{1}{l}{log age} & \multicolumn{1}{l}{RT} & \multicolumn{1}{l}{log RT} & \multicolumn{1}{l}{long acc} & \multicolumn{1}{l}{short acc } & \multicolumn{1}{l}{prod} & \multicolumn{1}{l}{comp}\\
+\midrule
+age &  1.00 &  &  &  &  &  &  & \\
+log age  & 0.98 & 1.00 &  &  &  &  &  &\\
+rt  & -0.33 & -0.35 & 1.00 &  &  &  &  & \\
+log rt  & -0.34 & -0.36 & 0.96 & 1.00 &  &  &  & \\
+long window accuracy  & 0.44 & 0.48 & -0.48 & -0.46 & 1.00 &  &  & \\
+short window accuracy & 0.38 & 0.43 & -0.62 & -0.61 & 0.82 & 1.00 &  & \\
+production vocabulary & 0.72 & 0.70 & -0.31 & -0.33 & 0.51 & 0.45 & 1.00 & \\
+comprehension vocabulary & 0.42 & 0.42 & -0.25 & -0.24 & 0.24 & 0.24 & 0.59 & 1.00\\
+\bottomrule
+\end{tabular}
+\end{threeparttable}
+\end{center}
+\caption{Pairwise correlations between primary variables of interest. \label{tab:corrs}}
+\end{table}
+
+
+```{r corrs, results = "asis", include = FALSE}
 
 cor(select(d_sub, age, log_age, rt, log_rt, 
            long_window_accuracy, short_window_accuracy, prod, comp), 
@@ -107,7 +139,7 @@ cor(select(d_sub, age, log_age, rt, log_rt,
 
 # Functional Form Model Comparison
 
-Table \ref{tab:accmods} shows model comparison measures between for different models of the functional form for accuracy and Table \ref{tab:rtmods} shows the same for reaction time. Note that all of these comparisons With our current dataset we cannot specifically determine whether within-individual patterns of change conform to linear, power law, or exponential developmental patterns [@heathcote2000].
+Table \ref{tab:accmods} shows model comparison measures between for different models of the functional form of the relationship between accuracy and age and Table \ref{tab:rtmods} shows the same for reaction time. Age gradients are estimated substantially better with long window accuracies. Note that there are a greater number of observations for short window accuracies due to less missing data. We speculate that, on average, more participants looked away from the screen towards the end of trials, leading to a greater number of exclusions of long window trials based on the 50% criterion. Note that the total percentage of trials excluded is still small for both measures: `r round(mean(is.na(d_trial$long_window_accuracy)), 2)`% for long window accuracy and `r round(mean(is.na(d_trial$short_window_accuracy)), 2)`% for short window accuracy. 
 
 
 \begin{table}[tbp]
@@ -115,16 +147,17 @@ Table \ref{tab:accmods} shows model comparison measures between for different mo
 \begin{threeparttable}
 \begin{tabular}{lllllllll}
 \toprule
-n. obs & \multicolumn{1}{c}{sigma} & \multicolumn{1}{c}{logLik} & \multicolumn{1}{c}{AIC} & \multicolumn{1}{c}{BIC} & \multicolumn{1}{c}{REMLcrit} & \multicolumn{1}{c}{df.residual} & \multicolumn{1}{c}{model} & \multicolumn{1}{c}{r2}\\
+n. obs & \multicolumn{1}{c}{sigma} & \multicolumn{1}{c}{logLik} & \multicolumn{1}{c}{AIC} & \multicolumn{1}{c}{BIC} & \multicolumn{1}{c}{REMLcrit} & \multicolumn{1}{c}{df.residual} & \multicolumn{1}{c}{model} & \multicolumn{1}{c}{$r_2$}\\
 \midrule
-48354 & 0.28 & -8,338.83 & 16,691.65 & 16,753.16 & 16,677.65 & 48347 & lwa\_lin & 0.14\\
-48354 & 0.28 & -8,305.39 & 16,624.78 & 16,686.28 & 16,610.78 & 48347 & lwa\_log & 0.12\\
-50244 & 0.31 & -12,486.60 & 24,987.21 & 25,048.98 & 24,973.21 & 50237 & swa\_lin & 0.09\\
-50244 & 0.31 & -12,458.77 & 24,931.54 & 24,993.31 & 24,917.54 & 50237 & swa\_log & 0.08\\
+48354 & 0.28 & -8,338.83 & 16,691.65 & 16,753.16 & 16,677.65 & 48347 & Long window, linear age & 0.14\\
+48354 & 0.28 & -8,305.39 & 16,624.78 & 16,686.28 & 16,610.78 & 48347 & Long window, log age & 0.12\\
+50244 & 0.31 & -12,486.60 & 24,987.21 & 25,048.98 & 24,973.21 & 50237 & Short window, linear age & 0.09\\
+50244 & 0.31 & -12,458.77 & 24,931.54 & 24,993.31 & 24,917.54 & 50237 & Short window, log age & 0.08\\
 \bottomrule
 \end{tabular}
 \end{threeparttable}
 \end{center}
+\caption{Model comparison metrics for different functional forms of the relationship between accuracy and age. \label{tab:accmods}}
 \end{table}
 
 \begin{table}[tbp]
@@ -132,17 +165,21 @@ n. obs & \multicolumn{1}{c}{sigma} & \multicolumn{1}{c}{logLik} & \multicolumn{1
 \begin{threeparttable}
 \begin{tabular}{lllllllll}
 \toprule
-n. obs & \multicolumn{1}{c}{sigma} & \multicolumn{1}{c}{logLik} & \multicolumn{1}{c}{AIC} & \multicolumn{1}{c}{BIC} & \multicolumn{1}{c}{REMLcrit} & \multicolumn{1}{c}{df.residual} & \multicolumn{1}{c}{model} & \multicolumn{1}{c}{r2}\\
+n. obs & \multicolumn{1}{c}{sigma} & \multicolumn{1}{c}{logLik} & \multicolumn{1}{c}{AIC} & \multicolumn{1}{c}{BIC} & \multicolumn{1}{c}{REMLcrit} & \multicolumn{1}{c}{df.residual} & \multicolumn{1}{c}{model} & \multicolumn{1}{c}{$r_2$}\\
 \midrule
-18940 & 0.45 & -12,414.69 & 24,843.38 & 24,898.32 & 24,829.38 & 18933 & log\_lin & 0.21\\
-18940 & 0.45 & -12,393.27 & 24,800.53 & 24,855.48 & 24,786.53 & 18933 & log\_log & 0.21\\
-18940 & 570.49 & -147,644.43 & 295,302.87 & 295,357.81 & 295,288.87 & 18933 & lin\_lin & 0.18\\
-18940 & 570.02 & -147,622.67 & 295,259.34 & 295,314.29 & 295,245.34 & 18933 & lin\_log & 0.18\\
+18940 & 0.45 & -12,414.69 & 24,843.38 & 24,898.32 & 24,829.38 & 18933 & Log RT, linear age & 0.21\\
+18940 & 0.45 & -12,393.27 & 24,800.53 & 24,855.48 & 24,786.53 & 18933 & Log RT, log age & 0.21\\
+18940 & 570.49 & -147,644.43 & 295,302.87 & 295,357.81 & 295,288.87 & 18933 & Linear RT, linear age & 0.18\\
+18940 & 570.02 & -147,622.67 & 295,259.34 & 295,314.29 & 295,245.34 & 18933 & Linear RT, log age & 0.18\\
 \bottomrule
 \end{tabular}
 \end{threeparttable}
 \end{center}
+\caption{Model comparison metrics for different functional forms of the relationship between RT and age. \label{tab:rtmods}}
 \end{table}
+
+Note that with our current dataset we cannot specifically determine whether within-individual patterns of change conform to linear, power law, or exponential developmental patterns (Heathcote, Brown, \& Mewhort, 2000). Our current results apply to the form of the age gradient as opposed to the form of any individual's pattern of developmental change. 
+
 
 
 ```{r accmods, results="asis", include = FALSE}
@@ -166,14 +203,14 @@ d_sub_mat_s <- d_sub_mat |>
   ungroup() |>
   mutate(across(all_of(c("rt", "rt_var", "long_window_accuracy", 
                          "long_window_acc_var", "prod", "comp")), 
-                       ~ age_scale(.x, age))) 
+                ~ age_scale(.x, age))) 
 fa.parallel(select(d_sub_mat, -dataset_name, -age), fa = "fa", 
             use = "pairwise.complete.obs")
 ```
 
 ```{r}
 fs <- fa(select(d_sub_mat, -dataset_name), nfactor = 3,
-            use = "pairwise", rotate = "varimax")
+         use = "pairwise", rotate = "varimax")
 
 as.data.frame(unclass(loadings(fs))) |> 
   kable(caption = "Factor loadings for the exploratory three factor solution using varimax rotation.", digits = 2)
@@ -196,14 +233,14 @@ To test for the differentiation of vocabulary growth based on initial reaction t
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrrrrr}
-  \hline
- & Value & Std Error & DF & $t$-value & $p$-value \\ 
-  \hline
+\hline
+& Value & Std Error & DF & $t$-value & $p$-value \\ 
+\hline
 Growth Intercept & 2.26 & 2.70 & 1766.00 & 0.84 & 0.40 \\ 
-  Growth Intercept $\times$ $t_0$ RT & 3.30 & 0.38 & 1766.00 & 8.59 & 0.00 \\ 
-  Growth Scale & 2.05 & 2.60 & 1766.00 & 0.79 & 0.43 \\ 
-  Growth Scale $\times$ $t_0$ RT & 0.28 & 0.38 & 1766.00 & 0.75 & 0.46 \\ 
-   \hline
+Growth Intercept $\times$ $t_0$ RT & 3.30 & 0.38 & 1766.00 & 8.59 & 0.00 \\ 
+Growth Scale & 2.05 & 2.60 & 1766.00 & 0.79 & 0.43 \\ 
+Growth Scale $\times$ $t_0$ RT & 0.28 & 0.38 & 1766.00 & 0.75 & 0.46 \\ 
+\hline
 \end{tabular}
 \caption{Fixed effects estimates from logistic growth model. \label{tab:nlme}}
 \end{table}
@@ -338,6 +375,9 @@ graph_sem(model = fit3_long, text_size = 3, layout=t(layout))
 ```
 
 
-# Short Window Analysis
+<!-- # Short Window Analysis -->
 
-Need to redo all figures using short windows ugh. 
+<!-- Need to redo all figures using short windows ugh.  -->
+# References
+
+Heathcote, A., Brown, S., \& Mewhort, D. J. K. (2000). The power law repealed: The case for an exponential law of practice. Psychonomic Bulletin & Review, 7(2), 185–207.
