@@ -149,11 +149,14 @@ suppressPackageStartupMessages(library(xtable))
 suppressPackageStartupMessages(library(papaja))
 suppressPackageStartupMessages(library(viridis))
 suppressPackageStartupMessages(library(nlme))
+suppressPackageStartupMessages(library(cowplot))
 
 source(here("helper","common.R"))
 
 source(here("helper/modified_sem_plot.R"))
 
+#load d_aoi for timecourse plot
+d_aoi <- readRDS(here("cached_intermediates","1_d_aoi.Rds"))
 d_trial <- readRDS(here("cached_intermediates","1_d_trial.Rds")) |>
   mutate(log_age = log(age))
 d_sub <- readRDS(here("cached_intermediates","1_d_sub.Rds")) |>
@@ -214,6 +217,76 @@ xtable(dataset_characteristics,
 
 ## Speed and accuracy of word recognition increase {.unnumbered}
 
+```{r timecourse, fig.cap="Timecourse of word recognition at different ages. The x-axis shows time (in ms) from the onset of the target label (vertical solid line). Colored lines show the average increase in proportion target looking post label onset at each age bin (in months). The dashed horizontal line represents chance looking. Error bands represent standard errors of the mean. Grey backgrounds highlight the short and long time windows used in subsequent analyses.", fig.env="figure", fig.height = 3, fig.width=4, out.width=".5\\textwidth", include=TRUE}
+
+#summarize by subject
+d_timecourse_by_dataset_age_subj <- d_aoi |>
+  filter(t_norm>-2000) |> 
+  #create age bins cutoffs
+  mutate(
+    age_bin = cut(age, breaks = c(0,12,15,18,21,24,27,30,36,60), 
+                  labels = c("<12", "12-15","15-18", "18-21", "21-24", "24-27","27-30","30-36", ">36"))
+  ) |>
+  #downsample t_norm to 50ms bins
+  #mutate(t_norm_downsampled = round(t_norm/50)*50) |>
+  group_by(dataset_name,dataset_id,subject_id,age_bin,t_norm) |> 
+  #calculate proportion time spent looking at target
+  summarize(
+    n=n(),
+    accuracy = mean(correct, na.rm=TRUE))
+
+#by age bin, not representing dataset structure
+d_timecourse_by_age_overall <- d_timecourse_by_dataset_age_subj |>
+  filter(n>=5) |> 
+  group_by(age_bin,t_norm) |>
+  summarize(
+    n_subj=n(),
+    proportion_target_looking = mean(accuracy,na.rm=TRUE),
+    sem = sd(accuracy,na.rm=TRUE)/sqrt(n_subj)
+  ) |> 
+  rename(accuracy=proportion_target_looking)
+
+#overall plot
+d_timecourse_by_age_overall |> 
+  filter(age_bin!="<12") |> 
+  filter(t_norm>-1000) |> 
+  ggplot(aes(x=t_norm, y=accuracy, group=age_bin, color=age_bin)) +
+  geom_rect(xmin=2000,xmax=4000,ymin=0,ymax=1.2,fill="#DFDFDF",color="#DFDFDF",alpha=0.05)+
+  geom_rect(xmin=200,xmax=2000,ymin=0,ymax=1.2,fill="#F2F2F2",color="#F2F2F2",alpha=0.05)+
+  geom_smooth(stat="identity", aes(y=accuracy, ymin=accuracy-sem, ymax=accuracy+sem,fill=age_bin))+
+  #geom_smooth(stat="smooth")+
+  geom_hline(yintercept=0.5, linetype="dashed")+
+  geom_vline(xintercept=0, linetype="solid")+
+  #add text
+  annotate("text", x=50, y=0.85, label="Label Onset", hjust=0, vjust=0,size=3)+
+  annotate("text", x=400, y=0.99, label="SHORT WINDOW",hjust=0, vjust=0,size=2.5)+
+  annotate("text", x=1500, y=0.93, label="LONG WINDOW",hjust=0, vjust=0,size=2.5)+
+  geom_segment(aes(x = 1000, y = 0.98, xend = 200, yend = 0.98),
+               arrow = arrow(type = "closed", angle = 20, length = unit(0.05, "inches")), color="black")+
+  geom_segment(aes(x = 1000, y = 0.98, xend = 2000, yend = 0.98),
+               arrow = arrow(type = "closed", angle = 20, length = unit(0.05, "inches")), color="black")+
+  geom_segment(aes(x = 2000, y = 0.92, xend = 200, yend = 0.92),
+               arrow = arrow(type = "closed", angle = 20, length = unit(0.05, "inches")), color="black")+
+  geom_segment(aes(x = 2000, y = 0.92, xend = 4000, yend = 0.92),
+               arrow = arrow(type = "closed", angle = 20, length = unit(0.05, "inches")), color="black")+
+  scale_color_viridis_d(name="Age Bin\n(mos)")+
+  scale_fill_viridis_d(name="Age Bin\n(mos)")+
+  #facet_wrap(~age_bin)+
+  scale_y_continuous(breaks=seq(0.4,1,0.1),limits=c(0.4,1))+
+  scale_x_continuous(breaks=seq(-1000,4000,1000),limits=c(-1050,4000))+
+  xlab("Time from trial onset (ms)")+
+  ylab("Proportion Target Looking")+
+  theme_cowplot()+
+  theme(legend.key.size = unit(0.3, 'cm'), #change legend key size
+        legend.key.height = unit(0.3, 'cm'), #change legend key height
+        legend.key.width = unit(0.3, 'cm'), #change legend key width
+        legend.text = element_text(size=9),
+        legend.title = element_text(size=9),
+        legend.position=c(0.03,0.6),
+        axis.title = element_text(size=12),
+        axis.text = element_text(size=10))
+```
+
 
 ```{r acc_mods}
 d_trial$age_s <- scale(d_trial$age)[,1]
@@ -249,7 +322,7 @@ rt_mods_lmer_summary <- map_df(rt_mods_lmer, ~broom.mixed::glance(.x)) |>
          r2 = map_dbl(rt_mods_lmer, ~performance::r2_nakagawa(.x)$R2_conditional))
 ```
 
-We began by characterizing age gradients in speed and accuracy across children. We computed both RTs (reaction times) and accuracies (proportion looking at the target image) following standard practices in the literature [@fernald2008]. Because there is no consensus about the length of time windows for the computation of accuracy, we considered both a shorter window (from 200 -- 2000 ms after noun onset) and a longer window (from 200 -- 4000 ms). For each window, we averaged all fixation within the window to compute a continuous proportion target looking between 0 (no fixation on the target during the window) and 1 (total fixation on the target during the window) on every trial. In this initial analysis, we treat observations of RT and target looking as direct measures of the constructs speed and accuracy (see SI: Test-Retest Reliability); in subsequent analyses we estimate latent variables representing these constructs.
+We began by examining developmental changes in children's word recognition. Figure \ref{fig:timecourse} depicts the average timecourse at different ages across all datasets. Intuitively, these timecourses show gradual increases in accuracy (higher overall proportion target looking) and speed (faster looking to the target after hearing a label) as age increases. To systematically characterize age gradients in speed and accuracy across children, we computed both RTs (reaction times) and accuracies (proportion looking at the target image) following standard practices in the literature [@fernald2008]. Because there is no consensus about the length of time windows for the computation of accuracy, we considered both a shorter window (from 200 -- 2000 ms after noun onset) and a longer window (from 200 -- 4000 ms). For each window, we averaged all fixation within the window to compute a continuous proportion target looking between 0 (no fixation on the target during the window) and 1 (total fixation on the target during the window) on every trial. In this initial analysis, we treat observations of RT and target looking as direct measures of the constructs speed and accuracy (see SI: Test-Retest Reliability); in subsequent analyses we estimate latent variables representing these constructs.
 
 Our first question was about the functional form of the relationships between age, speed, and accuracy (see SI: Correlations for raw correlations between variables). We began by fitting linear mixed effects models predicting speed and accuracy on each trial across the full dataset with random slopes of child age by study and random intercepts by participant. We compared models that included both long and short accuracy windows, as well as logarithmic and linear effects of age, and logarithmic and linear transformations of RT. The best fitting model of accuracy predicted long window accuracy as a function of the logarithm of age; the best fitting model of speed predicted log RT as a function of log age as well (see SI: Functional Form Model Comparison). Because long window accuracies were more correlated with other variables and showed clearer age gradients, we focus on these in our analysis.
 

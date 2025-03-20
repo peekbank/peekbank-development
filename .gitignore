@@ -68,3 +68,5 @@ paper/paper_files/figure-latex/growth-1.pdf
 paper/paper_files/figure-latex/longitudinal-1.pdf
 paper/paper_files/figure-latex/variance-1.pdf
 paper/paper.log
+*.R
+paper/paper_files/figure-latex/timecourse-1.pdf
