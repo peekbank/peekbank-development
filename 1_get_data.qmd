@@ -22,6 +22,8 @@ We load the frame-level data.
 
 ```{r}
 load(file = here("..", "peekbank-method", "cached_intermediates", "1_d_aoi.Rds"))
+#cache this here as an interim hack until we bring in the full pipeline
+saveRDS(d_aoi, here("cached_intermediates","1_d_aoi.Rds"))
 ```
 
 
