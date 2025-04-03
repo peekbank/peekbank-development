@@ -30,7 +30,7 @@ author:
   - name: Alvin Wei Ming Tan
     affiliation: a
   - name: Martin Zettersten
-    affiliation: f
+    affiliation: g
 address:
   - code: a
     address: Department of Psychology, Stanford University, Stanford, CA, USA
@@ -43,9 +43,9 @@ address:
   - code: e
     address: Department of Communication, Stanford University, Stanford, CA, USA
   - code: f
-    address: Department of Communication, Stanford University, Stanford, CA, USA
-  - code: g
     address: Department of Psychology, Ludwig Maximilian University, Munich, Germany
+  - code: g
+    address: Department of Cognitive Science, University of California, San Diego, CA, USA
 
 corresponding_author:
   code: 1
