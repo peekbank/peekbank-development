@@ -253,8 +253,8 @@ d_timecourse_by_age_overall |>
   filter(age_bin!="<12") |> 
   filter(t_norm>-1000) |> 
   ggplot(aes(x=t_norm, y=accuracy, group=age_bin, color=age_bin)) +
-  geom_rect(xmin=2000,xmax=4000,ymin=0,ymax=1.2,fill="#DFDFDF",color="#DFDFDF",alpha=0.05)+
-  geom_rect(xmin=200,xmax=2000,ymin=0,ymax=1.2,fill="#F2F2F2",color="#F2F2F2",alpha=0.05)+
+  geom_rect(xmin=2000,xmax=4000,ymin=0,ymax=1.2,fill="#DFDFDF",color=NA,alpha=0.05)+
+  geom_rect(xmin=200,xmax=2000,ymin=0,ymax=1.2,fill="#F2F2F2",color=NA,alpha=0.05)+
   geom_smooth(stat="identity", aes(y=accuracy, ymin=accuracy-sem, ymax=accuracy+sem,fill=age_bin))+
   #geom_smooth(stat="smooth")+
   geom_hline(yintercept=0.5, linetype="dashed")+
