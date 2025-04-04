@@ -28,8 +28,8 @@ Figure \ref{fig:dataset} gives the age distribution for each separate dataset.
 ggplot(d_sub, aes(x = age))+ 
   geom_histogram(binwidth = 3) + 
   facet_wrap(~dataset_name, scale = "free_y") +
-  xlab("Number of participants") + 
-  ylab("Age (months)")
+  xlab("Age (months)") + 
+  ylab("Number of participants")
 ```
 
 Figure \ref{fig:longitudinal} shows the distribution of measurement intervals for longitudinal studies within the dataset.
