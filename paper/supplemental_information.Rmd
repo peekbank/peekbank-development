@@ -277,6 +277,9 @@ Three-factor  & 6 & 46346.69 & 46475.43 & 91.96 &  &  &  &  \\
 # Non-linear Growth Models
 
 To test for the differentiation of vocabulary growth based on initial reaction time, we used the package `nlme` to fit a logistic growth model to the production data. This model has two parameters for the logistic curve, a scale and an intercept. Both were allowed to interact with initial reaction time. We also included random effects of logistic intercept and scale by participant and a grouping term across datasets. This model showed a significant effect of initial reaction time on the intercept of the logistic growth curve, but not on its scale (see Table \ref{tab:nlme}). 
+```{r}
+# xtable(summary(mod_nlme)$tTable)
+```
 
 <!-- % latex table generated in R 4.4.2 by xtable 1.8-4 package -->
 <!-- % Thu Mar 13 13:10:30 2025 -->
@@ -287,7 +290,7 @@ To test for the differentiation of vocabulary growth based on initial reaction t
 & Value & Std Error & DF & $t$-value & $p$-value \\ 
 \hline
 Growth Intercept & 2.26 & 2.70 & 1766.00 & 0.84 & 0.40 \\ 
-Growth Intercept $\times$ $t_0$ RT & 3.30 & 0.38 & 1766.00 & 8.59 & 0.00 \\ 
+Growth Intercept $\times$ $t_0$ RT & 3.30 & 0.38 & 1766.00 & 8.59 & < 0.0001 \\ 
 Growth Scale & 2.05 & 2.60 & 1766.00 & 0.79 & 0.43 \\ 
 Growth Scale $\times$ $t_0$ RT & 0.28 & 0.38 & 1766.00 & 0.75 & 0.46 \\ 
 \hline
@@ -298,132 +301,6 @@ Growth Scale $\times$ $t_0$ RT & 0.28 & 0.38 & 1766.00 & 0.75 & 0.46 \\
 Interpretation of growth in both this model and the linear growth model in the main text is complicated by the fact that the CDI form puts a ceiling on the total number of words that can be recorded; both the quadratic growth functions and the logistic functions come together at the form ceiling. Thus, a shift in quadratic growth in the linear model and a shift in intercept in the logistic model both point to the same overall effect, which is faster growth at the point of maximal sensitivity of the CDI. Neither model can estimate whether the overall growth trajectory is different beyond the range of the CDI. Thus, although these models might initially seem to be in conflict, we believe that they actually point to the same phenomenon, which is perhaps better described by the longitudinal SEM model reported in the main text. Children with greater skill in word recognition show an overall positive shift in the growth trajectory of vocabulary development.
 
 
-# Latent Factor Growth
-
-
-```{r}
-fa3_model_long <- "
-# measurement model
-vocab_t1 =~ 1*prod_t1 + s1*comp_t1
-accuracy_t1 =~ 1*acc_t1 + s2*acc_sd_t1
-speed_t1 =~ 1*log_rt_t1 + s3*log_rt_sd_t1
-
-vocab_t2 =~ 1*prod_t2 
-accuracy_t2 =~ 1*acc_t2 + s2*acc_sd_t2
-speed_t2 =~ 1*log_rt_t2 + s3*log_rt_sd_t2
-
-vocab_t3 =~ 1*prod_t3 
-accuracy_t3 =~ 1*acc_t3 + s2*acc_sd_t3
-speed_t3 =~ 1*log_rt_t3 + s3*log_rt_sd_t3
-
-vocab_t4 =~ 1*prod_t4 
-accuracy_t4 =~ 1*acc_t4 + s2*acc_sd_t4
-speed_t4 =~ 1*log_rt_t4 + s3*log_rt_sd_t4
-
-# means for the latents
-# vocab_t1 ~ 1
-# vocab_t2 ~ 1
-# vocab_t3 ~ 1
-# vocab_t4 ~ 1
-# accuracy_t1 ~ 1
-# accuracy_t2 ~ 1
-# accuracy_t3 ~ 1
-# accuracy_t4 ~ 1
-# speed_t1 ~ 1
-# speed_t2 ~ 1
-# speed_t3 ~ 1
-# speed_t4 ~ 1
-
-# autoregression for the latents
-# vocab_t2 ~ 1 * vocab_t1
-# vocab_t3 ~ 1 * vocab_t2
-# vocab_t4 ~ 1 * vocab_t3
-# accuracy_t2 ~ 1 * accuracy_t1
-# accuracy_t3 ~ 1 * accuracy_t2
-# accuracy_t4 ~ 1 * accuracy_t3
-# speed_t2 ~ 1 * speed_t1
-# speed_t3 ~ 1 * speed_t2
-# speed_t4 ~ 1 * speed_t3
-
-# regressions
-accuracy_intercept =~ 1*accuracy_t1 + 1*accuracy_t2 + 1*accuracy_t3 + 1*accuracy_t4 
-accuracy_slope =~ 1*accuracy_t1 + 2*accuracy_t2 + 3*accuracy_t3 + 4*accuracy_t4
-speed_intercept =~ 1*speed_t1 + 1*speed_t2 + 1*speed_t3 + 1*speed_t4 
-speed_slope =~ 1*speed_t1 + 2*speed_t2 + 3*speed_t3 + 4*speed_t4
-vocab_intercept =~ 1*vocab_t1 + 1*vocab_t2 + 1*vocab_t3 + 1*vocab_t4 
-vocab_slope =~ 1*vocab_t1 + 2*vocab_t2 + 3*vocab_t3 + 4*vocab_t4
-
-# parameters for the regressions
-vocab_intercept ~ 1
-vocab_slope ~ 1
-accuracy_intercept ~ 1
-accuracy_slope ~ 1
-speed_intercept ~ 1
-speed_slope ~ 1
-
-# residual variance for the latents
-vocab_t1 ~~ NA*vocab_t1
-vocab_t2 ~~ NA*vocab_t2
-vocab_t3 ~~ NA*vocab_t3
-vocab_t4 ~~ NA*vocab_t4
-accuracy_t1 ~~ NA*accuracy_t1
-accuracy_t2 ~~ NA*accuracy_t2
-accuracy_t3 ~~ NA*accuracy_t3
-accuracy_t4 ~~ NA*accuracy_t4
-speed_t1 ~~ NA*speed_t1
-speed_t2 ~~ NA*speed_t2
-speed_t3 ~~ NA*speed_t3
-speed_t4 ~~ NA*speed_t4
-
-# residual variance for the other latents
-vocab_intercept ~~ NA*vocab_intercept
-vocab_slope ~~ NA*vocab_slope
-accuracy_intercept ~~ NA*accuracy_intercept
-accuracy_slope ~~ NA*accuracy_slope
-speed_intercept ~~ NA*speed_intercept
-speed_slope ~~ NA*speed_slope
-
-# set observed intercepts to zero - these should go into the latents
-prod_t1 ~ 0
-prod_t2 ~ 0
-prod_t3 ~ 0
-prod_t4 ~ 0
-comp_t1 ~ 0 
-log_rt_t1 ~ 0
-log_rt_t2 ~ 0
-log_rt_t3 ~ 0
-log_rt_t4 ~ 0
-log_rt_sd_t1 ~ 0 
-log_rt_sd_t2 ~ 0
-log_rt_sd_t3 ~ 0 
-log_rt_sd_t4 ~ 0 
-acc_t1 ~ 0 
-acc_t2 ~ 0 
-acc_t3 ~ 0 
-acc_t4 ~ 0 
-acc_sd_t1 ~ 0
-acc_sd_t2 ~ 0
-acc_sd_t3 ~ 0
-acc_sd_t4 ~ 0
-"
-
-fit3_long <- sem(fa3_model_long, d_sub_wide_fine, std.lv=TRUE, missing='fiml')
-
-summary(fit3_long, fit.measures=TRUE, standardize=TRUE)
-
-```
-
-
-```{r}
-layout <- read.csv(here("misc/layout_dt3.csv"), header = FALSE)
-graph_sem(model = fit3_long, text_size = 3, layout=t(layout))
-
-```
-
-
-<!-- # Short Window Analysis -->
-
-<!-- Need to redo all figures using short windows ugh.  -->
 # References
 
 Heathcote, A., Brown, S., \& Mewhort, D. J. K. (2000). The power law repealed: The case for an exponential law of practice. Psychonomic Bulletin & Review, 7(2), 185–207.
