@@ -219,17 +219,67 @@ as.data.frame(unclass(loadings(fs))) |>
 
 # Alternative Factor Structures
 
+In this section, we provide comparisons between the three-factor model we report in the main text and several alternative models, including:
 
+* a one-factor model;
+* a two-factor model with vocabulary separated from speed and accuracy;
+* a two-factor model with speed separated from accuracy and vocabulary; and 
+* a two-factor model with variability terms separated from speed, accuracy, and vocabulary.
 
+\noindent Table \ref{tab:modcomp} shows the result of these comparisons. The three-factor model shows the lowest AIC and BIC, as well as being significantly better fittign than the next-best model.
 
-- Alternative factor models: variances together, two factor, etc. etc. 
+```{r, eval=FALSE}
+fa1_model <-  "
+F1  =~ log_rt + log_rt_var + long_window_accuracy + long_window_acc_var + prod + comp"
+fa1_fit <- cfa(fa1_model, d_sub_mat_s, std.lv=TRUE, missing='fiml')
+
+fa2_model <-  "
+processing =~ log_rt + log_rt_var + long_window_accuracy + long_window_acc_var
+vocabulary =~ prod + comp"
+fa2_fit <- cfa(fa2_model, d_sub_mat_s, std.lv=TRUE, missing='fiml')
+
+fa2b_model <-  "
+accuracy =~ long_window_accuracy + long_window_acc_var + prod + comp
+speed =~ log_rt + log_rt_var"
+fa2b_fit <- cfa(fa2b_model, d_sub_mat_s, std.lv=TRUE, missing='fiml')
+
+fa2v_model <-  "
+language =~ log_rt + long_window_accuracy + prod + comp
+               variability =~  long_window_acc_var + log_rt_var"
+fa2v_fit <- cfa(fa2v_model, d_sub_mat_s, std.lv=TRUE, missing='fiml')
+
+fa3_model <-  "
+speed =~ log_rt  + log_rt_var
+accuracy =~ long_window_accuracy + long_window_acc_var 
+vocab =~ prod + comp"
+fa3_fit <- cfa(fa3_model, d_sub_mat_s, std.lv=TRUE, missing='fiml')
+
+xtable(anova(fa1_fit, fa2_fit, fa2b_fit, fa2v_fit, fa3_fit), digits = 2)
+```
+<!-- xtable 1.8-4 package -->
+<!-- % Fri Apr  4 15:15:52 2025 -->
+\begin{table}[ht]
+\centering
+\caption{Model comparison for alternative factor structures. $p$-values show differences between adjacent models; no $p$-values are shown for comparisons between non-nested models. \label{tab:modcomp}}
+\begin{tabular}{lrrrrrrrr}
+  \hline
+ & Df & AIC & BIC & Chisq & Chisq diff & RMSEA & Df diff & Pr($>$Chisq) \\ 
+  \hline
+Three-factor  & 6 & 46346.69 & 46475.43 & 91.96 &  &  &  &  \\ 
+  Two-factor (vocab)  & 8 & 46397.74 & 46514.22 & 147.01 & 55.05 & 0.09 & 2 & $<$ 0.0001 \\ 
+  Two-factor (speed) & 8 & 46486.96 & 46603.44 & 236.23 & 89.22 & 0.00 & 0 &  \\ 
+  Two-factor (variability) & 8 & 46536.10 & 46652.58 & 285.37 & 49.14 & 0 & 0.00 &  \\ 
+  One-factor & 9 & 46535.49 & 46645.84 & 286.76 & 1.39 & 0.01 & 1 & 0.24 \\ 
+   \hline
+\end{tabular}
+\end{table}
 
 # Non-linear Growth Models
 
 To test for the differentiation of vocabulary growth based on initial reaction time, we used the package `nlme` to fit a logistic growth model to the production data. This model has two parameters for the logistic curve, a scale and an intercept. Both were allowed to interact with initial reaction time. We also included random effects of logistic intercept and scale by participant and a grouping term across datasets. This model showed a significant effect of initial reaction time on the intercept of the logistic growth curve, but not on its scale (see Table \ref{tab:nlme}). 
 
-% latex table generated in R 4.4.2 by xtable 1.8-4 package
-% Thu Mar 13 13:10:30 2025
+<!-- % latex table generated in R 4.4.2 by xtable 1.8-4 package -->
+<!-- % Thu Mar 13 13:10:30 2025 -->
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrrrrr}
@@ -246,10 +296,6 @@ Growth Scale $\times$ $t_0$ RT & 0.28 & 0.38 & 1766.00 & 0.75 & 0.46 \\
 \end{table}
 
 Interpretation of growth in both this model and the linear growth model in the main text is complicated by the fact that the CDI form puts a ceiling on the total number of words that can be recorded; both the quadratic growth functions and the logistic functions come together at the form ceiling. Thus, a shift in quadratic growth in the linear model and a shift in intercept in the logistic model both point to the same overall effect, which is faster growth at the point of maximal sensitivity of the CDI. Neither model can estimate whether the overall growth trajectory is different beyond the range of the CDI. Thus, although these models might initially seem to be in conflict, we believe that they actually point to the same phenomenon, which is perhaps better described by the longitudinal SEM model reported in the main text. Children with greater skill in word recognition show an overall positive shift in the growth trajectory of vocabulary development.
-
-```{r}
-# xtable(summary(mod_nlme)$tTable)
-```
 
 
 # Latent Factor Growth
