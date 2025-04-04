@@ -181,7 +181,7 @@ source(here("helper","common.R"))
 source(here("helper/modified_sem_plot.R"))
 
 #load d_aoi for timecourse plot
-d_aoi <- readRDS(here("cached_intermediates","1_d_aoi.Rds"))
+d_aoi <- readRDS(here("cached_intermediates","0_d_aoi.Rds"))
 d_trial <- readRDS(here("cached_intermediates","1_d_trial.Rds")) |>
   mutate(log_age = log(age))
 d_sub <- readRDS(here("cached_intermediates","1_d_sub.Rds")) |>

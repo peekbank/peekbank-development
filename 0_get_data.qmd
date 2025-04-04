@@ -55,13 +55,13 @@ aoi_data_joined <- all_aoi_timepoints |>
                      distractor_novelty = stimulus_novelty,
                      distractor_label = english_stimulus_label))
 
-save(aoi_data_joined, file= here("cached_intermediates","0_aoi_data_joined.Rds"))
+saveRDS(aoi_data_joined, file= here("cached_intermediates","0_aoi_data_joined.Rds"))
 ```
 
 Check on number of datasets. 
 
 ```{r}
-load(here("cached_intermediates", "1_aoi_data_joined.Rds"))
+aoi_data_joined <- readRDS(here("cached_intermediates", "1_aoi_data_joined.Rds"))
 length(unique(aoi_data_joined$dataset_name))
 unique(aoi_data_joined$dataset_name)
 ```
@@ -176,7 +176,7 @@ Previously we filtered by hand, but for several of our analyses, we want all the
 d_aoi <- d_aoi |>
   filter(t_norm >= -4000, t_norm <= 4000)
 
-save(d_aoi, file = here("cached_intermediates","1_d_aoi.Rds"))
+saveRDS(d_aoi, file = here("cached_intermediates","0_d_aoi.Rds"))
 ```
 
 ## CDI data
@@ -295,7 +295,7 @@ cdi_data <- fuzzyjoin::difference_left_join(mutate(admin_info, subject_id = 10*s
   mutate(across(c("prod","comp"), ~ifelse(is.nan(.x), NA, .x))) |>
   ungroup()                     
 
-save(cdi_data, file=here("cached_intermediates", "0_cdi_subjects.Rds"))
+saveRDS(cdi_data, file=here("cached_intermediates", "0_cdi_subjects.Rds"))
 ```
 
 ```{r}

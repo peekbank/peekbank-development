@@ -21,7 +21,7 @@ FIXME: we ideally want to figure out a more sustainable way to deal with this do
 We load the frame-level data. 
 
 ```{r}
-readRDS(file = here("cached_intermediates", "0_d_aoi.Rds"))
+d_aoi <- readRDS(file = here("cached_intermediates", "0_d_aoi.Rds"))
 ```
 
 
@@ -248,7 +248,7 @@ d_sub_nocdi_exclusions <- d_sub_nocdi |>
 This join is very tricky and is done based on some careful work in `peekbank-method` to get the English CDIs and fuzzy join them. 
 
 ```{r}
-load(here("cached_intermediates", "0_cdi_subjects.Rds"))
+cdi_data <- readRDS(here("cached_intermediates", "0_cdi_subjects.Rds"))
 
 d_sub <- d_sub_nocdi_exclusions |>
   left_join(select(cdi_data, -age, -dataset_name), 
