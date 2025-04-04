@@ -22,19 +22,40 @@ suppressMessages(source(paper))
 
 # Dataset Description
 
-Figure \ref{fig:dataset} gives the age distribution for each separate dataset. 
+Figure \ref{fig:dataset} gives the age distribution of unique participants for each separate dataset at different ages. 
+Note that for some datasets, there are multiple administrations (i.e., experimental test sessions) for each participant.
 
 ```{r dataset, fig.cap="\\label{fig:dataset} Age distribution for each dataset, using three-month bins.", fig.pos="h!"}
-ggplot(d_sub, aes(x = age))+ 
-  geom_histogram(binwidth = 3) + 
+
+# summarize participants by age bin
+d_sub_admin_by_age <- d_sub |>
+  mutate(age_bin = age %/% 3 * 3+1.5) |>
+  group_by(dataset_name, age_bin) |>
+  summarise(
+    n_subj = n_distinct(subject_id),
+    n_administration = n_distinct(administration_id)) |>
+  ungroup()
+
+# ggplot(d_sub, aes(x = age))+ 
+#   geom_histogram(binwidth=3) + 
+#   facet_wrap(~dataset_name, scale = "free_y") +
+#   xlab("Age (months)") + 
+#   ylab("Number of administrations")+
+#   theme(strip.text.x = element_text(size = 5))
+
+# plot number of participants across age
+ggplot(d_sub_admin_by_age, aes(x = age_bin,y=n_subj))+ 
+  geom_bar(stat="identity",width=3) + 
   facet_wrap(~dataset_name, scale = "free_y") +
   xlab("Age (months)") + 
-  ylab("Number of participants")
+  ylab("Number of participants")+
+  theme(strip.text.x = element_text(size = 5))
+
 ```
 
-Figure \ref{fig:longitudinal} shows the distribution of measurement intervals for longitudinal studies within the dataset.
+Figure \ref{fig:longitudinal_descriptives} shows the distribution of measurement intervals for longitudinal studies within the dataset.
 
-```{r longitudinal, fig.cap="\\label{fig:longitudinal} Number of administrations for datasets with repeated measurements, plotted by dataset.", fig.pos="h!"}
+```{r longitudinal_descriptives, fig.cap="\\label{fig:longitudinal_descriptives} Number of administrations for datasets with repeated measurements, plotted by dataset.", fig.pos="h!"}
 
 d_sub_long <- d_sub |>
   filter(subject_id %in% longitudinal$subject_id) |>

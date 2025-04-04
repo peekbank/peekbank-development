@@ -62,11 +62,10 @@ rsconnect/
 .DS_Store
 paper/paper.pdf
 paper/paper.tex
-paper/paper_files/figure-latex/age_regression-1.pdf
-paper/paper_files/figure-latex/devchange-1.pdf
-paper/paper_files/figure-latex/growth-1.pdf
-paper/paper_files/figure-latex/longitudinal-1.pdf
-paper/paper_files/figure-latex/variance-1.pdf
+paper/paper_files/figure-latex/*
 paper/paper.log
 *.R
 paper/paper_files/figure-latex/timecourse-1.pdf
+paper/supplemental_information_files/*
+paper/supplemental_information.tex
+paper/supplemental_information.pdf
