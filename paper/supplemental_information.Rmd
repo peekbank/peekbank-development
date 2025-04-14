@@ -215,7 +215,9 @@ papaja::apa_table(rt_mods_lmer_summary)
 
 # Factor Analysis 
 
-```{r}
+Figure 3 shows the result of a parallel analysis supporting the presence of three factors in the exploratory factor analysis. Table \ref{tab:loadings} shows the factor loadings for the exploratory three-factor solution using varimax rotation. The first factor is primarily driven by vocabulary measures, the second by reaction time, and the third by accuracy measures.
+
+```{r parallel, fig.cap="Parallel analysis scree plot showing the eigenvalues for each factor, for actual, simulated, and resampled data."}
 d_sub_mat <- d_sub |>
   ungroup() |>
   select(dataset_name, rt, rt_var, long_window_accuracy, long_window_acc_var, prod, comp, age) 
@@ -225,18 +227,37 @@ d_sub_mat_s <- d_sub_mat |>
   mutate(across(all_of(c("rt", "rt_var", "long_window_accuracy", 
                          "long_window_acc_var", "prod", "comp")), 
                 ~ age_scale(.x, age))) 
-fa.parallel(select(d_sub_mat, -dataset_name, -age), fa = "fa", 
-            use = "pairwise.complete.obs")
+outputs <- capture.output(fa.parallel(select(d_sub_mat, -dataset_name, -age), fa = "fa", 
+            use = "pairwise.complete.obs"))
 ```
 
-```{r}
+```{r eval=FALSE}
 fs <- fa(select(d_sub_mat, -dataset_name), nfactor = 3,
          use = "pairwise", rotate = "varimax")
 
 as.data.frame(unclass(loadings(fs))) |> 
-  kable(caption = "Factor loadings for the exploratory three factor solution using varimax rotation.", digits = 2)
+  xtable(caption = "Factor loadings for the exploratory three factor solution using varimax rotation.", digits = 2)
 ```
 
+<!-- % latex table generated in R 4.4.2 by xtable 1.8-4 package -->
+<!-- % Mon Apr 14 12:25:14 2025 -->
+\begin{table}[ht]
+\centering
+\begin{tabular}{rrrr}
+  \hline
+ & F1 & F2 & F3 \\ 
+  \hline
+RT & -0.19 & 0.81 & -0.30 \\ 
+  RT var & -0.10 & 0.81 & -0.22 \\ 
+  long window accuracy & 0.33 & -0.31 & 0.55 \\ 
+  long window accuracy var & -0.10 & 0.26 & -0.65 \\ 
+  production vocabulary & 0.95 & -0.04 & 0.30 \\ 
+  comprehension vocabulary & 0.61 & -0.16 & -0.01 \\ 
+  age & 0.63 & -0.14 & 0.37 \\ 
+   \hline
+\end{tabular}
+\caption{\label{tab:loadings}Factor loadings for the exploratory three factor solution using varimax rotation.} 
+\end{table}
 
 # Alternative Factor Structures
 
@@ -289,7 +310,7 @@ xtable(anova(fa1_fit, fa2_fit, fa2b_fit, fa2v_fit, fa3_fit), digits = 2)
 Three-factor  & 6 & 46346.69 & 46475.43 & 91.96 &  &  &  &  \\ 
   Two-factor (vocab)  & 8 & 46397.74 & 46514.22 & 147.01 & 55.05 & 0.09 & 2 & $<$ 0.0001 \\ 
   Two-factor (speed) & 8 & 46486.96 & 46603.44 & 236.23 & 89.22 & 0.00 & 0 &  \\ 
-  Two-factor (variability) & 8 & 46536.10 & 46652.58 & 285.37 & 49.14 & 0 & 0.00 &  \\ 
+  Two-factor (variability) & 8 & 46536.10 & 46652.58 & 285.37 & 49.14 & 0 & 0 &  \\ 
   One-factor & 9 & 46535.49 & 46645.84 & 286.76 & 1.39 & 0.01 & 1 & 0.24 \\ 
    \hline
 \end{tabular}
