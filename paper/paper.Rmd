@@ -62,7 +62,7 @@ abstract: |
 
 
 significance: |
-  The efficiency with which children recognize words provides a measurement of their real-time language processing, which has been argued to be a key part of the language learning process. Here, we use a large dataset of eye-tracking data from many different experiments to map out the development of word recognition, finding that this process becomes faster, more accurate, and less variable in the period between one and six years of age, and that children who are better at word recognition tend to have larger and faster-growing vocabularies. These data suggest that understanding language in real time is an important part of eearly language learning and that it improves gradually with practice across early childhood.
+  The efficiency with which children recognize words provides a measurement of their real-time language processing, which has been argued to be a key part of the language learning process. Here, we use a large dataset of eye-tracking data from many different experiments to map out the development of word recognition, finding that this process becomes faster, more accurate, and less variable in the period between one and six years of age, and that children who are better at word recognition tend to have larger and faster-growing vocabularies. These data suggest that understanding language in real time is an important part of early language learning and that it improves gradually with practice across early childhood.
 
 acknowledgements: |
   This work was supported by a grant from the Jacobs Foundation. 
@@ -122,7 +122,7 @@ Word recognition ability, as measured by LWL, is hypothesized to play a key role
 \centering
 \begin{tabular}{rlrrrrrrrll}
   \hline
- & dataset\_name & N subjects & N admins & Mean Age & Min Age & Max Age & Avg Trials & Avg RT Trials & CDIs & longitudinal \\ 
+ & Dataset Name & N subjects & N Admins & Mean Age & Min Age & Max Age & Avg Trials & Avg RT Trials & CDIs & longitudinal \\ 
   \hline
 1 & Yurovsky et al. (2017) & 310 & 310 & 36.82 & 12.24 & 60.00 & 6.21 & 2.87 &  &  \\ 
   2 & Yurovsky et al. (2017b) & 282 & 282 & 25.64 & 12.59 & 58.65 & 5.95 & 2.79 &  &  \\ 
