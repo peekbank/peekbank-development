@@ -7,6 +7,9 @@ output:
 header-includes:
   - \usepackage{threeparttablex}
   - \usepackage{booktabs}
+  - \renewcommand{\thefigure}{S\arabic{figure}}
+  - \renewcommand{\thetable}{S\arabic{table}}
+
 ---
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
@@ -25,7 +28,7 @@ suppressMessages(source(paper))
 Figure \ref{fig:dataset} gives the age distribution of unique participants for each separate dataset at different ages. 
 Note that for some datasets, there are multiple administrations (i.e., experimental test sessions) for each participant.
 
-```{r dataset, fig.cap="\\label{fig:dataset} Age distribution for each dataset, using three-month bins.", fig.pos="h!"}
+```{r dataset, fig.cap="\\label{fig:dataset} Age distribution of unique participants for each dataset, using three-month bins.", fig.pos="h!"}
 
 # summarize participants by age bin
 d_sub_admin_by_age <- d_sub |>
@@ -55,24 +58,208 @@ ggplot(d_sub_admin_by_age, aes(x = age_bin,y=n_subj))+
 
 Figure \ref{fig:longitudinal_descriptives} shows the distribution of measurement intervals for longitudinal studies within the dataset.
 
-```{r longitudinal_descriptives, fig.cap="\\label{fig:longitudinal_descriptives} Number of administrations for datasets with repeated measurements, plotted by dataset.", fig.pos="h!"}
+```{r longitudinal_descriptives, fig.cap="\\label{fig:longitudinal_descriptives} Distribution of retest administrations across datasets with repeated measurements, colored by dataset. Each count indicates a retest administration (initial administrations are excluded). Administrations listed with a retest interval of 0 indicate retests within a month of the initial administration.", fig.pos="h!"}
 
 d_sub_long <- d_sub |>
   filter(subject_id %in% longitudinal$subject_id) |>
   group_by(subject_id) |>
   arrange(age) |>
-  mutate(admin_num = 1:n(), 
-         delta_t = age - age[1])
+  mutate(delta_t = age - age[1])
 
-ggplot(d_sub_long, 
+ggplot(filter(d_sub_long, admin_num > 1), 
        aes(x = delta_t, fill = dataset_name)) +
   geom_histogram(binwidth = 1) + 
   scale_fill_solarized(name = "Dataset") +
   theme(legend.position = "bottom") + 
   # facet_wrap(~dataset_name) + 
-  xlab("Age since first test") + 
-  ylab("Number of participants")
+  xlab("Months since first test administration") + 
+  ylab("Number of administrations")
 ```
+
+# Reaction Time Computation
+
+Eye-tracking data are stored in Peekbank as a time series of fixations to specific areas of interest (in particular, the target and distractor on each trial). Other fixations can be to areas not in the target or distractor as well to off-screen areas. This time series has a uniform sample rate of 25ms/sample, based on resampling of the data in Peekbank to 40 Hz during preprocessing [@zettersten2023peekbank]. Reaction times are computed by filtering trials to only those on which the child is fixating the distractor at the point of disambiguation ($t=0$) and then finding those trials on which the first non-missing fixation is to the target (hence excluding trials without a shift and trials on which a shift is to an off-screen location). The reaction time is then the total time from $t=0$ to the first timestep during which the child fixates the target. Consistent with standard practice in the literature following Fernald et al. (2008), RTs that are shorter than 367 ms are excluded as they are too short to be considered a response to the stimulus. 
+
+
+
+
+# Separability of Variability from Other Measures
+
+## Reaction Time
+
+```{r}
+library(fitdistrplus)
+library(statmod)
+
+library(gamlss.dist)
+
+rt_fitting  <- d_sub |>
+  ungroup() |>
+  filter(!is.na(rt)) |>
+  mutate(age_bin = cut(age,
+                       breaks = c(0,12,15,18,21,24,27,30,36,60), 
+                       labels = c("<12", "12-15","15-18", "18-21", 
+                                  "21-24", "24-27","27-30","30-36", ">36"))) |>
+  select(age_bin, rt)
+
+
+norm <- fitdist(rt_fitting$rt, distr = "norm", method = "mle")
+lnorm <- fitdist(rt_fitting$rt, distr = "lnorm", method = "mle")
+wald <- fitdist(rt_fitting$rt, distr = "invgauss", method = "mle", 
+                start = list(mean = 1, shape = 1, dispersion = 1))
+exgaus <- fitdist(rt_fitting$rt, distr = "exGAUS", method = "mle", 
+                  start = list(mu = 1000, sigma = 500, nu = 1), 
+                  lower = c(0, 0, 0))
+
+BIC(norm)
+BIC(lnorm)
+BIC(wald)
+BIC(exgaus)
+
+
+rt_fits <- rt_fitting |>
+  group_by(age_bin) |>
+  nest(rt) |>
+  mutate(
+    norm = map(data, \(d) fitdist(d$rt, distr = "norm", method = "mle")),
+    lnorm = map(data, \(d) fitdist(d$rt, distr = "lnorm", method = "mle")),
+    wald = map(data, \(d) fitdist(d$rt, distr = "invgauss", method = "mle", 
+                                  start = list(mean = 1, shape = 1, dispersion = 1))),
+    exgaus = map(data, \(d) fitdist(d$rt, distr = "exGAUS", method = "mle", 
+                                    start = list(mu = 1000, sigma = 500, nu = 1), 
+                                    lower = c(0, 0, 0)))) |>
+  select(-data) |>
+  pivot_longer(norm:exgaus, names_to = "distribution", values_to = "fit") |>
+  mutate(BIC = map_dbl(fit, BIC)) |>
+  group_by(age_bin) |>
+  mutate(min_bic = BIC == min(BIC))
+
+ggplot(rt_fits, 
+       aes(x = distribution, y = BIC, col = min_bic)) + 
+  geom_point(stat = "identity", position = "dodge") + 
+  scale_color_solarized(name = "Lowest BIC") + 
+  xlab("Age bin") + 
+  ylab("BIC") + 
+  coord_flip() + 
+  facet_wrap(~age_bin, scales = "free_y") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+
+
+
+```{r}
+rt_hist_data <- d_sub |>
+  mutate(
+    age_bin = cut(age,
+                  breaks = c(0,12,15,18,21,24,27,30,36,60), 
+                  labels = c("<12", "12-15","15-18", "18-21", 
+                             "21-24", "24-27","27-30","30-36", ">36"))) 
+
+bw = .2
+
+rt_hist_summary <- rt_hist_data |>
+  group_by(age_bin) |>
+  summarise(m = mean(log_rt, na.rm = TRUE), 
+            sd = sd(log_rt, na.rm = TRUE), 
+            n = n()) |>
+  expand_grid(log_rt = seq(6,8,.01)) |>
+  mutate(norm = dnorm(log_rt, mean = m, sd = sd) * n * bw)
+
+
+ggplot(rt_hist_data,
+       aes(x = log_rt)) + 
+  geom_histogram(binwidth = bw) + 
+  geom_line(data = rt_hist_summary, aes(x = log_rt, y = norm), col = "blue") +
+  xlab("Log RT (ms)") + 
+  ylab("Number of trials") + 
+  facet_wrap(~age_bin)+ 
+  theme_few()
+```
+
+
+
+
+## Accuracy
+
+
+```{r}
+acc_hist_data <- d_sub |>
+  mutate(
+    age_bin = cut(age,
+                  breaks = c(0,12,15,18,21,24,27,30,36,60), 
+                  labels = c("<12", "12-15","15-18", "18-21", 
+                             "21-24", "24-27","27-30","30-36", ">36"))) 
+
+bw = .025
+
+acc_hist_summary <- acc_hist_data |>
+  group_by(age_bin) |>
+  summarise(m = mean(long_window_accuracy, na.rm = TRUE),
+            sd = sd(long_window_accuracy, na.rm = TRUE),
+            n = n()) |>
+  expand_grid(acc = seq(0,1,.01)) |>
+  mutate(norm = dnorm(acc, mean = m, sd = sd) * n * bw)
+
+
+ggplot(acc_hist_data,
+       aes(x = long_window_accuracy)) + 
+  geom_histogram(binwidth = bw) + 
+  geom_line(data = acc_hist_summary, aes(x = acc, y = norm), col = "blue") +
+  xlab("Long Window Accuracy") + 
+  ylab("Number of trials") + 
+  facet_wrap(~age_bin) + 
+  theme_few()
+```
+
+```{r}
+
+acc_fitting  <- d_sub |>
+  ungroup() |>
+  filter(!is.na(long_window_accuracy)) |>
+  mutate(age_bin = cut(age,
+                       breaks = c(0,12,15,18,21,24,27,30,36,60), 
+                       labels = c("<12", "12-15","15-18", "18-21", 
+                                  "21-24", "24-27","27-30","30-36", ">36"))) |>
+  select(age_bin, long_window_accuracy)
+
+
+norm <- fitdist(acc_fitting$long_window_accuracy, distr = "norm", method = "mle")
+beta <- fitdist(acc_fitting$long_window_accuracy, distr = "beta", method = "mle")
+
+BIC(norm)
+BIC(beta)
+```
+
+```{r}
+
+acc_fits <- acc_fitting |>
+  group_by(age_bin) |>
+  nest(long_window_accuracy) |>
+  mutate(
+    norm = map(data, \(d) fitdist(d$long_window_accuracy, distr = "norm", method = "mle")),
+    beta = map(data, \(d) fitdist(d$long_window_accuracy, distr = "beta", method = "mle"))) |>
+  select(-data) |>
+  pivot_longer(norm:beta, names_to = "distribution", values_to = "fit") |>
+  mutate(BIC = map_dbl(fit, BIC)) |>
+  group_by(age_bin) |>
+  mutate(min_bic = BIC == min(BIC))
+
+ggplot(acc_fits, 
+       aes(x = distribution, y = BIC, col = min_bic)) + 
+  geom_point(stat = "identity", position = "dodge") + 
+  scale_color_solarized(name = "Lowest BIC") + 
+  xlab("Age bin") + 
+  ylab("BIC") + 
+  coord_flip() + 
+  facet_wrap(~age_bin, scales = "free_y") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
 
 # Test-Retest Reliability
 
@@ -160,7 +347,7 @@ cor(select(d_sub, age, log_age, rt, log_rt,
 
 # Functional Form Model Comparison
 
-Table \ref{tab:accmods} shows model comparison measures between for different models of the functional form of the relationship between accuracy and age and Table \ref{tab:rtmods} shows the same for reaction time. Age gradients are estimated substantially better with long window accuracies. Note that there are a greater number of observations for short window accuracies due to less missing data. We speculate that, on average, more participants looked away from the screen towards the end of trials, leading to a greater number of exclusions of long window trials based on the 50% criterion. Note that the total percentage of trials excluded is still small for both measures: `r round(mean(is.na(d_trial$long_window_accuracy)), 2)`% for long window accuracy and `r round(mean(is.na(d_trial$short_window_accuracy)), 2)`% for short window accuracy. 
+Table \ref{tab:accmods} shows model comparison measures between for different models of the functional form of the relationship between accuracy and age and Table \ref{tab:rtmods} shows the same for reaction time. Age gradients are estimated substantially better with long window accuracies. Note that there are a greater number of observations for short window accuracies due to less missing data. We speculate that, on average, more participants looked away from the screen towards the end of trials, leading to a greater number of exclusions of long window trials based on the 50% criterion. Note that the total percentage of trials excluded is still small for both measures: `r round(mean(is.na(d_trial$long_window_accuracy)), 3)*100`% for long window accuracy and `r round(mean(is.na(d_trial$short_window_accuracy)), 3)*100`% for short window accuracy. 
 
 
 \begin{table}[tbp]
@@ -199,8 +386,6 @@ n. obs & \multicolumn{1}{c}{sigma} & \multicolumn{1}{c}{logLik} & \multicolumn{1
 \caption{Model comparison metrics for different functional forms of the relationship between RT and age. \label{tab:rtmods}}
 \end{table}
 
-Note that with our current dataset we cannot specifically determine whether within-individual patterns of change conform to linear, power law, or exponential developmental patterns (Heathcote, Brown, \& Mewhort, 2000). Our current results apply to the form of the age gradient as opposed to the form of any individual's pattern of developmental change. 
-
 
 
 ```{r accmods, results="asis", include = FALSE}
@@ -211,6 +396,42 @@ papaja::apa_table(acc_mods_lmer_summary)
 ```{r results="asis", include = FALSE}
 papaja::apa_table(rt_mods_lmer_summary)
 ```
+
+# Power Law Fits
+
+In the literature on the "law of practice", although the log-log relationship we observed is commonly present in the aggregate across individuals, the situation is substantially more complex when relationships are measured within individuals. The best fitting curves for individuals are often exponentials or delayed exponentials  (Evans et al., 2018; Heathcote, Brown, \& Mewhort, 2000). With our current dataset we cannot specifically determine whether within-individual patterns of change conform to linear, power law, or exponential developmental patterns unfortunately, because we have insufficient data about individuals' improvement across time. Thus, our current results apply to the form of the age gradient as opposed to the form of any individual's pattern of developmental change. 
+
+Nevertheless, here we test for other forms of the aggregate relationship between age and reaction time. In particular, we consider further model comparison between the 
+
+
+```{r rt_mods}
+rt_more_mods_lmer <- 
+  list(log_log = lmer(log_rt ~ log_age_s + 
+                        (log_age_s | dataset_name) + (1 | subject_id), 
+                      data = d_trial),
+       log_log_plus = lmer(log_rt ~ log_age_s + age_s +  
+                             (log_age_s + age_s | dataset_name) + (1 | subject_id), 
+                           data = d_trial), 
+       lin_poly2 = lmer(rt ~ poly(age_s, 2) +  
+                        (age_s | dataset_name) + (1 | subject_id), 
+                      data = d_trial),
+       lin_poly3 = lmer(rt ~ poly(age_s, 3) +  
+                        (age_s | dataset_name) + (1 | subject_id), 
+                      data = d_trial))
+
+
+rt_more_mods_lmer_summary <- map_df(rt_more_mods_lmer, ~broom.mixed::glance(.x)) |>
+  mutate(model = names(rt_more_mods_lmer), 
+         r2 = map_dbl(rt_more_mods_lmer, ~performance::r2_nakagawa(.x)$R2_conditional))
+```
+
+# Mixed effects model specifications
+
+Here we provide specifications for the mixed effects models used in the main text. These models are used to estimate the relationship between age and the primary variables of interest, controlling for dataset and subject-level variability.
+
+\verbatim{lmer(long_window_acc_var ~ log_age_s + (log_age_s | dataset_name) + (1 | subject_id)}
+
+FIXME
 
 
 # Factor Analysis 
@@ -228,7 +449,7 @@ d_sub_mat_s <- d_sub_mat |>
                          "long_window_acc_var", "prod", "comp")), 
                 ~ age_scale(.x, age))) 
 outputs <- capture.output(fa.parallel(select(d_sub_mat, -dataset_name, -age), fa = "fa", 
-            use = "pairwise.complete.obs"))
+                                      use = "pairwise.complete.obs"))
 ```
 
 ```{r eval=FALSE}
@@ -244,20 +465,72 @@ as.data.frame(unclass(loadings(fs))) |>
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrrr}
-  \hline
- & F1 & F2 & F3 \\ 
-  \hline
+\hline
+& F1 & F2 & F3 \\ 
+\hline
 RT & -0.19 & 0.81 & -0.30 \\ 
-  RT var & -0.10 & 0.81 & -0.22 \\ 
-  long window accuracy & 0.33 & -0.31 & 0.55 \\ 
-  long window accuracy var & -0.10 & 0.26 & -0.65 \\ 
-  production vocabulary & 0.95 & -0.04 & 0.30 \\ 
-  comprehension vocabulary & 0.61 & -0.16 & -0.01 \\ 
-  age & 0.63 & -0.14 & 0.37 \\ 
-   \hline
+RT var & -0.10 & 0.81 & -0.22 \\ 
+long window accuracy & 0.33 & -0.31 & 0.55 \\ 
+long window accuracy var & -0.10 & 0.26 & -0.65 \\ 
+production vocabulary & 0.95 & -0.04 & 0.30 \\ 
+comprehension vocabulary & 0.61 & -0.16 & -0.01 \\ 
+age & 0.63 & -0.14 & 0.37 \\ 
+\hline
 \end{tabular}
 \caption{\label{tab:loadings}Factor loadings for the exploratory three factor solution using varimax rotation.} 
 \end{table}
+
+# Factor Analysis: First Administrations
+
+```{r}
+d_sub_mat_firstadmin <- d_sub_firstadmin |>
+  ungroup() |>
+  select(dataset_name, log_rt, log_rt_var, long_window_accuracy, long_window_acc_var, prod, comp, age, log_age) 
+
+
+d_sub_mat_firstadmin_s <- d_sub_mat_firstadmin |>
+  ungroup() |>
+  mutate(across(all_of(c("log_rt", "log_rt_var", "long_window_accuracy", 
+                         "long_window_acc_var", "prod", "comp")), 
+                ~ age_scale(.x, age))) 
+```
+
+
+```{r}
+fit3_firstadmin <- cfa(fa3_model, d_sub_mat_firstadmin_s, 
+                       std.lv=TRUE, missing='fiml')
+
+fit_stats_firstadmin <- suppressMessages(summary(fit3_firstadmin, 
+                                                 fit.measures=TRUE, 
+                                                 standardize=TRUE))
+```
+
+
+```{r}
+d_sub_mat_firstadmin_s_renamed <- d_sub_mat_firstadmin_s |>
+  rename(acc = long_window_accuracy, 
+         acc_sd = long_window_acc_var, 
+         log_rt_sd = log_rt_var)
+
+fit3_age_firstadmin <- cfa(fa3_age_model, 
+                           d_sub_mat_firstadmin_s_renamed, 
+                           std.lv=TRUE, missing='fiml')
+
+fit3_age_summary_firstadmin <- 
+  suppressMessages(summary(fit3_age_firstadmin, 
+                           fit.measures=TRUE, 
+                           standardize=TRUE))
+```
+
+
+```{r}
+library(semoutput)
+semoutput::sem_fitmeasures(fit3)
+semoutput::sem_fitmeasures(fit3_firstadmin)
+semoutput::sem_fitmeasures(fit3_age)
+semoutput::sem_fitmeasures(fit3_age_firstadmin)
+
+```
 
 # Alternative Factor Structures
 
@@ -287,7 +560,7 @@ fa2b_fit <- cfa(fa2b_model, d_sub_mat_s, std.lv=TRUE, missing='fiml')
 
 fa2v_model <-  "
 language =~ log_rt + long_window_accuracy + prod + comp
-               variability =~  long_window_acc_var + log_rt_var"
+variability =~  long_window_acc_var + log_rt_var"
 fa2v_fit <- cfa(fa2v_model, d_sub_mat_s, std.lv=TRUE, missing='fiml')
 
 fa3_model <-  "
@@ -304,15 +577,15 @@ xtable(anova(fa1_fit, fa2_fit, fa2b_fit, fa2v_fit, fa3_fit), digits = 2)
 \centering
 \caption{Model comparison for alternative factor structures. $p$-values show differences between adjacent models; no $p$-values are shown for comparisons between non-nested models. \label{tab:modcomp}}
 \begin{tabular}{lrrrrrrrr}
-  \hline
- & Df & AIC & BIC & Chisq & Chisq diff & RMSEA & Df diff & Pr($>$Chisq) \\ 
-  \hline
+\hline
+& Df & AIC & BIC & Chisq & Chisq diff & RMSEA & Df diff & Pr($>$Chisq) \\ 
+\hline
 Three-factor  & 6 & 46346.69 & 46475.43 & 91.96 &  &  &  &  \\ 
-  Two-factor (vocab)  & 8 & 46397.74 & 46514.22 & 147.01 & 55.05 & 0.09 & 2 & $<$ 0.0001 \\ 
-  Two-factor (speed) & 8 & 46486.96 & 46603.44 & 236.23 & 89.22 & 0.00 & 0 &  \\ 
-  Two-factor (variability) & 8 & 46536.10 & 46652.58 & 285.37 & 49.14 & 0 & 0 &  \\ 
-  One-factor & 9 & 46535.49 & 46645.84 & 286.76 & 1.39 & 0.01 & 1 & 0.24 \\ 
-   \hline
+Two-factor (vocab)  & 8 & 46397.74 & 46514.22 & 147.01 & 55.05 & 0.09 & 2 & $<$ 0.0001 \\ 
+Two-factor (speed) & 8 & 46486.96 & 46603.44 & 236.23 & 89.22 & 0.00 & 0 &  \\ 
+Two-factor (variability) & 8 & 46536.10 & 46652.58 & 285.37 & 49.14 & 0 & 0 &  \\ 
+One-factor & 9 & 46535.49 & 46645.84 & 286.76 & 1.39 & 0.01 & 1 & 0.24 \\ 
+\hline
 \end{tabular}
 \end{table}
 
@@ -342,7 +615,239 @@ Growth Scale $\times$ $t_0$ RT & 0.28 & 0.38 & 1766.00 & 0.75 & 0.46 \\
 
 Interpretation of growth in both this model and the linear growth model in the main text is complicated by the fact that the CDI form puts a ceiling on the total number of words that can be recorded; both the quadratic growth functions and the logistic functions come together at the form ceiling. Thus, a shift in quadratic growth in the linear model and a shift in intercept in the logistic model both point to the same overall effect, which is faster growth at the point of maximal sensitivity of the CDI. Neither model can estimate whether the overall growth trajectory is different beyond the range of the CDI. Thus, although these models might initially seem to be in conflict, we believe that they actually point to the same phenomenon, which is perhaps better described by the longitudinal SEM model reported in the main text. Children with greater skill in word recognition show an overall positive shift in the growth trajectory of vocabulary development.
 
+FIXME
 
-# References
+```{r}
+d_sub_prod <- filter(d_sub, !is.na(prod), !is.na(log_rt)) |>
+  ungroup() |>
+  mutate(log_rt_resid = resid(lm(log_rt ~ log_age))) |>
+  group_by(subject_id) |>
+  mutate(log_rt_0 = log_rt[1],
+         log_rt_0_resid = log_rt_resid[1],
+         acc_0 = long_window_accuracy[1]) |> 
+  filter(!is.na(log_rt_0)) 
+
+
+mod_nlme <- nlme(model = prod ~ SSlogis(age, Asym = 1, xmid, scale),
+                 data = d_sub_prod,
+                 fixed = xmid + scale ~ log_rt_0_resid,
+                 random = xmid + scale ~ 1 | subject_id,
+                 groups = ~ dataset_name,
+                 start = c(xmid = 20, scale = 3, `xmid:log_rt_0_resid` = 1, `scale:log_rt_0_resid` = 3),
+                 na.action = na.exclude, 
+                 control = list(maxIter = 1000, tolerance = .1))
+
+summary(mod_nlme)
+
+# fixed
+global_preds <- expand_grid(age = seq(min(d_sub_prod$age), 
+                                      max(d_sub_prod$age), .1), 
+                            log_rt_0_resid = c(quantile(d_sub_prod$log_rt_0_resid, 
+                                                        c(.25,.75), 
+                                                        na.rm=TRUE)))
+global_preds$pred <- predict(mod_nlme, newdata = global_preds, level = 0)
+
+
+#random effects
+dataset_preds <- d_sub |>
+  filter(!is.na(prod)) |> # filter on predictor
+  group_by(dataset_name) |>
+  summarise(min_age = min(age),
+            max_age = max(age)) |>
+  group_by(dataset_name) |>
+  mutate(df = map2(min_age, max_age, ~expand_grid(age = seq(.x, .y, .1), log_rt_0_resid = c(quantile(d_sub_prod$log_rt_0_resid, 
+                                                                                                     c(.25,.75), 
+                                                                                                     na.rm=TRUE))))) |>
+  select(-min_age, -max_age) |>
+  unnest(col = "df") |>
+  ungroup()
+
+
+dataset_preds$pred <- predict(mod_nlme,
+                              newdata = dataset_preds,
+                              level = c(0,1))$predict.dataset_name
+
+ggplot(d_sub_prod, aes(x = age, y = prod, col = as.factor(log_rt_0_resid))) + 
+  geom_point(alpha = .03, pch = ".", col = "black") + 
+  geom_line(aes(group = subject_id), alpha = .02, col = "black") + 
+  geom_line(data = dataset_preds |>   
+              filter(dataset_name %in% datasets_with_age_variation$dataset_name), 
+            aes(y = pred, group = interaction(log_rt_0_resid, dataset_name)), lty="dashed", alpha=.5)+
+  geom_line(data = global_preds, aes(y = pred, group = log_rt_0_resid, col = as.factor(log_rt_0_resid)), size=1)+
+  scale_color_viridis(discrete=T, option = "H")+
+  theme(legend.position = "none")+
+  labs(y="Production", x="Age in months")
+
+```
+
+
+```{r}
+library(brms)
+
+d_sub_prod$age_c <- d_sub_prod$age - mean(d_sub_prod$age, na.rm = TRUE)
+d_sub_prod$log_rt_0_c <- d_sub_prod$log_rt_0 - mean(d_sub_prod$log_rt_0, na.rm = TRUE)
+
+
+# Define the nonlinear formula
+nlform <- brms::bf(
+  prod ~ 1 / (1 + exp((xmid - age_c) / exp(logscale))),
+  xmid ~ 1 + log_rt_0_c  + (1 | dataset_name/subject_id),
+  logscale ~ 1 + log_rt_0_c  + (1 | dataset_name/subject_id),
+  # scale ~ 1 + log_rt_0_c,
+  nl = TRUE
+)
+
+# xmid ~ 1 + log_rt_0_c + (1 | dataset_name/subject_id),
+# scale ~ 1 + log_rt_0_c + (1 | dataset_name/subject_id),
+
+
+priors <- c(
+  prior(normal(0, 5), nlpar = "xmid", coef = "Intercept"),  # xmid near center of age_c
+  prior(normal(1, 1), nlpar = "logscale", coef = "Intercept"), # scale > 0, mildly steep curve
+  prior(normal(0, 1), nlpar = "logscale", coef = "log_rt_0_c"),
+  prior(exponential(1), class = "sigma"),                # residual error
+  prior(normal(0, 2), nlpar = "xmid", coef = "log_rt_0_c"),
+  # prior(normal(0, 1), nlpar = "scale", lb = 0)
+  
+  # Random effects for xmid
+  prior(exponential(1), class = "sd", nlpar = "xmid", group = "dataset_name"),
+  prior(exponential(1), class = "sd", nlpar = "xmid", group = "dataset_name:subject_id"),
+  
+  # Random effects for scale
+  prior(exponential(1), class = "sd", nlpar = "logscale", group = "dataset_name"),
+  prior(exponential(1), class = "sd", nlpar = "logscale", group = "dataset_name:subject_id")
+)
+#
+
+# Fit the model
+mod_brms <- brm(
+  formula = nlform,
+  data = d_sub_prod,
+  prior = priors,
+  family = gaussian(),
+  # init = 0,  # initialize all parameters to 0 on unconstrained scale (safe for centered priors)
+  chains = 4, cores = 4,
+  control = list(adapt_delta = 0.95),
+  # backend = "cmdstanr",  # optional but faster
+  save_pars = save_pars(all = TRUE),
+  sample_prior = "yes"
+)
+
+
+new_data <- expand.grid(
+  age_c = seq(min(d_sub_prod$age_c), max(d_sub_prod$age_c), length.out = 100),
+  log_rt_0_c = c(-1, 0, 1)  # e.g., low, mean, high values
+)
+
+fitted_vals <- fitted(mod_brms, newdata = new_data, re_formula = NA, summary = TRUE)
+
+
+new_data$fit <- fitted_vals[, "Estimate"]
+new_data$lower <- fitted_vals[, "Q2.5"]
+new_data$upper <- fitted_vals[, "Q97.5"]
+
+ggplot(new_data, aes(x = age_c, y = fit, col = as.factor(log_rt_0_c))) +
+  geom_line(linewidth = 2) +
+  geom_ribbon(aes(ymin = lower, ymax = upper, fill = as.factor(log_rt_0_c), group = as.factor(log_rt_0_c)), 
+              alpha = 0.2) +
+  labs(x = "Centered Age", y = "Predicted prod (fixed effects only)") +
+  theme_minimal() + 
+  geom_point(data = d_sub_prod, aes(x = age_c, y = prod), col = "black") + 
+  scale_color_solarized(name = "log RT at t0 (SD)") + 
+  scale_fill_solarized(guide = FALSE)
+
+```
+
+
+
+```{r}
+library(brms)
+
+d_sub_prod$age_c <- d_sub_prod$age - mean(d_sub_prod$age, na.rm = TRUE)
+d_sub_prod$log_rt_0_c <- d_sub_prod$log_rt_0 - mean(d_sub_prod$log_rt_0, na.rm = TRUE)
+
+d_sub_prod$resid_log_rt_0_c <- resid(lm(log_rt_0_c ~ log(age), data = d_sub_prod))
+
+
+# Define the nonlinear formula
+nlform_resid <- brms::bf(
+  prod ~ 1 / (1 + exp((xmid - age_c) / exp(logscale))),
+  xmid ~ 1 + resid_log_rt_0_c  + (1 | dataset_name/subject_id),
+  logscale ~ 1 + resid_log_rt_0_c  + (1 | dataset_name/subject_id),
+  # scale ~ 1 + log_rt_0_c,
+  nl = TRUE
+)
+
+# xmid ~ 1 + log_rt_0_c + (1 | dataset_name/subject_id),
+# scale ~ 1 + log_rt_0_c + (1 | dataset_name/subject_id),
+
+
+priors_resid <- c(
+  prior(normal(0, 5), nlpar = "xmid", coef = "Intercept"),  # xmid near center of age_c
+  prior(normal(1, 1), nlpar = "logscale", coef = "Intercept"), # scale > 0, mildly steep curve
+  prior(normal(0, 1), nlpar = "logscale", coef = "resid_log_rt_0_c"),
+  prior(exponential(1), class = "sigma"),                # residual error
+  prior(normal(0, 2), nlpar = "xmid", coef = "resid_log_rt_0_c"),
+  # prior(normal(0, 1), nlpar = "scale", lb = 0)
+  
+  # Random effects for xmid
+  prior(exponential(1), class = "sd", nlpar = "xmid", group = "dataset_name"),
+  prior(exponential(1), class = "sd", nlpar = "xmid", group = "dataset_name:subject_id"),
+  
+  # Random effects for scale
+  prior(exponential(1), class = "sd", nlpar = "logscale", group = "dataset_name"),
+  prior(exponential(1), class = "sd", nlpar = "logscale", group = "dataset_name:subject_id")
+)
+#
+
+# Fit the model
+resid_mod_brms <- brm(
+  formula = nlform_resid,
+  data = d_sub_prod,
+  prior = priors_resid,
+  family = gaussian(),
+  # init = 0,  # initialize all parameters to 0 on unconstrained scale (safe for centered priors)
+  chains = 4, cores = 4,
+  control = list(adapt_delta = 0.95),
+  # backend = "cmdstanr",  # optional but faster
+  save_pars = save_pars(all = TRUE),
+  sample_prior = "yes"
+)
+
+
+new_data_resid <- expand.grid(
+  age_c = seq(min(d_sub_prod$age_c), max(d_sub_prod$age_c), length.out = 100),
+  resid_log_rt_0_c = c(-1, 0, 1)  # e.g., low, mean, high values
+)
+
+fitted_vals <- fitted(mod_brms, newdata = new_data, re_formula = NA, summary = TRUE)
+
+
+new_data_resid$fit <- fitted_vals[, "Estimate"]
+new_data_resid$lower <- fitted_vals[, "Q2.5"]
+new_data_resid$upper <- fitted_vals[, "Q97.5"]
+
+ggplot(new_data_resid, aes(x = age_c, y = fit, col = as.factor(resid_log_rt_0_c))) +
+  geom_line(linewidth = 2) +
+  geom_ribbon(aes(ymin = lower, ymax = upper, fill = as.factor(resid_log_rt_0_c), group = as.factor(resid_log_rt_0_c)), 
+              alpha = 0.2) +
+  labs(x = "Centered Age", y = "Predicted prod (fixed effects only)") +
+  theme_minimal() + 
+  scale_color_viridis() + 
+  geom_point(data = d_sub_prod, aes(x = age_c, y = prod), col = "black")
+
+```
+
+# SEM Longitudinal Missingness
+
+FIXME 
+
+```{r}
+colMeans(!is.na(d_sub_wide_fine))
+```
+
+
+
+# Additional References
 
 Heathcote, A., Brown, S., \& Mewhort, D. J. K. (2000). The power law repealed: The case for an exponential law of practice. Psychonomic Bulletin & Review, 7(2), 185–207.
