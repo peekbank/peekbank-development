@@ -83,7 +83,7 @@ csl: pnas.csl
 ## change to true to add optional line numbering
 lineno: false
 
-output: rticles::pnas_article
+output: papaja::apa6_pdf
 
 nocite: |
   @yurovsky2017,
@@ -272,7 +272,7 @@ d_timecourse_by_dataset_age_subj <- d_aoi |>
     age_bin = cut(age, breaks = c(0,12,15,18,21,24,27,30,36,60), 
                   labels = c("<12", "12-15","15-18", "18-21", "21-24", "24-27","27-30","30-36", ">36"))
   ) |>
-  #downsample t_norm to 50ms bins
+  #downsample t_norm to 50ms binsv
   #mutate(t_norm_downsampled = round(t_norm/50)*50) |>
   group_by(dataset_name,dataset_id,subject_id,age_bin,t_norm) |> 
   #calculate proportion time spent looking at target
