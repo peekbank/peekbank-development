@@ -64,7 +64,6 @@ paper/paper.pdf
 paper/paper.tex
 paper/paper_files/figure-latex/*
 paper/paper.log
-*.R
 paper/paper_files/figure-latex/timecourse-1.pdf
 paper/supplemental_information_files/*
 paper/supplemental_information.tex
