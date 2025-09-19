@@ -1,6 +1,7 @@
 ---
 title: Continuous developmental changes in word recognition support language learning across early childhood 
 
+shorttitle: Continuous developmental changes
 # Use letters for affiliations, numbers to show equal authorship (if applicable) and to indicate the corresponding author
 author:
   - name: Michael C. Frank
@@ -82,7 +83,7 @@ csl: pnas.csl
 
 ## change to true to add optional line numbering
 lineno: false
-
+floatsintext: yes
 output: papaja::apa6_pdf
 
 nocite: |
@@ -110,7 +111,7 @@ nocite: |
   @newman2017
 ---
 
-\dropcap{C}hildren acquiring a language are learning a body of knowledge -- a set of words and the ways they are combined -- but they are also learning to deploy this knowledge in the myriad complex, noisy, and fast-moving environments in which language is used. As children enter their second year, language explodes onto the scene; both vocabulary and grammatical abilities grow rapidly and in tandem [@bates1994developmental;@frank2021]. This growth in knowledge is also accompanied by changes in language processing efficiency: children become quicker and more accurate in recognizing words and matching them with their referents [@fernald1998;@peter2019;@bergelson2020comprehension].
+Children acquiring a language are learning a body of knowledge -- a set of words and the ways they are combined -- but they are also learning to deploy this knowledge in the myriad complex, noisy, and fast-moving environments in which language is used. As children enter their second year, language explodes onto the scene; both vocabulary and grammatical abilities grow rapidly and in tandem [@bates1994developmental;@frank2021]. This growth in knowledge is also accompanied by changes in language processing efficiency: children become quicker and more accurate in recognizing words and matching them with their referents [@fernald1998;@peter2019;@bergelson2020comprehension].
 
 Yet unlike language production, which is manifest via overt behavior, evidence for word recognition is often more subtle. Very young children with incomplete knowledge may not be able to point to the correct referent of a word, but they may still have some representation of word meaning [@bergelson2012]. Eye tracking has thus emerged as a key method that allows the measurement of language comprehension with high temporal resolution: both adults and children reliably fixate the referent of a word soon after it is used [@tanenhaus1995integration;@altmann1999incremental;@fernald1998;@fernald2008;@macdonald2018]. The relative timecourse of fixation then can provide an index of an individual comprehender's ability or be used to measure the difference between two stimulus conditions. 
 
@@ -500,7 +501,7 @@ We fit a series of factor analytic models to explore the dimensionality of the p
 Initial exploratory factor analysis using parallel analysis to select the number of factors suggested that three factors explained substantial variance in the data (see SI: Factor Analysis). To better accommodate missing data under the assumption of data missing at random (e.g., missingness due to the age sampling schemes of the various datasets), we used confirmatory factor analysis with full information maximum likelihood to find the best set of loadings. The best fitting model was a three-factor model with factors for speed (RT and RT variability), accuracy (proportion looking to target on each trial and associated variability of this measure), and vocabulary (comprehension and production from the CDI). Fit statistics for this model were generally good (Confirmatory fit index: `r round(fit_stats$fit["cfi"], 3)`, RMSE: `r round(fit_stats$fit["rmsea"], 3)`); see SI: Alternative Factor Structures). 
 
 
-```{r age_regression, fig.env="figure*", fig.cap="Structural equation model showing the three-factor factor analysis with a regression of each latent variable on the logarithm of age. Observed variables are notated as squares and latent variables are notated as circles Factor loadings and regression coefficients are shown with straight, solid lines; covariances are shown with dashed lines; residual variances are shown as solid circular connections. Stars show conventional levels of statistical significance, e.g. * indicates p < .05, ** indicates p < .01, and *** indicates p < .001. Covariances reflect age-residualized correlations between variables.", fig.height = 3}
+```{r age-regression, fig.env="figure*", fig.cap="Structural equation model showing the three-factor factor analysis with a regression of each latent variable on the logarithm of age. Observed variables are notated as squares and latent variables are notated as circles Factor loadings and regression coefficients are shown with straight, solid lines; covariances are shown with dashed lines; residual variances are shown as solid circular connections. Stars show conventional levels of statistical significance, e.g. * indicates p < .05, ** indicates p < .01, and *** indicates p < .001. Covariances reflect age-residualized correlations between variables.", fig.height = 3}
 
 d_sub_mat_s_renamed <- d_sub_mat_s |>
   rename(acc = long_window_accuracy, 
@@ -570,7 +571,7 @@ prepare_graph(edges=edges, nodes=nodes, text_size = 2.5, layout = t(layout_age),
           fix_coord=FALSE) |> plot_happy_arrows()
 ```
 
-Figure \ref{fig:age_regression} shows a regression model fit to this confirmatory factor analysis, with log age predicting each latent variable. This regression model allows interpretation of the covariances between latent factors as partial correlations (controlling for age). The non-age related variance of all three latent factors was significantly related to that of the other factors, with speed and accuracy showing strong negative covariance ($\beta=$ `r round(fit3_age_summary$pe[21,"est"],3)`, SE = `r round(fit3_age_summary$pe[21,"se"],3)`, $p < .0001$) and weaker but significant covariation between RT and vocabulary ($\beta=$ `r round(fit3_age_summary$pe[20,"est"],3)`, SE = `r round(fit3_age_summary$pe[20,"se"],3)`, $p < .0001$) and accuracy and vocabulary ($\beta=$ `r round(fit3_age_summary$pe[19,"est"],3)`, SE = `r round(fit3_age_summary$pe[19,"se"],3)`, $p < .0001$). This model supports the idea that variation in speed and accuracy of word recognition is related to individual differences in parent-reported vocabulary beyond the effects of age. Further, the broader set of analyses support a factor structure in which speed and accuracy (and their associated variabilities) are related but distinct aspects of word recognition, rather than being measures of one single construct. These analyses treat all data as between person, however, rather than modeling change in these factors within individuals. 
+Figure \ref{fig:age-regression} shows a regression model fit to this confirmatory factor analysis, with log age predicting each latent variable. This regression model allows interpretation of the covariances between latent factors as partial correlations (controlling for age). The non-age related variance of all three latent factors was significantly related to that of the other factors, with speed and accuracy showing strong negative covariance ($\beta=$ `r round(fit3_age_summary$pe[21,"est"],3)`, SE = `r round(fit3_age_summary$pe[21,"se"],3)`, $p < .0001$) and weaker but significant covariation between RT and vocabulary ($\beta=$ `r round(fit3_age_summary$pe[20,"est"],3)`, SE = `r round(fit3_age_summary$pe[20,"se"],3)`, $p < .0001$) and accuracy and vocabulary ($\beta=$ `r round(fit3_age_summary$pe[19,"est"],3)`, SE = `r round(fit3_age_summary$pe[19,"se"],3)`, $p < .0001$). This model supports the idea that variation in speed and accuracy of word recognition is related to individual differences in parent-reported vocabulary beyond the effects of age. Further, the broader set of analyses support a factor structure in which speed and accuracy (and their associated variabilities) are related but distinct aspects of word recognition, rather than being measures of one single construct. These analyses treat all data as between person, however, rather than modeling change in these factors within individuals. 
 
 
 ## Speed of processing relates to vocabulary growth {.unnumbered}
@@ -889,8 +890,14 @@ We used `lme4` to fit linear mixed effects models, `nlme` to fit non-linear mode
 We retrieved all data from Peekbank release 2025.1 using the `peekbankr` package.  All code and data necessary to reproduce this manuscript are available at [http://github.com/peekbank/peekbank-development](). 
 
 <!-- Leave these lines as they are at the end of your .Rmd file to ensure placement of methods & acknowledgements sections before the references-->
-\showmatmethods
+<!--\showmatmethods
 \showacknow
 \pnasbreak
 
-\newpage 
+\newpage -->
+\newpage
+
+# References
+
+::: {#refs custom-style="Bibliography"}
+:::
