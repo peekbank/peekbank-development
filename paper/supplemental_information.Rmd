@@ -7,6 +7,7 @@ output:
 header-includes:
   - \usepackage{threeparttablex}
   - \usepackage{booktabs}
+  - \usepackage{placeins}
   - \renewcommand{\thefigure}{S\arabic{figure}}
   - \renewcommand{\thetable}{S\arabic{table}}
   - \usepackage{float}
@@ -24,6 +25,7 @@ header-includes:
 knitr::opts_chunk$set(echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE)
 library(here)
 source(here("helper","common.R"))
+#library(kableExtra)
 library(papaja)
 ```
 
@@ -84,9 +86,13 @@ ggplot(filter(d_sub_long, admin_num > 1),
   ylab("Number of administrations")
 ```
 
+\FloatBarrier
+
 # Reaction Time Computation
 
-Eye-tracking data are stored in Peekbank as a time series of fixations to specific areas of interest (in particular, the target and distractor on each trial). Other fixations can be to areas not in the target or distractor as well to off-screen areas. This time series has a uniform sample rate of 25ms/sample, based on resampling of the data in Peekbank to 40 Hz during preprocessing [@zettersten2023peekbank]. Reaction times are computed by filtering trials to only those on which the child is fixating the distractor at the point of disambiguation ($t=0$) and then finding those trials on which the first non-missing fixation is to the target (hence excluding trials without a shift and trials on which a shift is to an off-screen location). The reaction time is then the total time from $t=0$ to the first timestep during which the child fixates the target. Consistent with standard practice in the literature following Fernald et al. (2008), RTs that are shorter than 367 ms are excluded as they are too short to be considered a response to the stimulus.
+Eye-tracking data are stored in Peekbank as a time series of fixations to specific areas of interest (in particular, the target and distractor on each trial). Other fixations can be to areas not in the target or distractor as well to off-screen areas. This time series has a uniform sample rate of 25ms/sample, based on resampling of the data in Peekbank to 40 Hz during preprocessing (Zettersten et al. 2023). Reaction times are computed by filtering trials to only those on which the child is fixating the distractor at the point of disambiguation ($t=0$) and then finding those trials on which the first non-missing fixation is to the target (hence excluding trials without a shift and trials on which a shift is to an off-screen location). The reaction time is then the total time from $t=0$ to the first timestep during which the child fixates the target. Consistent with standard practice in the literature following Fernald et al. (2008), RTs that are shorter than 367 ms are excluded as they are too short to be considered a response to the stimulus.
+
+\FloatBarrier
 
 # Comparison of Reaction Times for Correct and Incorrect Trials: Re-analysis of Creel (2024)
 
@@ -149,12 +155,13 @@ ggplot(filter(subj_rt_acc,n_correct_trials>1&n_trials>1),aes(mean_rt,mean_rt_cor
   scale_size_continuous(name="# Trials",breaks=c(2,5,10,15,20))
 ```
 
-# Separability of Variability from Other Measures
+\FloatBarrier
 
-(TODO someone should edit this text)
-A potential concern with multiple measures deriving from the same underlying data (as with RT/accuracy in the looking-while-listening paradigm) is that distributional assumptions about each variable could implicitly assume some connections between RT/accuracy and variability that might not be warranted.
+# Checks on data distributional assumptions 
 
-To begin, we note that RT/accuracy and variability could be connected due to true age-related covariation - that is, some common cause leading to improvement in both, namely improvement in speed of response and improvement in consistency of response (e.g., skill learning). But they could be necessarily connected by virtue of their distributional form, and this is the concern we address here. 
+Here, we check whether the distributional forms that are assumed for the distributions of RT and accuracy are a reasonable empirical fit to the data, and compare against other commonly used distributional forms. 
+
+We confirm that, across the age range, the choice to use a log-normal distribution for RT and a normal distribution for accuracy is justified. 
 
 ```{r}
 library(fitdistrplus)
@@ -164,8 +171,6 @@ library(statmod)
 library(gamlss.dist)
 
 #note that fitdistrplus attaches MASS which also has a select function, and that's annoying
-detach("package:dplyr", character.only = TRUE)
-library("dplyr", character.only = TRUE)
 
 rt_fitting  <- d_sub |>
   ungroup() |>
@@ -174,7 +179,7 @@ rt_fitting  <- d_sub |>
                        breaks = c(0,12,15,18,21,24,27,30,36,60), 
                        labels = c("<12", "12-15","15-18", "18-21", 
                                   "21-24", "24-27","27-30","30-36", ">36"))) |>
-  select(age_bin, rt)
+  dplyr::select(age_bin, rt)
 
 
 norm <- fitdist(rt_fitting$rt, distr = "norm", method = "mle")
@@ -185,10 +190,10 @@ exgaus <- fitdist(rt_fitting$rt, distr = "exGAUS", method = "mle",
                   start = list(mu = 1000, sigma = 500, nu = 1), 
                   lower = c(0, 0, 0))
 
-#BIC(norm)
-#BIC(lnorm)
-#BIC(wald)
-#BIC(exgaus)
+norm_bic <- BIC(norm)
+lnorm_bic <- BIC(lnorm)
+wald_bic <- BIC(wald)
+exgaus_bic <- BIC(exgaus)
 
 
 rt_fits <- rt_fitting |>
@@ -202,7 +207,7 @@ rt_fits <- rt_fitting |>
     exgaus = map(data, \(d) fitdist(d$rt, distr = "exGAUS", method = "mle", 
                                     start = list(mu = 1000, sigma = 500, nu = 1), 
                                     lower = c(0, 0, 0)))) |>
-  select(-data) |>
+  dplyr::select(-data) |>
   pivot_longer(norm:exgaus, names_to = "distribution", values_to = "fit") |>
   mutate(BIC = map_dbl(fit, BIC)) |>
   group_by(age_bin) |>
@@ -211,18 +216,18 @@ rt_fits <- rt_fitting |>
 
 ## Reaction Time
 
-We’ll look at reaction time first. Under certain distributional forms for reaction time, there would be a necessary relationship between RT and its variation. However, the literature focuses on the use of the Exponential-Gaussian (ex-Gaussian) distribution as well as Wald, Weibull, gamma, and log normal distributions (see for example Luce, 1986; Ratcliff, 1993; Van Zandt, 2002). All of these are 2- or 3-parameter distributions meaning that there is no necessary relationship between mean and variance. 
+The literature focuses on the use of the Exponential-Gaussian (ex-Gaussian) distribution as well as Wald, Weibull, gamma, and log normal distributions (see for example Luce, 1986; Ratcliff, 1993; Van Zandt, 2002). All of these are 2- or 3-parameter distributions meaning that there is no necessary relationship between mean and variance. 
 
 The problem of fitting RT distributions is complex and a substantial literature exists (e.g., Ratcliff, 1979; Luce, 1986; Van Zandt, 2000; Baayen & Milin, 2010). One of the big challenges in our dataset as well as elsewhere is that distributions are conditional on factors such as participant and task, so it is challenging to draw inferences about the underlying distribution when looking at average data. 
 
-That said, we have attempted some fitting and we find that overall the data are best fit by either an ex-Gaussian or a log normal distribution, again consistent with prior literature, giving us confidence in this conclusion. Across the full dataset, the BIC values for ex-Gaussian (`r BIC(exgaus)`) and log normal (`r BIC(lnorm)`) are quite close to one another, and better than the Wald (`r BIC(wald)`) and normal (`r BIC(norm)`) fits. When binned by age (Fig \ref{fig:rt-fits}), younger children seem better fit for a log normal distribution and older children seem better fit by ex-Gaussian (models with lowest BICs are shown in red since significant differences can be obscured by the large scale). Figure \ref{fig:rt-hist} shows the RT data distribution overlaid with the corresponding log-normal distributions. 
+That said, we find that overall the data are best fit by either an ex-Gaussian or a log normal distribution, again consistent with prior literature, giving us confidence in this conclusion. Across the full dataset, the BIC values for ex-Gaussian (`r round(exgaus_bic)|> as.character()`) and log normal (`r round(lnorm_bic)|> as.character()`) are quite close to one another, and better than the Wald (`r round(wald_bic)|> as.character()`) and normal (`r round(norm_bic)|> as.character()`) fits. When binned by age (Fig \ref{fig:rt-fits}), younger children seem better fit for a log normal distribution and older children seem better fit by ex-Gaussian (models with lowest BICs are shown in red since significant differences can be obscured by the large scale). Figure \ref{fig:rt-hist} shows the RT data distribution overlaid with the corresponding log-normal distributions. 
 
-Overall, we think this result generally vitiates our decision to use log-transformed RTs as our primary dependent measure, and further suggests that reaction time means and variabilities are, in principle, theoretically independent. 
-
-
+Overall, we think this result generally vitiates our decision to use log-transformed RTs as our primary dependent measure. 
 
 
-```{r rt-fits, fig.cap="\\label{fig:rt-fits} Goodness of fit for different distributional models for RT, split by age.", fig.pos="h!", fig.width=8, fig.height=6}
+
+
+```{r rt-fits, fig.cap="\\label{fig:rt-fits} Goodness of fit for different distributional models for RT, split by age.", fig.pos="h!", fig.width=8, fig.height=5}
 ggplot(rt_fits, 
        aes(x = distribution, y = BIC, col = min_bic)) + 
   geom_point(stat = "identity", position = "dodge") + 
@@ -235,7 +240,7 @@ ggplot(rt_fits,
 
 ```
 
-```{r rt-hist, fig.cap="\\label{fig:rt-hist} Distribution of RT overlaid with log normal distribution, split by age.", fig.pos="h!", fig.width=8, fig.height=6}
+```{r rt-hist, fig.cap="\\label{fig:rt-hist} Distribution of RT overlaid with log normal distribution, split by age.", fig.pos="h!", fig.width=8, fig.height=5}
 
 rt_hist_data <- d_sub |>
   mutate(
@@ -276,23 +281,23 @@ acc_fitting  <- d_sub |>
                        breaks = c(0,12,15,18,21,24,27,30,36,60), 
                        labels = c("<12", "12-15","15-18", "18-21", 
                                   "21-24", "24-27","27-30","30-36", ">36"))) |>
-  select(age_bin, long_window_accuracy)
+  dplyr::select(age_bin, long_window_accuracy)
 
 
 norm_acc <- fitdist(acc_fitting$long_window_accuracy, distr = "norm", method = "mle")
 beta_acc <- fitdist(acc_fitting$long_window_accuracy, distr = "beta", method = "mle")
 
-#BIC(norm)
-#BIC(beta)
+norm_acc_bic <- BIC(norm_acc)
+beta_acc_bic <- BIC(beta_acc)
 ```
 
-Individual trial-level accuracies are not binomial because they are an average probability of fixation over a viewing window, as described in the manuscript. They are bounded at 0 and 1, but in general they tend towards the range .5 - .8 in most studies of this population. Figure \ref{acc-hist} shows the data binned by age group with fitted gaussian distributions.
+Individual trial-level accuracies are not binomial because they are an average probability of fixation over a viewing window. They are bounded at 0 and 1, but in general they tend towards the range .5 - .8 in most studies of this population. Figure \ref{fig:acc-hist} shows the data binned by age group with fitted gaussian distributions.
 
-These distributions seem well fit by standard gaussians, but they are in principle bounded and so we asked whether this made a difference, using a Beta distribution (a two-parameter continuous distribution bounded at 0 and 1) for fitting. Surprisingly, across all data, the BIC values for the two distributions were very similar (`r BIC(norm_acc)` for normal versus `r BIC(beta_acc)` for Beta), though the Beta was slightly favored. Across age groups, there was heterogeneity with some groups better fit by a gaussian and others better fit by a Beta (Figure \ref{fig:acc-fits}).
+These distributions seem well fit by standard gaussians, but they are in principle bounded and so we asked whether this made a difference, using a Beta distribution (a two-parameter continuous distribution bounded at 0 and 1) for fitting. Surprisingly, across all data, the BIC values for the two distributions were very similar (`r round(norm_acc_bic) |> as.character()` for normal versus `r round(beta_acc_bic)` for Beta), though the normal distribution was slightly favored. Across age groups, there was heterogeneity with some groups better fit by a gaussian and others better fit by a Beta (Figure \ref{fig:acc-fits}).
 
-Again, we feel that this result generally vitiates our approach of modeling accuracies via standard linear mixed effects models: their distributional form is quite close to normal. Thus, again there is no necessary connection between mean and variance: they could in principle be independent. As above, we will plan on including this information in the Supplement. 
+Again, we feel that this result generally vitiates our approach of modeling accuracies via standard linear mixed effects models: their distributional form is quite close to normal. 
 
-```{r acc-hist, fig.cap="\\label{fig:acc-hist} Goodness of fit for different distributional models of accuracy, split by age.", fig.pos="h!", fig.width=8, fig.height=6}
+```{r acc-hist, fig.cap="\\label{fig:acc-hist} Goodness of fit for different distributional models of accuracy, split by age.", fig.pos="h!", fig.width=8, fig.height=5}
 acc_hist_data <- d_sub |>
   mutate(
     age_bin = cut(age,
@@ -323,14 +328,14 @@ ggplot(acc_hist_data,
 
 
 
-```{r acc-fits, fig.cap="\\label{fig:acc-fits} Distribution of accuracies overlaid with normal distribution, split by age.", fig.pos="h!", fig.width=8, fig.height=6}
+```{r acc-fits, fig.cap="\\label{fig:acc-fits} Distribution of accuracies overlaid with normal distribution, split by age.", fig.pos="h!", fig.width=8, fig.height=5}
 acc_fits <- acc_fitting |>
   group_by(age_bin) |>
   nest(long_window_accuracy) |>
   mutate(
     norm = map(data, \(d) fitdist(d$long_window_accuracy, distr = "norm", method = "mle")),
     beta = map(data, \(d) fitdist(d$long_window_accuracy, distr = "beta", method = "mle"))) |>
-  select(-data) |>
+  dplyr::select(-data) |>
   pivot_longer(norm:beta, names_to = "distribution", values_to = "fit") |>
   mutate(BIC = map_dbl(fit, BIC)) |>
   group_by(age_bin) |>
@@ -347,6 +352,8 @@ ggplot(acc_fits,
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
+
+\FloatBarrier
 
 # Test-Retest Reliability
 
@@ -394,12 +401,14 @@ global_reliabilities <- d_reliability |>
 
 We examined test-retest reliability for our primary variables of interest by calculating Pearson correlations between pairs of administrations given no more than three months apart. Test-retest correlations were significant but relatively modest: $\rho_{long window acc} = `r round(global_reliabilities[2], 3)`$, $\rho_{short window acc} = `r round(global_reliabilities[3], 3)`$, $\rho_{rt} =  `r round(global_reliabilities[1],3)`$. These reliabilities were biased downwards by three factors, however. First, longitudinal assessments sometimes use variable items between testing sessions, leading to item-related variance in measurement. Second, even three months can lead to substantial change in some children's language abilities, thus correlations are attenuated by true change as well as measurement error. Third, longitudinal data in the dataset come primarily from the youngest children and hence are likely to show overall higher measurement error due to variability in children's behavior and an overall lower number of trials.
 
+\FloatBarrier
 # Correlations
 
 Table \ref{tab:corrs} shows pairwise correlations between the primary variables of interest in the dataset.
 
 ```{=tex}
-\begin{table}[tbp]
+\begin{table}[H]
+\caption{Pairwise correlations between primary variables of interest. \label{tab:corrs}}
 \begin{center}
 \begin{threeparttable}
 \begin{tabular}{llllllllll}
@@ -418,74 +427,62 @@ comprehension vocabulary & 0.42 & 0.42 & -0.25 & -0.24 & 0.24 & 0.24 & 0.59 & 1.
 \end{tabular}
 \end{threeparttable}
 \end{center}
-\caption{Pairwise correlations between primary variables of interest. \label{tab:corrs}}
+
 \end{table}
 ```
-```{r corrs, results = "asis", include = FALSE}
 
-cor(select(d_sub, age, log_age, rt, log_rt, 
+```{r corrs, results = "asis", include = FALSE, eval=F}
+
+cor(dplyr::select(d_sub, age, log_age, rt, log_rt, 
            long_window_accuracy, short_window_accuracy, prod, comp), 
     use = "pairwise.complete.obs") |>
-  round(2) |>
+  round(2) |> 
   papaja::apa_table()
 
 ```
+
+\FloatBarrier
 
 # Functional Form Model Comparison
 
 Table \ref{tab:accmods} shows model comparison measures between for different models of the functional form of the relationship between accuracy and age and Table \ref{tab:rtmods} shows the same for reaction time. Age gradients are estimated substantially better with long window accuracies. Note that there are a greater number of observations for short window accuracies due to less missing data. We speculate that, on average, more participants looked away from the screen towards the end of trials, leading to a greater number of exclusions of long window trials based on the 50% criterion. Note that the total percentage of trials excluded is still small for both measures: `r round(mean(is.na(d_trial$long_window_accuracy)), 3)*100`% for long window accuracy and `r round(mean(is.na(d_trial$short_window_accuracy)), 3)*100`% for short window accuracy.
 
-```{=tex}
-\begin{table}[tbp]
-\begin{center}
-\begin{threeparttable}
-\begin{tabular}{lllllllll}
-\toprule
-n. obs & \multicolumn{1}{c}{sigma} & \multicolumn{1}{c}{logLik} & \multicolumn{1}{c}{AIC} & \multicolumn{1}{c}{BIC} & \multicolumn{1}{c}{REMLcrit} & \multicolumn{1}{c}{df.residual} & \multicolumn{1}{c}{model} & \multicolumn{1}{c}{$r_2$}\\
-\midrule
-48354 & 0.28 & -8,338.83 & 16,691.65 & 16,753.16 & 16,677.65 & 48347 & Long window, linear age & 0.14\\
-48354 & 0.28 & -8,305.39 & 16,624.78 & 16,686.28 & 16,610.78 & 48347 & Long window, log age & 0.12\\
-50244 & 0.31 & -12,486.60 & 24,987.21 & 25,048.98 & 24,973.21 & 50237 & Short window, linear age & 0.09\\
-50244 & 0.31 & -12,458.77 & 24,931.54 & 24,993.31 & 24,917.54 & 50237 & Short window, log age & 0.08\\
-\bottomrule
-\end{tabular}
-\end{threeparttable}
-\end{center}
-\caption{Model comparison metrics for different functional forms of the relationship between accuracy and age. \label{tab:accmods}}
-\end{table}
-```
-```{=tex}
-\begin{table}[tbp]
-\begin{center}
-\begin{threeparttable}
-\begin{tabular}{lllllllll}
-\toprule
-n. obs & \multicolumn{1}{c}{sigma} & \multicolumn{1}{c}{logLik} & \multicolumn{1}{c}{AIC} & \multicolumn{1}{c}{BIC} & \multicolumn{1}{c}{REMLcrit} & \multicolumn{1}{c}{df.residual} & \multicolumn{1}{c}{model} & \multicolumn{1}{c}{$r_2$}\\
-\midrule
-18940 & 0.45 & -12,414.69 & 24,843.38 & 24,898.32 & 24,829.38 & 18933 & Log RT, linear age & 0.21\\
-18940 & 0.45 & -12,393.27 & 24,800.53 & 24,855.48 & 24,786.53 & 18933 & Log RT, log age & 0.21\\
-18940 & 570.49 & -147,644.43 & 295,302.87 & 295,357.81 & 295,288.87 & 18933 & Linear RT, linear age & 0.18\\
-18940 & 570.02 & -147,622.67 & 295,259.34 & 295,314.29 & 295,245.34 & 18933 & Linear RT, log age & 0.18\\
-\bottomrule
-\end{tabular}
-\end{threeparttable}
-\end{center}
-\caption{Model comparison metrics for different functional forms of the relationship between RT and age. \label{tab:rtmods}}
-\end{table}
-```
-```{r accmods, results="asis", include = FALSE}
-papaja::apa_table(acc_mods_lmer_summary)
+```{r}
+acc_mods_lmer_summary |>
+  mutate(BIC=round(BIC),
+         AIC=round(AIC),
+         logLik=round(logLik),
+                  REMLcrit=round(REMLcrit),
+         model=str_replace(model, "lwa", "Long window") |> str_replace("swa", "Short window") |> str_replace("lin", "linear age") |> str_replace("log", "log age") |> str_replace("_", ", ")
+         ) |>rename(`n. obs`=nobs) |>  dplyr::select(model, everything()) |> 
+kable(digits=3, caption="Model comparison metrics for different functional forms of the relationship between accuracy and age. \\label{tab:accmods}", latex_options = "HOLD_position")
 ```
 
-```{r results="asis", include = FALSE}
-papaja::apa_table(rt_mods_lmer_summary)
+```{r}
+rt_mods_lmer_summary |>
+  mutate(BIC=round(BIC),
+         AIC=round(AIC),
+         logLik=round(logLik),
+         REMLcrit=round(REMLcrit),
+         model=str_replace(model, "log_", "Log RT, ") |> str_replace("lin_", "Linear RT, ") |> str_replace("lin", "linear age") |> str_replace("log", "log age") |> str_replace("_", ", ")
+         ) |> rename(`n.  obs`=nobs) |> dplyr::select(model, everything()) |> 
+kable(digits=3, caption="Model comparison metrics for different functional forms of the relationship between RT and age. \\label{tab:rtmods}", format="latex", booktabs=T, latex_options = "HOLD_position")
 ```
+
+\FloatBarrier
 
 # Power Law Fits
 
-In the literature on the "law of practice", although the log-log relationship we observed is commonly present in the aggregate across individuals, the situation is substantially more complex when relationships are measured within individuals. The best fitting curves for individuals are often exponentials or delayed exponentials (Evans et al., 2018; Heathcote, Brown, & Mewhort, 2000). With our current dataset we cannot specifically determine whether within-individual patterns of change conform to linear, power law, or exponential developmental patterns unfortunately, because we have insufficient data about individuals' improvement across time. Thus, our current results apply to the form of the age gradient as opposed to the form of any individual's pattern of developmental change.
+In the literature on the "law of practice", although the log-log relationship we observed is commonly present in the aggregate across individuals, the situation is substantially more complex when relationships are measured within individuals. The best fitting curves for individuals are often exponentials or delayed exponentials (Evans et al., 2018; Heathcote, Brown, & Mewhort, 2000). 
 
-Nevertheless, here we test for other forms of the aggregate relationship between age and reaction time. In particular, we consider further model comparison between the
+With our current dataset we cannot specifically determine whether within-individual patterns of change conform to linear, power law, or exponential developmental patterns unfortunately, because we have insufficient data about individuals' improvement across time. Thus, our current results apply to the form of the age gradient as opposed to the form of any individual's pattern of developmental change.
+
+We believe that, unlike the skills being studied in the prior adult literature (e.g., Anderson, 1982; Heathcote, Brown, & Mewhort, 2000; Logan, 1988), language processing is being learned over the course of a child’s lifetime. Thus, we do not expect to see within-paradigm changes in learning in what is a narrow period of time compared to the duration over which language processing skills are refined. 
+
+Nevertheless, here we test for other forms of the aggregate relationship between age and reaction time. In particular, we consider 1) a log~log relationship between RT and age (presented in the main text), 2) using both a log age and a linear age to predict log RT, 3) a quadratic relationship between age and RT, and 4) a cubic relationship between age and RT. As shown in Table \ref{tab:age-rt}, the model with a linear age term in addition to a log age term has the best fit, although the linear age term coefficient is only marginally significant (coefficients in Table \ref{tab:loglin}). 
+
+These models reveal a small but significant additional linear age term over and above log age, but – because individual participant-level fits are not possible – this term can’t really be used to weigh in on the debate about the precise nature of the learning pattern. 
+
 
 ```{r rt_more_mods}
 rt_more_mods_lmer <- 
@@ -503,18 +500,71 @@ rt_more_mods_lmer <-
                       data = d_trial))
 
 
-rt_more_mods_lmer_summary <- map_df(rt_more_mods_lmer, ~broom.mixed::glance(.x)) |>
+ map_df(rt_more_mods_lmer, ~broom.mixed::glance(.x)) |>
   mutate(model = names(rt_more_mods_lmer), 
-         r2 = map_dbl(rt_more_mods_lmer, ~performance::r2_nakagawa(.x)$R2_conditional))
+         model = case_when(
+           model=="log_log" ~ "Log RT, log age",
+           model=="log_log_plus"~ "Log RT, log+linear age",
+           model=="lin_poly2" ~ "Linear RT, poly(age,2)",
+           model=="lin_poly3" ~ "Linear RT, poly(age,3)"
+         ),
+         r2 = map_dbl(rt_more_mods_lmer, ~performance::r2_nakagawa(.x)$R2_conditional)) |> mutate(AIC=round(AIC), BIC=round(BIC), logLik=round(logLik),          REMLcrit=round(REMLcrit),
+) |> dplyr::select(model, everything()) |>  rename(`n. obs`=nobs) |> kable(digits=3, caption="Goodness of fit comparison between different models of the relationship between age and RT. \\label{tab:age-rt}", padding=0, latex_options = "HOLD_position")
 ```
+
+```{r}
+ log_log_plus = lmer(log_rt ~ log_age_s + age_s +  
+                             (log_age_s + age_s | dataset_name) + (1 | subject_id), 
+                           data = d_trial)
+
+summary(log_log_plus)$coef |> as_tibble(rownames="Term") |> 
+  mutate(Term=case_when(
+  Term=="(Intercept)"~"Intercept",
+  Term=="log_age_s"~ "log age",
+  Term=="age_s"~"linear age",)) |> rename(`$p$-value`=`Pr(>|t|)`)|> kable(digits=3, caption="Fixed effects coefficients for a model predicting log RT from both log age and linear age. \\label{tab:loglin}", format="latex", escape=F, booktabs=T, latex_options = "HOLD_position") |>   kableExtra::kable_styling(full_width = F)
+```
+
+
+\FloatBarrier
 
 # Mixed effects model specifications
 
-Here we provide specifications for the mixed effects models used in the main text. These models are used to estimate the relationship between age and the primary variables of interest, controlling for dataset and subject-level variability.
+Here we provide specifications for the lmer mixed effects models used in the main text. These models are used to estimate the relationship between age and the primary variables of interest, controlling for dataset and subject-level variability.
 
-<!--\verbatim{lmer(long_window_acc_var ~ log_age_s + (log_age_s | dataset_name) + (1 | subject_id)}-->
+For accuracy, 4 models were run, crossing long and short windows as the dependent variable with age or log age as the predictor. 
 
-FIXME because I cause things to crash!
+\begin{verbatim}
+long_window_accuracy ~ log_age_s + (log_age_s | dataset_name) + (1 | subject_id)
+long_window_accuracy ~ log_age_s + (log_age_s | dataset_name) + (1 | subject_id)
+short_window_accuracy ~ age_s  + (age_s | dataset_name) + (1 | subject_id)
+short_window_accuracy ~ log_age_s + (log_age_s | dataset_name) + (1 | subject_id)
+\end{verbatim}
+
+For reaction time, 4 models were run, crossing rt and log rt as the dependent variable  with age or log age as the predictor. 
+
+\begin{verbatim}
+log_rt ~ age_s + (age_s | dataset_name) + (1 | subject_id)
+log_rt ~ log_age_s + (log_age_s | dataset_name) + (1 | subject_id)
+rt ~ age_s + (age_s | dataset_name) + (1 | subject_id)
+rt ~ log_age_s + (log_age_s | dataset_name) + (1 | subject_id)
+\end{verbatim}
+
+To look at the relationship between variance in the accuracy and reaction time measures and children's age, we ran two models. 
+
+\begin{verbatim}
+long_window_acc_var ~ log_age_s + (log_age_s | dataset_name) +  (1 | subject_id)
+log_rt_var ~ log_age_s + (log_age_s | dataset_name) + (1 | subject_id)
+
+\end{verbatim}
+
+In the growth curve analysis, fit a mixed effects model predicting growth in vocabulary as a quadratic function of age, RT at
+study initiation (t0), and their interaction, using the formula below
+
+\begin{verbatim}
+prod ~ poly(age_15,2) *rt_t0 + (age  | subject_id) + (1 | dataset_name)
+\end{verbatim}
+          
+\FloatBarrier
 
 # Factor Analysis
 
@@ -523,19 +573,19 @@ Figure 3 shows the result of a parallel analysis supporting the presence of thre
 ```{r parallel, fig.cap="Parallel analysis scree plot showing the eigenvalues for each factor, for actual, simulated, and resampled data."}
 d_sub_mat <- d_sub |>
   ungroup() |>
-  select(dataset_name, rt, rt_var, long_window_accuracy, long_window_acc_var, prod, comp, age) 
+  dplyr::select(dataset_name, rt, rt_var, long_window_accuracy, long_window_acc_var, prod, comp, age) 
 
 d_sub_mat_s <- d_sub_mat |>
   ungroup() |>
   mutate(across(all_of(c("rt", "rt_var", "long_window_accuracy", 
                          "long_window_acc_var", "prod", "comp")), 
                 ~ age_scale(.x, age))) 
-outputs <- capture.output(fa.parallel(select(d_sub_mat, -dataset_name, -age), fa = "fa", 
+outputs <- capture.output(fa.parallel(dplyr::select(d_sub_mat, -dataset_name, -age), fa = "fa", 
                                       use = "pairwise.complete.obs"))
 ```
 
 ```{r eval=FALSE}
-fs <- fa(select(d_sub_mat, -dataset_name), nfactor = 3,
+fs <- fa(dplyr::select(d_sub_mat, -dataset_name), nfactor = 3,
          use = "pairwise", rotate = "varimax")
 
 as.data.frame(unclass(loadings(fs))) |> 
@@ -547,7 +597,7 @@ as.data.frame(unclass(loadings(fs))) |>
 <!-- % Mon Apr 14 12:25:14 2025 -->
 
 ```{=tex}
-\begin{table}[ht]
+\begin{table}[H]
 \centering
 \begin{tabular}{rrrr}
 \hline
@@ -565,12 +615,57 @@ age & 0.63 & -0.14 & 0.37 \\
 \caption{\label{tab:loadings}Factor loadings for the exploratory three factor solution using varimax rotation.} 
 \end{table}
 ```
+
+The confirmatory factor analysis of this three-factor solution was fit using the following specification
+
+\begin{verbatim}
+vocab =~ prod + comp
+accuracy =~ long_window_accuracy + long_window_acc_var
+speed =~ log_rt + log_rt_var
+\end{verbatim}
+
+The confirmatory factor analysis of the three-factor solution  with a relation to age was fit using the following specification
+
+\begin{verbatim}
+vocab =~ prod + comp
+accuracy =~ acc + acc_sd
+speed =~ log_rt + log_rt_sd
+
+vocab ~ log_age
+accuracy ~ log_age
+speed ~ log_age
+\end{verbatim}
+
+The SEM with a linear growth curve used the following specification
+
+\begin{verbatim}
+accuracy_intercept =~ 1*acc_t0 + 1*acc_t1 + 1*acc_t2 + 1*acc_t3 + 1*acc_t4
+accuracy_slope =~ 1*acc_t0 + 2*acc_t1 + 3*acc_t2 + 4*acc_t3 + 5*acc_t4
+speed_intercept =~ 1*log_rt_t0 + 1*log_rt_t1 + 1*log_rt_t2 + 1*log_rt_t3 + 1*log_rt_t4
+
+speed_slope =~ 1*log_rt_t0 + 2*log_rt_t1 + 3*log_rt_t2 + 4*log_rt_t3 + 5*log_rt_t4
+vocab_intercept =~ 1*prod_t0 + 1*prod_t1 + 1*prod_t2 + 1*prod_t3 + 1*prod_t4
+vocab_slope =~ 1*prod_t0 + 2*prod_t1 + 3*prod_t2 + 4*prod_t3 + 5*prod_t4
+
+accuracy_intercept ~~ NA*accuracy_intercept
+accuracy_slope ~~ NA*accuracy_slope
+speed_intercept ~~ NA*speed_intercept
+
+speed_slope ~~ NA*speed_slope
+vocab_intercept ~~ NA*vocab_intercept
+vocab_slope ~~ NA*vocab_slope
+\end{verbatim}
+
+\FloatBarrier
+
 # Factor Analysis: First Administrations
+
+As a robustness check, we tested our best factor analytic models using only cross-sectional data (filtering to the first test session in longitudinal datasets; N=1963 instead of N=3553). A comparison of all 4 models is shown in Table \ref{tab:factor-first}. For the three-factor CFA, the first administration model shows increased CFI (.992 instead of .972) and decreased RMSEA (.030 instead of .065). The same is true for the age-regressed three-factor CFA, which shows very good statistics on both first administrations and longitudinal data (CFI = .999 and .991, respectively and RMSEA = .009 and .037 respectively). 
 
 ```{r}
 d_sub_mat_firstadmin <- d_sub_firstadmin |>
   ungroup() |>
-  select(dataset_name, log_rt, log_rt_var, long_window_accuracy, long_window_acc_var, prod, comp, age, log_age) 
+  dplyr::select(dataset_name, log_rt, log_rt_var, long_window_accuracy, long_window_acc_var, prod, comp, age, log_age) 
 
 
 d_sub_mat_firstadmin_s <- d_sub_mat_firstadmin |>
@@ -608,13 +703,17 @@ fit3_age_summary_firstadmin <-
 ```{r}
 #remotes::install_github("dr-JT/semoutput")
 library(semoutput)
-semoutput::sem_fitmeasures(fit3, print=F) |> kable()
-semoutput::sem_fitmeasures(fit3_firstadmin, print=F) |> kable()
-semoutput::sem_fitmeasures(fit3_age, print=F) |> kable()
-semoutput::sem_fitmeasures(fit3_age_firstadmin, print=F) |> kable()
 
+output <- sem_fitmeasures(fit3, print=F) |> as_tibble() |> mutate(Model="No Age, longitudinal") |>
+  bind_rows(sem_fitmeasures(fit3_firstadmin, print=F) |> as_tibble() |> mutate(Model="No Age, first admin")) |> 
+  bind_rows(sem_fitmeasures(fit3_age, print=F) |> as_tibble() |> mutate(Model="Age, longitudinal")) |> 
+  bind_rows(sem_fitmeasures(fit3_age_firstadmin, print=F) |> as_tibble() |> mutate(Model="Age, first admin")) |>
+  dplyr::select(Model, everything()) |> mutate(AIC=round(AIC), BIC=round(BIC)) |> rename(`RMSEA$_{Lower}$`=`RMSEA_Lower`, `RMSEA$_{Upper}$`=`RMSEA_Upper`)
+
+kable(output, digits=3, caption="Comparison of confirmatory factor analysis models on longitudinal data or first administrations only. \\label{tab:factor-first}", padding=0)
 ```
 
+\FloatBarrier
 # Alternative Factor Structures
 
 In this section, we provide comparisons between the three-factor model we report in the main text and several alternative models, including:
@@ -624,7 +723,7 @@ In this section, we provide comparisons between the three-factor model we report
 -   a two-factor model with speed separated from accuracy and vocabulary; and
 -   a two-factor model with variability terms separated from speed, accuracy, and vocabulary.
 
-\noindent Table \ref{tab:modcomp} shows the result of these comparisons. The three-factor model shows the lowest AIC and BIC, as well as being significantly better fittign than the next-best model.
+\noindent Table \ref{tab:modcomp} shows the result of these comparisons. The three-factor model shows the lowest AIC and BIC, as well as being significantly better fitting than the next-best model.
 
 ```{r, eval=FALSE}
 fa1_model <-  "
@@ -676,197 +775,14 @@ One-factor & 9 & 46535.49 & 46645.84 & 286.76 & 1.39 & 0.01 & 1 & 0.24 \\
 \end{tabular}
 \end{table}
 ```
+
+\FloatBarrier
 # Non-linear Growth Models
 
-To test for the differentiation of vocabulary growth based on initial reaction time, we used the package `nlme` to fit a logistic growth model to the production data. This model has two parameters for the logistic curve, a scale and an intercept. Both were allowed to interact with initial reaction time. We also included random effects of logistic intercept and scale by participant and a grouping term across datasets. This model showed a significant effect of initial reaction time on the intercept of the logistic growth curve, but not on its scale (see Table \ref{tab:nlme}).
-
-```{r}
-# xtable(summary(mod_nlme)$tTable)
-```
-
-<!-- % latex table generated in R 4.4.2 by xtable 1.8-4 package -->
-
-<!-- % Thu Mar 13 13:10:30 2025 -->
-
-```{=tex}
-\begin{table}[ht]
-\centering
-\begin{tabular}{rrrrrr}
-\hline
-& Value & Std Error & DF & $t$-value & $p$-value \\ 
-\hline
-Growth Intercept & 2.26 & 2.70 & 1766.00 & 0.84 & 0.40 \\ 
-Growth Intercept $\times$ $t_0$ RT & 3.30 & 0.38 & 1766.00 & 8.59 & < 0.0001 \\ 
-Growth Scale & 2.05 & 2.60 & 1766.00 & 0.79 & 0.43 \\ 
-Growth Scale $\times$ $t_0$ RT & 0.28 & 0.38 & 1766.00 & 0.75 & 0.46 \\ 
-\hline
-\end{tabular}
-\caption{Fixed effects estimates from logistic growth model. \label{tab:nlme}}
-\end{table}
-```
-Interpretation of growth in both this model and the linear growth model in the main text is complicated by the fact that the CDI form puts a ceiling on the total number of words that can be recorded; both the quadratic growth functions and the logistic functions come together at the form ceiling. Thus, a shift in quadratic growth in the linear model and a shift in intercept in the logistic model both point to the same overall effect, which is faster growth at the point of maximal sensitivity of the CDI. Neither model can estimate whether the overall growth trajectory is different beyond the range of the CDI. Thus, although these models might initially seem to be in conflict, we believe that they actually point to the same phenomenon, which is perhaps better described by the longitudinal SEM model reported in the main text. Children with greater skill in word recognition show an overall positive shift in the growth trajectory of vocabulary development.
-
-FIXME
-
-```{r}
-d_sub_prod <- filter(d_sub, !is.na(prod), !is.na(log_rt)) |>
-  ungroup() |>
-  mutate(log_rt_resid = resid(lm(log_rt ~ log_age))) |>
-  group_by(subject_id) |>
-  mutate(log_rt_0 = log_rt[1],
-         log_rt_0_resid = log_rt_resid[1],
-         acc_0 = long_window_accuracy[1]) |> 
-  filter(!is.na(log_rt_0)) 
-
-
-mod_nlme <- nlme(model = prod ~ SSlogis(age, Asym = 1, xmid, scale),
-                 data = d_sub_prod,
-                 fixed = xmid + scale ~ log_rt_0_resid,
-                 random = xmid + scale ~ 1 | subject_id,
-                 groups = ~ dataset_name,
-                 start = c(xmid = 20, scale = 3, `xmid:log_rt_0_resid` = 1, `scale:log_rt_0_resid` = 3),
-                 na.action = na.exclude, 
-                 control = list(maxIter = 1000, tolerance = .1))
-
-#summary(mod_nlme)
-
-# fixed
-global_preds <- expand_grid(age = seq(min(d_sub_prod$age), 
-                                      max(d_sub_prod$age), .1), 
-                            log_rt_0_resid = c(quantile(d_sub_prod$log_rt_0_resid, 
-                                                        c(.25,.75), 
-                                                        na.rm=TRUE)))
-global_preds$pred <- predict(mod_nlme, newdata = global_preds, level = 0)
-
-
-#random effects
-dataset_preds <- d_sub |>
-  filter(!is.na(prod)) |> # filter on predictor
-  group_by(dataset_name) |>
-  summarise(min_age = min(age),
-            max_age = max(age)) |>
-  group_by(dataset_name) |>
-  mutate(df = map2(min_age, max_age, ~expand_grid(age = seq(.x, .y, .1), log_rt_0_resid = c(quantile(d_sub_prod$log_rt_0_resid, 
-                                                                                                     c(.25,.75), 
-                                                                                                     na.rm=TRUE))))) |>
-  dplyr::select(-min_age, -max_age) |>
-  unnest(col = "df") |>
-  ungroup()
-
-
-dataset_preds$pred <- predict(mod_nlme,
-                              newdata = dataset_preds,
-                              level = c(0,1))$predict.dataset_name
-
-ggplot(d_sub_prod, aes(x = age, y = prod, col = as.factor(log_rt_0_resid))) + 
-  geom_point(alpha = .03, pch = ".", col = "black") + 
-  geom_line(aes(group = subject_id), alpha = .02, col = "black") + 
-  geom_line(data = dataset_preds |>   
-              filter(dataset_name %in% datasets_with_age_variation$dataset_name), 
-            aes(y = pred, group = interaction(log_rt_0_resid, dataset_name)), lty="dashed", alpha=.5)+
-  geom_line(data = global_preds, aes(y = pred, group = log_rt_0_resid, col = as.factor(log_rt_0_resid)), size=1)+
-  scale_color_viridis(discrete=T, option = "H")+
-  theme(legend.position = "none")+
-  labs(y="Production", x="Age in months")
-
-```
-
 ```{r, eval=F}
 library(brms)
+library(tidybayes)
 
-d_sub_prod$age_c <- d_sub_prod$age - mean(d_sub_prod$age, na.rm = TRUE)
-d_sub_prod$log_rt_0_c <- d_sub_prod$log_rt_0 - mean(d_sub_prod$log_rt_0, na.rm = TRUE)
-
-
-# Define the nonlinear formula
-nlform <- brms::bf(
-  prod ~ 1 / (1 + exp((xmid - age_c) / exp(logscale))),
-  xmid ~ 1 + log_rt_0_c  + (1 | dataset_name/subject_id),
-  logscale ~ 1 + log_rt_0_c  + (1 | dataset_name/subject_id),
-  # scale ~ 1 + log_rt_0_c,
-  nl = TRUE
-)
-
-# xmid ~ 1 + log_rt_0_c + (1 | dataset_name/subject_id),
-# scale ~ 1 + log_rt_0_c + (1 | dataset_name/subject_id),
-
-
-priors <- c(
-  prior(normal(0, 5), nlpar = "xmid", coef = "Intercept"),  # xmid near center of age_c
-  prior(normal(1, 1), nlpar = "logscale", coef = "Intercept"), # scale > 0, mildly steep curve
-  prior(normal(0, 1), nlpar = "logscale", coef = "log_rt_0_c"),
-  prior(exponential(1), class = "sigma"),                # residual error
-  prior(normal(0, 2), nlpar = "xmid", coef = "log_rt_0_c"),
-  # prior(normal(0, 1), nlpar = "scale", lb = 0)
-  
-  # Random effects for xmid
-  prior(exponential(1), class = "sd", nlpar = "xmid", group = "dataset_name"),
-  prior(exponential(1), class = "sd", nlpar = "xmid", group = "dataset_name:subject_id"),
-  
-  # Random effects for scale
-  prior(exponential(1), class = "sd", nlpar = "logscale", group = "dataset_name"),
-  prior(exponential(1), class = "sd", nlpar = "logscale", group = "dataset_name:subject_id")
-)
-#
-
-# Fit the model
-mod_brms <- brm(
-  formula = nlform,
-  data = d_sub_prod,
-  prior = priors,
-  family = gaussian(),
-  # init = 0,  # initialize all parameters to 0 on unconstrained scale (safe for centered priors)
-  chains = 4, cores = 4,
-  control = list(adapt_delta = 0.95),
-  # backend = "cmdstanr",  # optional but faster
-  save_pars = save_pars(all = TRUE),
-  sample_prior = "yes",
-  file="brms1.rds"
-)
-
-
-new_data <- expand.grid(
-  age_c = seq(min(d_sub_prod$age_c), max(d_sub_prod$age_c), length.out = 100),
-  log_rt_0_c = c(-1, 0, 1)  # e.g., low, mean, high values
-)
-
-fitted_vals <- fitted(mod_brms, newdata = new_data, re_formula = NA, summary = TRUE)
-
-saveRDS(fitted_vals, "brms1_fitted.rds")
-```
-
-
-```{r}
-fitted_vals <- readRDS("brms1_fitted.rds")
-
-
-d_sub_prod$age_c <- d_sub_prod$age - mean(d_sub_prod$age, na.rm = TRUE)
-d_sub_prod$log_rt_0_c <- d_sub_prod$log_rt_0 - mean(d_sub_prod$log_rt_0, na.rm = TRUE)
-
-
-new_data <- expand.grid(
-  age_c = seq(min(d_sub_prod$age_c), max(d_sub_prod$age_c), length.out = 100),
-  log_rt_0_c = c(-1, 0, 1)  # e.g., low, mean, high values
-)
-
-new_data$fit <- fitted_vals[, "Estimate"]
-new_data$lower <- fitted_vals[, "Q2.5"]
-new_data$upper <- fitted_vals[, "Q97.5"]
-
-ggplot(new_data, aes(x = age_c, y = fit, col = as.factor(log_rt_0_c))) +
-  geom_line(linewidth = 2) +
-  geom_ribbon(aes(ymin = lower, ymax = upper, fill = as.factor(log_rt_0_c), group = as.factor(log_rt_0_c)), 
-              alpha = 0.2) +
-  labs(x = "Centered Age", y = "Predicted prod (fixed effects only)") +
-  theme_minimal() + 
-  geom_point(data = d_sub_prod, aes(x = age_c, y = prod), col = "black") + 
-  scale_color_solarized(name = "log RT at t0 (SD)") + 
-  scale_fill_solarized(guide = FALSE)
-
-```
-
-```{r, eval=F}
-library(brms)
 
 d_sub_prod$age_c <- d_sub_prod$age - mean(d_sub_prod$age, na.rm = TRUE)
 d_sub_prod$log_rt_0_c <- d_sub_prod$log_rt_0 - mean(d_sub_prod$log_rt_0, na.rm = TRUE)
@@ -920,6 +836,8 @@ resid_mod_brms <- brm(
   file="brms2.rds"
 )
 
+summary(resid_mod_brms)$fixed |> saveRDS("brms2_coef.rds")
+
 
 new_data_resid <- expand.grid(
   age_c = seq(min(d_sub_prod$age_c), max(d_sub_prod$age_c), length.out = 100),
@@ -931,9 +849,35 @@ fitted_vals <- fitted(mod_brms, newdata = new_data, re_formula = NA, summary = T
 saveRDS(fitted_vals, "brms2_fitted.rds")
 ```
 
+```{r}
+readRDS("brms1_coef.rds") |> as_tibble(rownames="type") |> 
+  mutate(Type=case_when(
+    type=="xmid_Intercept" ~ "Constant component of growth intercept",
+    type=="xmid_log_rt_0_c" ~ "Effect of $t_0$ RT on growth intercept",
+    type=="logscale_Intercept" ~ "Constant compontent of growth scale",
+    type=="logscale_log_rt_0_c" ~ "Effect of $t_0$ RT on growth scale"
+  )) |> 
+  dplyr::select(Type, Estimate, `Est.Error`, `l-95\\% CI`=`l-95% CI`, `u-95\\% CI`=`u-95% CI`) |> kable(digits=3, caption="Fixed effects estimates from logistic growth model. \\label{tab:nlme}", format="latex", escape=F, booktabs=T, latex_options = "HOLD_position") |>   kableExtra::kable_styling(full_width = F)
+
+```
 
 ```{r}
+readRDS("brms2_coef.rds") |> as_tibble(rownames="type") |> 
+  mutate(Type=case_when(
+    type=="xmid_Intercept" ~ "Constant component of growth intercept",
+    type=="xmid_resid_log_rt_0_c" ~ "Effect of residualized $t_0$ RT on growth intercept",
+    type=="logscale_Intercept" ~ "Constant component of growth scale",
+    type=="logscale_resid_log_rt_0_c" ~ "Effect of residualized $t_0$ RT on growth scale"
+  )) |> 
+  dplyr::select(Type, Estimate, `Est.Error`, `l-95\\% CI`=`l-95% CI`, `u-95\\% CI`=`u-95% CI`) |> kable(digits=3, caption="Fixed effects estimates from logistic growth model using RT residualized on age as the predictor. \\label{tab:nlme-resid}", format="latex", escape=F, booktabs=T, latex_options = "HOLD_position") |>  kableExtra:: kable_styling(full_width = F)
 
+```
+
+To test for the differentiation of vocabulary growth based on initial reaction time, we used the package `brms` to fit a (Bayesian) logistic growth model to the production data. This model has two parameters for the logistic curve, a scale and an intercept. Both were allowed to interact with initial reaction time. We also included random effects of logistic intercept and scale by participant and a grouping term across datasets. This model showed a significant effect of initial reaction time on the intercept of the logistic growth curve, but not on its scale (see Table \ref{tab:nlme}).
+
+Age and initial reaction time were both mean-centered. 
+
+```{r nlme-residual, fig.cap="\\label{fig:nlme-resid} Growth curves from a logistic growth model showing predicted vocabulary growth for children based on their age-residualized initial reaction times. Predictions are shown for children with initial reaction times one SD faster than the mean for their age (blue), at the mean  for their age (red), and one SD slower than the mean for their age (green). Individual longitudinal trajectories are shown in light gray. Solid lines show global model estimates and colored regions indicate 95% credible intervals.", fig.env="figure", fig.height = 4, fig.width=6, out.width=".6\\textwidth", fig.pos="h!"}
 
 d_sub_prod$age_c <- d_sub_prod$age - mean(d_sub_prod$age, na.rm = TRUE)
 d_sub_prod$log_rt_0_c <- d_sub_prod$log_rt_0 - mean(d_sub_prod$log_rt_0, na.rm = TRUE)
@@ -953,27 +897,81 @@ new_data_resid$lower <- fitted_vals[, "Q2.5"]
 new_data_resid$upper <- fitted_vals[, "Q97.5"]
 
 ggplot(new_data_resid, aes(x = age_c, y = fit, col = as.factor(resid_log_rt_0_c))) +
+ geom_line(data = d_sub_prod, aes(x = age_c, y = prod, group=subject_id), col = "black", alpha=.1) + 
   geom_line(linewidth = 2) +
   geom_ribbon(aes(ymin = lower, ymax = upper, fill = as.factor(resid_log_rt_0_c), group = as.factor(resid_log_rt_0_c)), 
-              alpha = 0.2) +
+              alpha = 0.3) +
   labs(x = "Centered Age", y = "Predicted prod (fixed effects only)") +
   theme_minimal() + 
-  scale_color_viridis(discrete=T) + 
-  scale_fill_viridis(discrete=T, guide=F)+
-  geom_point(data = d_sub_prod, aes(x = age_c, y = prod), col = "black")
+  scale_color_solarized(name = "residualized log RT at t0 (SD)") + 
+  scale_fill_solarized(guide = FALSE)
 
 ```
 
+The formula specification was
+\begin{verbatim}
+nlform <- brms::bf(
+  prod ~ 1 / (1 + exp((xmid - age_c) / exp(logscale))),
+  xmid ~ 1 + log_rt_0_c  + (1 | dataset_name/subject_id),
+  logscale ~ 1 + log_rt_0_c  + (1 | dataset_name/subject_id),
+  # scale ~ 1 + log_rt_0_c,
+  nl = TRUE
+)
+\end{verbatim}
+
+And the priors were
+
+\begin{verbatim}
+priors <- c(
+  prior(normal(0, 5), nlpar = "xmid", coef = "Intercept"), 
+  prior(normal(1, 1), nlpar = "logscale", coef = "Intercept"), 
+  prior(normal(0, 1), nlpar = "logscale", coef = "log_rt_0_c"),
+  prior(exponential(1), class = "sigma"),              
+  prior(normal(0, 2), nlpar = "xmid", coef = "log_rt_0_c"),
+
+  # Random effects for xmid
+  prior(exponential(1), class = "sd", nlpar = "xmid", group = "dataset_name"),
+  prior(exponential(1), class = "sd", nlpar = "xmid", group = "dataset_name:subject_id"),
+  
+  # Random effects for scale
+  prior(exponential(1), class = "sd", nlpar = "logscale", group = "dataset_name"),
+  prior(exponential(1), class = "sd", nlpar = "logscale", group = "dataset_name:subject_id")
+)
+\end{verbatim}
+
+Age and reaction time are correlated, so to check that the effects of initial reaction time were not due to age effects, we reran the model using residualized reaction time to remove effects of age. As seen in Table \ref{tab:nlme-resid} and Figure \ref{fig:nlme-resid}, the pattern of effects is similar for residualized reaction time as for reaction time. 
+
+Interpretation of growth in both this model and the linear growth model in the main text is complicated by the fact that the CDI form puts a ceiling on the total number of words that can be recorded; both the quadratic growth functions and the logistic functions come together at the form ceiling. Thus, a shift in quadratic growth in the linear model and a shift in intercept in the logistic model both point to the same overall effect, which is faster growth at the point of maximal sensitivity of the CDI. Neither model can estimate whether the overall growth trajectory is different beyond the range of the CDI. Thus, although these models might initially seem to be in conflict, we believe that they actually point to the same phenomenon, which is perhaps better described by the longitudinal SEM model reported in the main text. Children with greater skill in word recognition show an overall positive shift in the growth trajectory of vocabulary development.
+
+
+\FloatBarrier
 # SEM Longitudinal Missingness
 
-FIXME
+The SEM model was fit to the entire dataset, including the large mass of cross-sectional data (to anchor the estimates of t0 coefficients) and the sparse longitudinal data for each time point. We have 3%-12% of the total t0 datapoints for any given time point (see Table \ref{tab:sem-missing}), given the sparsity of longitudinal sampling (only 6/24 of the datasets are longitudinal). 
 
-```{r, eval=F}
-colMeans(!is.na(d_sub_wide_fine))
+Our data are MAR (missing at random) rather than MCAR (missing completely at random). This is because their missingness is due to which dataset they are part of – if they are from a cross-sectional dataset, they are by definition missing all longitudinal observations. For our analyses to be appropriate given this structure, we have to assume that the general developmental patterns we are studying are replicated across datasets. We believe that they are, and we show this statistically using our mixed effects and non-linear mixed effects models, which control for dataset-related variation. (We also show dataset-level effects in a number of our visualizations for this same reason). The same degree of random effect specification that we can do in the mixed effects models is not possible in the SEM model, however, purely for technical reasons. Again, this point highlights the importance of convergence across analyses. 
+
+
+```{r}
+colMeans(!is.na(d_sub_wide_fine)) |> as_tibble(rownames="type") |> filter(!type%in%c("subject_id", "dataset_name")) |>  separate_wider_regex(type, c(type = ".*", "_", timepoint = ".*")) |> pivot_wider(names_from=type, values_from=value) |> arrange(timepoint) |> dplyr::select(-log_rt_sd, -acc_sd) |>
+  rename("Log RT"=log_rt, Accuracy=acc, Production=prod, Comprehension=comp) |> kable(digits=3, caption="\\label{tab:sem-missing} Fraction of data present for each measure at each time point for the longitudinal SEM. ", format="latex",  booktabs = TRUE, linesep = "", latex_options = "HOLD_position") |>   kableExtra::kable_styling(full_width = F)
+
 ```
-
+\FloatBarrier
 # Additional References
 
-Heathcote, A., Brown, S., & Mewhort, D. J. K. (2000). The power law repealed: The case for an exponential law of practice. Psychonomic Bulletin & Review, 7(2), 185–207.
+Baayen, R. H., & Milin, P. (2010). Analyzing reaction times. International journal of psychological research, 3(2), 12-28.
 
 Creel, S. (2024). Connecting the tots: Strong looking-pointing correlations in preschoolers' word learning and implications for continuity in language development. Child Development, 96, 87-103.
+
+Logan, G. D. (1988). Toward an instance theory of automatization. Psychological review, 95(4), 492.
+
+Luce, P. A. (1986). A computational analysis of uniqueness points in auditory word recognition. Perception & Psychophysics, 39(3), 155-158.
+
+Ratcliff, R. (1979). Group reaction time distributions and an analysis of distribution statistics. Psychological bulletin, 86(3), 446.
+
+Ratcliff, R. (1993). Methods for dealing with reaction time outliers. Psychological bulletin, 114(3), 510.
+
+Van Zandt, T. (2000). How to fit a response time distribution. Psychonomic bulletin & review, 7(3), 424-465.
+
+Van Zandt, T. (2002). Analysis of response time distributions. Stevens’ handbook of experimental psychology, 4, 461-516.

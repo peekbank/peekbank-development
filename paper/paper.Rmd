@@ -85,6 +85,18 @@ csl: pnas.csl
 lineno: false
 floatsintext: yes
 output: papaja::apa6_pdf
+header-includes:
+  - \usepackage{threeparttablex}
+  - \usepackage{booktabs}
+  - \usepackage{placeins}
+  - \usepackage{float}
+  - \renewcommand{\textfraction}{0.00}
+  - \renewcommand{\topfraction}{1}
+  - \renewcommand{\bottomfraction}{1}
+  - \renewcommand{\floatpagefraction}{1}
+  - \setcounter{topnumber}{5}
+  - \setcounter{bottomnumber}{5}
+  - \setcounter{totalnumber}{6}  
 
 nocite: |
   @yurovsky2017,
@@ -119,8 +131,10 @@ The version of this method that is used with children goes by many names, includ
 
 Word recognition ability, as measured by LWL, is hypothesized to play a key role in language learning. Measurements of children's language input at home are consistently associated with their vocabulary size [@hart1995meaningful;@anderson2021linking]. The mechanism posited to drive this association is that each word that a child experiences is an opportunity to learn. But each word must first be recognized during the short window of time when it is present in the child's memory. Consider a child hearing the utterance "Can you put the ball in the crate?" The faster and more accurately the child can recognize the word "ball", the better they can use this evidence to help infer the speaker's intended meaning, allowing possible inferences about the meaning of the less familiar word, "crate" [@frank2009using]. Consistent with this idea, one important study found that children's word recognition speed mediated the longitudinal relationship between home language input and vocabulary growth [@Weisleder2013].
 
-\begin{table*}[ht]
+\begin{table}[ht]
 \centering
+\setlength\tabcolsep{2pt}
+\begin{scriptsize}
 \begin{tabular}{rlrrrrrrrll}
   \hline
  & Dataset Name & N subjects & N Admins & Mean Age & Min Age & Max Age & Avg Trials & Avg RT Trials & CDIs & longitudinal \\ 
@@ -153,14 +167,15 @@ Word recognition ability, as measured by LWL, is hypothesized to play a key role
     & Total & 1963 & 3554 & 24.73 & 12.00 & 60.00 & 12.74 & 5.05 & 15 & 6 \\ 
    \hline
 \end{tabular}
+\end{scriptsize}
 \caption{Characteristics of included datasets from Peekbank. "Admins" denotes separate experimental sessions. "CDIs" refers to whether the dataset contains parent report vocabulary data from the MacArthur-Bates Communicative Development Inventory. \label{tab:datasets}} 
-\end{table*}
+\end{table}
 
 Word recognition speed has also been used as an index of individual differences in early childhood [@fernald2006;@marchman2008;@peter2019;@fernald2012;@newbury2016interrelationships] and beyond [@colby2023efficiency;@jeppsen2022development;@mcmurray2022slow]. Over and above measures of vocabulary size, word recognition speed at 18 months predicts children's standardized test scores years later [@marchman2008]. Further, faster processing at 18 months is predictive of whether "late talkers" catch up to their peers or could benefit from further intervention [@fernald2012].  Critically, these assessments use words that children at the target age are reported to understand and produce -- they are not indices of vocabulary size but rather of how quickly and accurately the child can recognize a familiar spoken word and use it to guide their visual attention to a referent. 
 
 Yet given the logistical hurdles involved in sampling from this population, individual experiments measuring processing speed with young children typically recruit relatively small samples in a restricted range of ages. These samples provide neither the breadth of ages nor the number of participants needed to estimate how word recognition changes developmentally and how it connects with other aspects of early language development (see [@colby2023efficiency; @mcmurray2022slow] for examples of these analyses in school-aged children). To overcome these limitations, we created Peekbank, an open database of LWL data from young children, stored in a harmonized format [@zettersten2023peekbank]. This dataset unifies and carefully curates a large amount of eye-tracking data from studies with infants and toddlers, representing cumulatively over 12 million individual samples of children's eye movements during real-time language processing. The Peekbank dataset allows us to gain an unprecedented view of the development of word recognition across a large sample of children. 
 
-We investigate two specific hypotheses here. First, one influential theory posits that language learning is a process of skill learning, in which the child is learning the skill of fluent conversation with other language users [@christiansen2016;@chater2018]. In this theory, the major information processing challenge of language learning is that incoming language is ephemeral and must be processed quickly before it is lost (the "now-or-never bottleneck"). On this kind of account, we should expect to see the signatures of expertise and skill learning in word recognition, which is one of the primary skills involved in processing incoming language in real time. Accuracy should change linearly with the logarithm of age, reflecting gradual asymptotic convergence to mature levels of accuracy. In addition, we might observe what is known as the "power law of practice," the regularity found in many cases of skill learning that the logarithm of reaction time decreases with the logarithm of experience across participants [@snoddy1926;@kail1991;@anderson1982; cf. @heathcote2000; @heathcote2018]. Indeed, this pattern is predicted by an influential associative process model of early word learning [@mcmurray2012].  In our case, we expect that chronological age is a proxy for experience and so the logarithm of reaction time should decrease linearly with the logarithm of age. Finally, trial-to-trial variability in both speed and accuracy should decrease with increasing expertise, as is found in studies of motor expertise [@todorov2002optimal]. 
+We investigate two specific hypotheses here. First, one influential theory posits that language learning is a process of skill learning, in which the child is learning the skill of fluent conversation with other language users [@christiansen2016;@chater2018]. In this theory, the major information processing challenge of language learning is that incoming language is ephemeral and must be processed quickly before it is lost (the "now-or-never bottleneck"). On this kind of account, we should expect to see the signatures of expertise and skill learning in word recognition, which is one of the primary skills involved in processing incoming language in real time. Accuracy should change linearly with the logarithm of age, reflecting gradual asymptotic convergence to mature levels of accuracy. In addition, we might observe what is known as the "power law of practice," the regularity found in many cases of skill learning that the logarithm of reaction time decreases with the logarithm of experience across participants [@snoddy1926;@kail1991;@anderson1982; cf. @heathcote2000; @heathcote2018, @evans2018]. Indeed, this pattern is predicted by an influential associative process model of early word learning [@mcmurray2012].  In our case, we expect that chronological age is a proxy for experience and so the logarithm of reaction time should decrease linearly with the logarithm of age. Finally, trial-to-trial variability in both speed and accuracy should decrease with increasing expertise, as is found in studies of motor expertise [@todorov2002optimal]. 
 
 Second, previous findings have provided limited and sometimes conflicting evidence on the concurrent and predictive relations between word recognition and language learning. Initial reports showed strong predictive relationships between both speed and accuracy and later vocabulary growth [@fernald2006], with replications in infants born preterm [@marchman2016] and late talkers [@fernald2012]. Subsequent studies have primarily focused on speed of processing and found more mixed results, with reaction time measures found to be only inconsistently predictive of later vocabulary outcomes [@peter2019;@newbury2016interrelationships;@lany2018]. A larger dataset should allow us to make a more definitive test of the presence of these relationships. Further, by examining the relationship between speed, accuracy, and vocabulary, it should be possible to assess the extent to which processing speed specifically plays a role in vocabulary growth.
 
@@ -174,7 +189,7 @@ suppressPackageStartupMessages(library(tidySEM))
 suppressPackageStartupMessages(library(xtable))
 suppressPackageStartupMessages(library(papaja))
 suppressPackageStartupMessages(library(viridis))
-suppressPackageStartupMessages(library(nlme))
+#suppressPackageStartupMessages(library(nlme))
 suppressPackageStartupMessages(library(cowplot))
 
 source(here("helper","common.R"))
@@ -376,7 +391,7 @@ Our first question was about the functional form of the relationships between ag
 
 Figure \ref{fig:devchange} shows these age gradients. Log RT decreased significantly with age, reflecting increasing speed (`r papaja::apa_print(rt_mods_lmer[[2]])$full_result$log_age_s`) and accuracy also increased significantly with age  (`r papaja::apa_print(acc_mods_lmer[[2]])$full_result$log_age_s`). In sum, we see continuing improvements in word recognition across the full age range in our dataset that appear roughly linear in the logarithm of age. These logarithmic relationships follow theoretical expectations that both speed and accuracy should gradually asymptote to mature levels of performance, as seen in skill learning more generally [@anderson1982;@snoddy1926]. 
 
-```{r devchange, fig.cap="Participant-level target looking and reaction time (log), plotted by age (log). Longitudinal datapoints are connected by lines. The solid blue line shows a linear fit and associated confidence interval. Thin colored lines show linear fits for those datasets spanning six or more months of age. The dashed line for accuracy shows chance-level looking (.5)", fig.env="figure*", fig.height = 2.5}
+```{r devchange, fig.cap="Participant-level target looking and reaction time (log), plotted by age (log). Longitudinal datapoints are connected by lines. The solid blue line shows a linear fit and associated confidence interval. Thin colored lines show linear fits for those datasets spanning six or more months of age. The dashed line for accuracy shows chance-level looking (.5)", fig.env="figure", fig.height = 2.5}
 
 #library(RColorBrewer)
 
@@ -432,7 +447,7 @@ rt_var_mod <- lmer(log_rt_var ~ log_age_s + (log_age_s | dataset_name) +
 
 One further hallmark of increasing skill is a decrease in task-relevant variability [@todorov2002optimal]. Both within and across datasets, within-individual variation in speed and accuracy decreased across the developmental range we examined (Figure \ref{fig:variance}). We fit mixed-effects models predicting the standard deviation of both speed and accuracy for each testing session for each participant, including random slopes of log age nested within dataset and random intercepts for each participant. For both speed and accuracy, within-individual variability decreased with age (speed: `r papaja::apa_print(rt_var_mod)$full_result$log_age_s`; accuracy: `r papaja::apa_print(acc_var_mod)$full_result$log_age_s`). Thus, as well as being faster and more accurate, older children were more consistent in their real-time word recognition than younger children.
 
-```{r variance, fig.cap="Participant-level variability in target looking and reaction time (log RT), plotted by age (log). Plotting conventions are as in Figure 1.", fig.env="figure*", fig.height = 2.5}
+```{r variance, fig.cap="Participant-level variability in target looking and reaction time (log RT), plotted by age (log). Plotting conventions are as in Figure 1.", fig.env="figure", fig.height = 2.5}
   mycolors = c("#1B9E77", "#D95F02", "#E7298A", "#66A61E", "#1B9E77", "#D95F02", "#E7298A", "#66A61E", "#1B9E77", "#D95F02", "#E7298A", "#66A61E","#1B9E77", "#D95F02")
 
 c <- ggplot(d_sub,
@@ -501,7 +516,7 @@ We fit a series of factor analytic models to explore the dimensionality of the p
 Initial exploratory factor analysis using parallel analysis to select the number of factors suggested that three factors explained substantial variance in the data (see SI: Factor Analysis). To better accommodate missing data under the assumption of data missing at random (e.g., missingness due to the age sampling schemes of the various datasets), we used confirmatory factor analysis with full information maximum likelihood to find the best set of loadings. The best fitting model was a three-factor model with factors for speed (RT and RT variability), accuracy (proportion looking to target on each trial and associated variability of this measure), and vocabulary (comprehension and production from the CDI). Fit statistics for this model were generally good (Confirmatory fit index: `r round(fit_stats$fit["cfi"], 3)`, RMSE: `r round(fit_stats$fit["rmsea"], 3)`); see SI: Alternative Factor Structures). 
 
 
-```{r age-regression, fig.env="figure*", fig.cap="Structural equation model showing the three-factor factor analysis with a regression of each latent variable on the logarithm of age. Observed variables are notated as squares and latent variables are notated as circles Factor loadings and regression coefficients are shown with straight, solid lines; covariances are shown with dashed lines; residual variances are shown as solid circular connections. Stars show conventional levels of statistical significance, e.g. * indicates p < .05, ** indicates p < .01, and *** indicates p < .001. Covariances reflect age-residualized correlations between variables.", fig.height = 3}
+```{r age-regression, fig.env="figure", fig.cap="Structural equation model showing the three-factor factor analysis with a regression of each latent variable on the logarithm of age. Observed variables are notated as squares and latent variables are notated as circles Factor loadings and regression coefficients are shown with straight, solid lines; covariances are shown with dashed lines; residual variances are shown as solid circular connections. Stars show conventional levels of statistical significance, e.g. * indicates p < .05, ** indicates p < .01, and *** indicates p < .001. Covariances reflect age-residualized correlations between variables.", fig.height = 3}
 
 d_sub_mat_s_renamed <- d_sub_mat_s |>
   rename(acc = long_window_accuracy, 
@@ -600,63 +615,109 @@ To investigate within-person relationships between LWL and vocabulary, we began 
 
 We confirmed this analysis using a non-linear growth model with a logistic shape, which provides a better fit to vocabulary size within a fixed-length form than the quadratic model (see SI: Non-Linear Growth Model) [@frank2021]. Figure \ref{fig:growth} shows predictions from this model, confirming the differentiation of growth curves for children with higher and lower initial reaction time. 
 
-```{r growth, fig.cap="Growth curves from a logistic growth model showing predicted vocabulary growth for the 25th (red) and 75th (blue) percentile on initial reaction times. Individual longitudinal trajectories are shown in light gray. Solid lines show global model estimates and dashed lines show estimates for individual datasets with sufficient age variation as above.", fig.env="figure", fig.height = 2.5, fig.width=4, out.width=".5\\textwidth", include=TRUE}
-
-d_sub_prod <- filter(d_sub, !is.na(prod)) |>
+```{r}
+d_sub_prod <- filter(d_sub, !is.na(prod), !is.na(log_rt)) |>
+  ungroup() |>
+  mutate(log_rt_resid = resid(lm(log_rt ~ log_age))) |>
   group_by(subject_id) |>
   mutate(log_rt_0 = log_rt[1],
+         log_rt_0_resid = log_rt_resid[1],
          acc_0 = long_window_accuracy[1]) |> 
-  filter(!is.na(log_rt_0))
+  filter(!is.na(log_rt_0)) 
 
-mod_nlme <- nlme(model = prod ~ SSlogis(age, Asym = 1, xmid, scale),
-             data = d_sub_prod,
-             fixed = xmid + scale ~ log_rt_0,
-             random = xmid + scale ~ 1 | subject_id,
-             groups = ~ dataset_name,
-             start = c(xmid = 20, scale = 3, `xmid:log_rt_0` = 1, `scale:log_rt_0` = 3),
-             na.action = na.exclude, 
-             control = list(maxIter = 1000, tolerance = 10))
+d_sub_prod$age_c <- d_sub_prod$age - mean(d_sub_prod$age, na.rm = TRUE)
+d_sub_prod$log_rt_0_c <- d_sub_prod$log_rt_0 - mean(d_sub_prod$log_rt_0, na.rm = TRUE)
+```
 
-# fixed effects (no CIs)
-global_preds <- expand_grid(age = seq(min(d_sub_prod$age), 
-                                      max(d_sub_prod$age), .1), 
-                            log_rt_0 = c(quantile(d_sub_prod$log_rt, 
-                                                  c(.25,.75), 
-                                                  na.rm=TRUE)))
-global_preds$pred <- predict(mod_nlme, newdata = global_preds, level = 0)
+```{r, eval=F}
+library(brms)
 
+# Define the nonlinear formula
+nlform <- brms::bf(
+  prod ~ 1 / (1 + exp((xmid - age_c) / exp(logscale))),
+  xmid ~ 1 + log_rt_0_c  + (1 | dataset_name/subject_id),
+  logscale ~ 1 + log_rt_0_c  + (1 | dataset_name/subject_id),
+  # scale ~ 1 + log_rt_0_c,
+  nl = TRUE
+)
 
-#random effects
-dataset_preds <- d_sub |>
-  filter(!is.na(prod)) |> # filter on predictor
-  group_by(dataset_name) |>
-  summarise(min_age = min(age),
-            max_age = max(age)) |>
-  group_by(dataset_name) |>
-  mutate(df = map2(min_age, max_age, ~expand_grid(age = seq(.x, .y, .1), log_rt_0 = c(quantile(d_sub_prod$log_rt_0, 
-                                                  c(.25,.75), 
-                                                  na.rm=TRUE))))) |>
-  select(-min_age, -max_age) |>
-  unnest(col = "df") |>
-  ungroup()
+# xmid ~ 1 + log_rt_0_c + (1 | dataset_name/subject_id),
+# scale ~ 1 + log_rt_0_c + (1 | dataset_name/subject_id),
 
 
-dataset_preds$pred <- predict(mod_nlme,
-                              newdata = dataset_preds,
-                              level = c(0,1))$predict.dataset_name
+priors <- c(
+  prior(normal(0, 5), nlpar = "xmid", coef = "Intercept"),  # xmid near center of age_c
+  prior(normal(1, 1), nlpar = "logscale", coef = "Intercept"), # scale > 0, mildly steep curve
+  prior(normal(0, 1), nlpar = "logscale", coef = "log_rt_0_c"),
+  prior(exponential(1), class = "sigma"),                # residual error
+  prior(normal(0, 2), nlpar = "xmid", coef = "log_rt_0_c"),
+  # prior(normal(0, 1), nlpar = "scale", lb = 0)
+  
+  # Random effects for xmid
+  prior(exponential(1), class = "sd", nlpar = "xmid", group = "dataset_name"),
+  prior(exponential(1), class = "sd", nlpar = "xmid", group = "dataset_name:subject_id"),
+  
+  # Random effects for scale
+  prior(exponential(1), class = "sd", nlpar = "logscale", group = "dataset_name"),
+  prior(exponential(1), class = "sd", nlpar = "logscale", group = "dataset_name:subject_id")
+)
+#
 
-ggplot(d_sub_prod, aes(x = age, y = prod, col = as.factor(log_rt_0))) + 
-  geom_point(alpha = .03, pch = ".", col = "black") + 
-  geom_line(aes(group = subject_id), alpha = .02, col = "black") + 
-  geom_line(data = dataset_preds |>   
-              filter(dataset_name %in% datasets_with_age_variation$dataset_name), 
-            aes(y = pred, group = interaction(log_rt_0, dataset_name)), lty="dashed", alpha=.5)+
-  geom_line(data = global_preds, aes(y = pred, group = log_rt_0, col = as.factor(log_rt_0)), size=1)+
-  scale_color_viridis(discrete=T, option = "H")+
-  theme(legend.position = "none")+
-  labs(y="Production", x="Age in months")
-# +
-#   geom_line(data = dataset_preds, aes(y = pred))
+# Fit the model
+mod_brms <- brm(
+  formula = nlform,
+  data = d_sub_prod,
+  prior = priors,
+  family = gaussian(),
+  # init = 0,  # initialize all parameters to 0 on unconstrained scale (safe for centered priors)
+  chains = 4, cores = 4,
+  control = list(adapt_delta = 0.95),
+  # backend = "cmdstanr",  # optional but faster
+  save_pars = save_pars(all = TRUE),
+  sample_prior = "yes",
+  file="brms1.rds"
+)
+
+summary(mod_brms)$fixed |> saveRDS("brms1_coef.rds")
+
+new_data <- expand.grid(
+  age_c = seq(min(d_sub_prod$age_c), max(d_sub_prod$age_c), length.out = 100),
+  log_rt_0_c = c(-1, 0, 1)  # e.g., low, mean, high values
+)
+
+fitted_vals <- fitted(mod_brms, newdata = new_data, re_formula = NA, summary = TRUE)
+
+saveRDS(fitted_vals, "brms1_fitted.rds")
+
+```
+
+
+```{r growth, fig.cap="Growth curves from a logistic growth model showing predicted vocabulary growth for children with initial reaction times one SD faster than the mean (blue), at the mean (red), and one SD slower than the mean (green). Individual longitudinal trajectories are shown in light gray. Solid lines show global model estimates and colored regions indicate 95% credible intervals.", fig.env="figure", fig.height = 4, fig.width=6, out.width=".6\\textwidth", include=TRUE}
+
+
+fitted_vals <- readRDS("brms1_fitted.rds")
+
+
+new_data <- expand.grid(
+  age_c = seq(min(d_sub_prod$age_c), max(d_sub_prod$age_c), length.out = 100),
+  log_rt_0_c = c(-1, 0, 1)  # e.g., low, mean, high values
+)
+
+new_data$fit <- fitted_vals[, "Estimate"]
+new_data$lower <- fitted_vals[, "Q2.5"]
+new_data$upper <- fitted_vals[, "Q97.5"]
+
+ggplot(new_data, aes(x = age_c, y = fit, col = as.factor(log_rt_0_c))) +
+    geom_line(data = d_sub_prod, aes(x = age_c, y = prod, group=subject_id), col = "black", alpha=.1) + 
+  geom_line(linewidth = 2) +
+  geom_ribbon(aes(ymin = lower, ymax = upper, fill = as.factor(log_rt_0_c), group = as.factor(log_rt_0_c)), 
+              alpha = 0.3) +
+  labs(x = "Centered Age", y = "Predicted prod (fixed effects only)") +
+  theme_minimal() + 
+  scale_color_solarized(name = "log RT at t0 (SD)") + 
+  scale_fill_solarized(guide = FALSE)
+
+
 ```
 
 ```{r prep_long_data}
@@ -724,7 +785,7 @@ Our key question of interest concerned coupling among the (latent) intercepts an
 In sum, these findings provide evidence consistent with the claim that differences in processing speed are related to differences in the rate of age-related change in vocabulary [@fernald2006;@Weisleder2013]. Children with greater skill in word recognition learn words faster.
 
 
-```{r longitudinal, fig.env="figure*", height = 3.5, fig.cap = "Structural equation model showing longitudinal couplings between growth parameters. "}
+```{r longitudinal, fig.env="figure", height = 3.5, fig.cap = "Structural equation model showing longitudinal couplings between growth parameters. "}
 layout <- read.csv(here("misc/layout_slopes_observed_growth.csv"), header = FALSE)
 
 acc_color <- "#B2DF8A"
@@ -877,13 +938,11 @@ More broadly, our results here suggest the continued importance of the looking-w
 
 We included information from `r length(unique(d_sub$subject_id))` unique participants across `r length(unique(d_sub$dataset_name))` datasets. Dataset information is given in Table \ref{tab:datasets}. Although experiments in Peekbank include a variety of different experimental manipulations, we analyzed only data from simple word recognition trials; these trials were sometimes the main focus of the original studies and sometimes constituted control conditions for experiments with more complex manipulations. We focus here on English purely for practical reasons -- the Peekbank dataset at present contains limited data from other languages.
 
-Reaction times
-
 We excluded trials entirely if they were missing data on more than 50% of timepoints, and excluded RTs if they were based on fewer than 50% of timepoints in the short analytic window (200 -- 2000 ms). We also removed RTs shorter than 367 ms, as these were unlikely to be generated based on the specific linguistic stimulus. We then excluded participants from the analysis if they contributed fewer than four accuracy measurements or fewer than two reaction time measurements. At the participant level, these steps together led to `r round(mean(is.na(d_sub$rt)), 3)*100`% missingness for RTs and `r round(mean(is.na(d_sub$long_window_accuracy)), 3)*100`% missingness for long window accuracies.
 
 ## Analytic methods {.unnumbered}
 
-We used `lme4` to fit linear mixed effects models, `nlme` to fit non-linear models, and `lavaan` to fit structural equation models. Random effects structures for each model are given in text; full model specifications are available in the Supplemental Information and in the reproducible code for this paper, available in the linked repository. To aid interpretability, all variables were standardized (z-scored) prior to inclusion in structural equation models. 
+We used `lme4` to fit linear mixed effects models, `brms` to fit non-linear growth models, and `lavaan` to fit structural equation models. Random effects structures for each model are given in text; full model specifications are available in the Supplemental Information and in the reproducible code for this paper, available in the linked repository. To aid interpretability, all variables were standardized (z-scored) prior to inclusion in structural equation models. 
 
 ## Code and Data Availability {.unnumbered}
 
