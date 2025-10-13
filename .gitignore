@@ -70,3 +70,9 @@ paper/supplemental_information.tex
 paper/supplemental_information.pdf
 supplemental_data/creel_2024/allfamiliars.csv
 supplemental_data/creel_2024/allnovels.csv
+brms1.rds
+brms1_coef.rds
+brms1_fitted.rds
+brms2.rds
+brms2_coef.rds
+brms2_fitted.rds

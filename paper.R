@@ -6,7 +6,7 @@ suppressPackageStartupMessages(library(tidySEM))
 suppressPackageStartupMessages(library(xtable))
 suppressPackageStartupMessages(library(papaja))
 suppressPackageStartupMessages(library(viridis))
-suppressPackageStartupMessages(library(nlme))
+#suppressPackageStartupMessages(library(nlme))
 suppressPackageStartupMessages(library(cowplot))
 
 source(here("helper","common.R"))
@@ -52,6 +52,9 @@ d_sub_firstadmin <- d_sub |>
 
 knitr::opts_chunk$set(echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE)
 
+#set to TRUE the first time running the document to ensure all cached elements are created (FALSE thereafter)
+FIRST_TIME = FALSE
+
 dataset_characteristics <- d_sub |>
   group_by(dataset_name) |>
   summarise(`N subjects` = length(unique(subject_id)),
@@ -89,7 +92,7 @@ d_timecourse_by_dataset_age_subj <- d_aoi |>
     age_bin = cut(age, breaks = c(0,12,15,18,21,24,27,30,36,60), 
                   labels = c("<12", "12-15","15-18", "18-21", "21-24", "24-27","27-30","30-36", ">36"))
   ) |>
-  #downsample t_norm to 50ms bins
+  #downsample t_norm to 50ms binsv
   #mutate(t_norm_downsampled = round(t_norm/50)*50) |>
   group_by(dataset_name,dataset_id,subject_id,age_bin,t_norm) |> 
   #calculate proportion time spent looking at target
@@ -362,62 +365,45 @@ growth_mod <- lmer(prod ~ poly(age_15,2) *rt_t0 + (age  | subject_id) + (1 | dat
 
 # summary(growth_mod)
 
-
-d_sub_prod <- filter(d_sub, !is.na(prod)) |>
+d_sub_prod <- filter(d_sub, !is.na(prod), !is.na(log_rt)) |>
+  ungroup() |>
+  mutate(log_rt_resid = resid(lm(log_rt ~ log_age))) |>
   group_by(subject_id) |>
   mutate(log_rt_0 = log_rt[1],
+         log_rt_0_resid = log_rt_resid[1],
          acc_0 = long_window_accuracy[1]) |> 
-  filter(!is.na(log_rt_0))
+  filter(!is.na(log_rt_0)) 
 
-mod_nlme <- nlme(model = prod ~ SSlogis(age, Asym = 1, xmid, scale),
-             data = d_sub_prod,
-             fixed = xmid + scale ~ log_rt_0,
-             random = xmid + scale ~ 1 | subject_id,
-             groups = ~ dataset_name,
-             start = c(xmid = 20, scale = 3, `xmid:log_rt_0` = 1, `scale:log_rt_0` = 3),
-             na.action = na.exclude, 
-             control = list(maxIter = 1000, tolerance = 10))
-
-# fixed effects (no CIs)
-global_preds <- expand_grid(age = seq(min(d_sub_prod$age), 
-                                      max(d_sub_prod$age), .1), 
-                            log_rt_0 = c(quantile(d_sub_prod$log_rt, 
-                                                  c(.25,.75), 
-                                                  na.rm=TRUE)))
-global_preds$pred <- predict(mod_nlme, newdata = global_preds, level = 0)
+d_sub_prod$age_c <- d_sub_prod$age - mean(d_sub_prod$age, na.rm = TRUE)
+d_sub_prod$log_rt_0_c <- d_sub_prod$log_rt_0 - mean(d_sub_prod$log_rt_0, na.rm = TRUE)
 
 
-#random effects
-dataset_preds <- d_sub |>
-  filter(!is.na(prod)) |> # filter on predictor
-  group_by(dataset_name) |>
-  summarise(min_age = min(age),
-            max_age = max(age)) |>
-  group_by(dataset_name) |>
-  mutate(df = map2(min_age, max_age, ~expand_grid(age = seq(.x, .y, .1), log_rt_0 = c(quantile(d_sub_prod$log_rt_0, 
-                                                  c(.25,.75), 
-                                                  na.rm=TRUE))))) |>
-  select(-min_age, -max_age) |>
-  unnest(col = "df") |>
-  ungroup()
 
 
-dataset_preds$pred <- predict(mod_nlme,
-                              newdata = dataset_preds,
-                              level = c(0,1))$predict.dataset_name
 
-ggplot(d_sub_prod, aes(x = age, y = prod, col = as.factor(log_rt_0))) + 
-  geom_point(alpha = .03, pch = ".", col = "black") + 
-  geom_line(aes(group = subject_id), alpha = .02, col = "black") + 
-  geom_line(data = dataset_preds |>   
-              filter(dataset_name %in% datasets_with_age_variation$dataset_name), 
-            aes(y = pred, group = interaction(log_rt_0, dataset_name)), lty="dashed", alpha=.5)+
-  geom_line(data = global_preds, aes(y = pred, group = log_rt_0, col = as.factor(log_rt_0)), size=1)+
-  scale_color_viridis(discrete=T, option = "H")+
-  theme(legend.position = "none")+
-  labs(y="Production", x="Age in months")
-# +
-#   geom_line(data = dataset_preds, aes(y = pred))
+fitted_vals <- readRDS("brms1_fitted.rds")
+
+
+new_data <- expand.grid(
+  age_c = seq(min(d_sub_prod$age_c), max(d_sub_prod$age_c), length.out = 100),
+  log_rt_0_c = c(-1, 0, 1)  # e.g., low, mean, high values
+)
+
+new_data$fit <- fitted_vals[, "Estimate"]
+new_data$lower <- fitted_vals[, "Q2.5"]
+new_data$upper <- fitted_vals[, "Q97.5"]
+
+ggplot(new_data, aes(x = age_c, y = fit, col = as.factor(log_rt_0_c))) +
+    geom_line(data = d_sub_prod, aes(x = age_c, y = prod, group=subject_id), col = "black", alpha=.1) + 
+  geom_line(linewidth = 2) +
+  geom_ribbon(aes(ymin = lower, ymax = upper, fill = as.factor(log_rt_0_c), group = as.factor(log_rt_0_c)), 
+              alpha = 0.3) +
+  labs(x = "Centered Age", y = "Predicted prod (fixed effects only)") +
+  theme_minimal() + 
+  scale_color_solarized(name = "log RT at t0 (SD)") + 
+  scale_fill_solarized(guide = FALSE)
+
+
 
 # rename and scale variables
 d_sub_s <- d_sub |>

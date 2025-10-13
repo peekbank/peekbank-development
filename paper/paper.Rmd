@@ -234,6 +234,9 @@ d_sub_firstadmin <- d_sub |>
   select(-admin_num, -time_since_t0, -delta_t)
 
 knitr::opts_chunk$set(echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE)
+
+#set to TRUE the first time running the document to ensure all cached elements are created (FALSE thereafter)
+FIRST_TIME = FALSE
 ```
 
 # Results {.unnumbered}
@@ -629,7 +632,7 @@ d_sub_prod$age_c <- d_sub_prod$age - mean(d_sub_prod$age, na.rm = TRUE)
 d_sub_prod$log_rt_0_c <- d_sub_prod$log_rt_0 - mean(d_sub_prod$log_rt_0, na.rm = TRUE)
 ```
 
-```{r, eval=F}
+```{r, eval=FIRST_TIME}
 library(brms)
 
 # Define the nonlinear formula

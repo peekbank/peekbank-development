@@ -27,9 +27,12 @@ library(here)
 source(here("helper","common.R"))
 #library(kableExtra)
 library(papaja)
+
+#set to TRUE to fit the Bayesian models
+FIT_BAYES = FALSE
 ```
 
-```{r, echo=FALSE, cache=TRUE, message=FALSE, warning=FALSE, include=F}
+```{r, echo=FALSE, cache=FALSE, message=FALSE, warning=FALSE, include=F}
 paper <- suppressMessages(knitr::purl(here("paper","paper.Rmd"), documentation = 0))
 suppressMessages(source(paper))
 ```
@@ -779,7 +782,7 @@ One-factor & 9 & 46535.49 & 46645.84 & 286.76 & 1.39 & 0.01 & 1 & 0.24 \\
 \FloatBarrier
 # Non-linear Growth Models
 
-```{r, eval=F}
+```{r, eval=FIT_BAYES}
 library(brms)
 library(tidybayes)
 
@@ -844,7 +847,7 @@ new_data_resid <- expand.grid(
   resid_log_rt_0_c = c(-1, 0, 1)  # e.g., low, mean, high values
 )
 
-fitted_vals <- fitted(mod_brms, newdata = new_data, re_formula = NA, summary = TRUE)
+fitted_vals <- fitted(resid_mod_brms, newdata = new_data_resid, re_formula = NA, summary = TRUE)
 
 saveRDS(fitted_vals, "brms2_fitted.rds")
 ```
