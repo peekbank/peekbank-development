@@ -281,7 +281,7 @@ xtable(dataset_characteristics,
 
 ## Speed and accuracy of word recognition increase {.unnumbered}
 
-```{r timecourse, fig.cap="Timecourse of word recognition at different ages. The x-axis shows time (in ms) from the onset of the target label (vertical solid line). Colored lines show the average increase in proportion target looking post label onset at each age bin (in months). Age bins are larger for older children due to decreased data density. The dashed horizontal line represents chance looking. Error bands represent standard errors of the mean. Grey backgrounds highlight the short and long time windows used in subsequent analyses.", fig.env="figure", fig.height = 3, fig.width=4, out.width=".5\\textwidth", include=TRUE}
+```{r timecourse, fig.cap="Timecourse of word recognition at different ages. The x-axis shows time (in ms) from the onset of the target label (vertical solid line). Colored lines show the average increase in proportion target looking post label onset at each age bin (in months). Age bins are larger for older children due to decreased data density. The dashed horizontal line represents chance looking. Error bands represent standard errors of the mean. Grey backgrounds highlight the short and long time windows used in subsequent analyses.", fig.env="figure", fig.height = 4, include=TRUE}
 
 #summarize by subject
 d_timecourse_by_dataset_age_subj <- d_aoi |>
