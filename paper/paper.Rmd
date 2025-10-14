@@ -695,7 +695,7 @@ saveRDS(fitted_vals, "brms1_fitted.rds")
 ```
 
 
-```{r growth, fig.cap="Growth curves from a logistic growth model showing predicted vocabulary growth for children with initial reaction times one SD faster than the mean (blue), at the mean (red), and one SD slower than the mean (green). Individual longitudinal trajectories are shown in light gray. Solid lines show global model estimates and colored regions indicate 95% credible intervals.", fig.env="figure", fig.height = 4, fig.width=6, out.width=".6\\textwidth", include=TRUE}
+```{r growth, fig.cap="Growth curves from a logistic growth model showing predicted vocabulary growth for children with initial reaction times one SD faster than the mean (blue), at the mean (red), and one SD slower than the mean (green). Individual longitudinal trajectories are shown in light gray. Solid lines show global model estimates and colored regions indicate 95% credible intervals.", fig.env="figure", fig.height = 4, include=TRUE}
 
 
 fitted_vals <- readRDS("brms1_fitted.rds")
@@ -939,13 +939,13 @@ More broadly, our results here suggest the continued importance of the looking-w
 
 ## Data {.unnumbered}
 
-We included information from `r length(unique(d_sub$subject_id))` unique participants across `r length(unique(d_sub$dataset_name))` datasets. Dataset information is given in Table \ref{tab:datasets}. Although experiments in Peekbank include a variety of different experimental manipulations, we analyzed only data from simple word recognition trials; these trials were sometimes the main focus of the original studies and sometimes constituted control conditions for experiments with more complex manipulations. We focus here on English purely for practical reasons -- the Peekbank dataset at present contains limited data from other languages.
+We included information from `r length(unique(d_sub$subject_id))` unique participants across `r length(unique(d_sub$dataset_name))` datasets. Dataset information is given in Table \ref{tab:datasets}. Although experiments in Peekbank include a variety of different experimental manipulations, we analyzed only data from standard, simple word recognition trials; these trials were sometimes the main focus of the original studies and sometimes constituted control conditions for experiments with more complex manipulations. Requirements for being considered a standard word recognition trial included that (a) the target word was familiar (also no part-words); (b) the target word was the first point of disambiguation; (c) the target word was embedded in a well-formed, grammatical carrier phrase; (d) there was no informative language presented prenominally (e.g. semantically informative verbs, adjectives); (e) there were no nonsense words presented anywhere during the trial (including the carrier phrase); (f) there was no language-, speaker-, or accent-switching within trial; (g) the distractor image was unrelated to both the target label and the target image; and (h) there was no phonological overlap between the distractor label and target label. We focus here on English purely for practical reasons -- the Peekbank dataset at present contains limited data from other languages.
 
 We excluded trials entirely if they were missing data on more than 50% of timepoints, and excluded RTs if they were based on fewer than 50% of timepoints in the short analytic window (200 -- 2000 ms). We also removed RTs shorter than 367 ms, as these were unlikely to be generated based on the specific linguistic stimulus. We then excluded participants from the analysis if they contributed fewer than four accuracy measurements or fewer than two reaction time measurements. At the participant level, these steps together led to `r round(mean(is.na(d_sub$rt)), 3)*100`% missingness for RTs and `r round(mean(is.na(d_sub$long_window_accuracy)), 3)*100`% missingness for long window accuracies.
 
 ## Analytic methods {.unnumbered}
 
-We used `lme4` to fit linear mixed-effects models, `brms` to fit non-linear growth models, and `lavaan` to fit structural equation models. Random effects structures for each model are given in text; full model specifications are available in the Supplemental Information and in the reproducible code for this paper, available in the linked repository. To aid interpretability, all variables were standardized (z-scored) prior to inclusion in structural equation models. 
+We used `lme4` to fit linear mixed-effects models, `brms` to fit non-linear growth models, and `lavaan` to fit structural equation models. Random effects structures for each model are given in text; full model specifications are available in the Supplemental Information (S8, S9, and S12) and in the reproducible code for this paper, available in the linked repository. To aid interpretability, all variables were standardized (z-scored) prior to inclusion in structural equation models. 
 
 ## Code and Data Availability {.unnumbered}
 

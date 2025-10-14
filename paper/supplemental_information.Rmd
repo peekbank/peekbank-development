@@ -883,7 +883,7 @@ To test for the differentiation of vocabulary growth based on initial reaction t
 
 Age and initial reaction time were both mean-centered. 
 
-```{r nlme-residual, fig.cap="\\label{fig:nlme-resid} Growth curves from a logistic growth model showing predicted vocabulary growth for children based on their age-residualized initial reaction times. Predictions are shown for children with initial reaction times one SD faster than the mean for their age (blue), at the mean  for their age (red), and one SD slower than the mean for their age (green). Individual longitudinal trajectories are shown in light gray. Solid lines show global model estimates and colored regions indicate 95% credible intervals.", fig.env="figure", fig.height = 4, fig.width=6, out.width=".6\\textwidth", fig.pos="h!"}
+```{r nlme-residual, fig.cap="\\label{fig:nlme-resid} Growth curves from a logistic growth model showing predicted vocabulary growth for children based on their age-residualized initial reaction times. Predictions are shown for children with initial reaction times one SD faster than the mean for their age (blue), at the mean  for their age (red), and one SD slower than the mean for their age (green). Individual longitudinal trajectories are shown in light gray. Solid lines show global model estimates and colored regions indicate 95% credible intervals.", fig.env="figure", fig.height = 4}
 
 d_sub_prod$age_c <- d_sub_prod$age - mean(d_sub_prod$age, na.rm = TRUE)
 d_sub_prod$log_rt_0_c <- d_sub_prod$log_rt_0 - mean(d_sub_prod$log_rt_0, na.rm = TRUE)
@@ -955,7 +955,7 @@ Interpretation of growth in both this model and the linear growth model in the m
 
 The SEM model was fit to the entire dataset, including the large mass of cross-sectional data (to anchor the estimates of t0 coefficients) and the sparse longitudinal data for each time point. We have 3%-12% of the total t0 datapoints for any given time point (see Table \ref{tab:sem-missing}), given the sparsity of longitudinal sampling (only 6/24 of the datasets are longitudinal). 
 
-Our data are MAR (missing at random) rather than MCAR (missing completely at random). This is because their missingness is due to which dataset they are part of – if they are from a cross-sectional dataset, they are by definition missing all longitudinal observations. For our analyses to be appropriate given this structure, we have to assume that the general developmental patterns we are studying are replicated across datasets. We believe that they are, and we show this statistically using our mixed-effects and non-linear mixed-effects models, which control for dataset-related variation. (We also show dataset-level effects in a number of our visualizations for this same reason). The same degree of random effect specification that we can do in the mixed-effects models is not possible in the SEM model, however, purely for technical reasons. Again, this point highlights the importance of convergence across analyses. 
+Our data are MAR (missing at random) rather than MCAR (missing completely at random). This is because their missingness is due to which dataset they are part of – if they are from a cross-sectional dataset, they are by definition missing all longitudinal observations. For our analyses to be appropriate given this structure, we have to assume that the general developmental patterns we are studying are replicated across datasets. We believe that they are, and we show this statistically using our mixed-effects and non-linear mixed-effects models, which control for dataset-related variation. We also show dataset-level effects in a number of our visualizations for this same reason. The same degree of random effect specification that we can do in the mixed-effects models is not possible in the SEM model, however, purely for technical reasons. Again, this point highlights the importance of convergence across analyses. 
 
 
 ```{r}
@@ -966,18 +966,18 @@ colMeans(!is.na(d_sub_wide_fine)) |> as_tibble(rownames="type") |> filter(!type%
 \FloatBarrier
 # Additional References
 
-Baayen, R. H., & Milin, P. (2010). Analyzing reaction times. International journal of psychological research, 3(2), 12-28.
+Baayen, R. H., & Milin, P. (2010). Analyzing reaction times. *International Journal of Psychological Research, 3*(2), 12-28.
 
-Creel, S. (2024). Connecting the tots: Strong looking-pointing correlations in preschoolers' word learning and implications for continuity in language development. Child Development, 96, 87-103.
+Creel, S. (2024). Connecting the tots: Strong looking-pointing correlations in preschoolers' word learning and implications for continuity in language development. *Child Development, 96*, 87-103.
 
-Logan, G. D. (1988). Toward an instance theory of automatization. Psychological review, 95(4), 492.
+Logan, G. D. (1988). Toward an instance theory of automatization. *Psychological Review, 95*(4), 492–527.
 
-Luce, P. A. (1986). A computational analysis of uniqueness points in auditory word recognition. Perception & Psychophysics, 39(3), 155-158.
+Luce, P. A. (1986). A computational analysis of uniqueness points in auditory word recognition. *Perception & Psychophysics, 39*(3), 155-158.
 
-Ratcliff, R. (1979). Group reaction time distributions and an analysis of distribution statistics. Psychological bulletin, 86(3), 446.
+Ratcliff, R. (1979). Group reaction time distributions and an analysis of distribution statistics. *Psychological bulletin, 86*(3), 446–461.
 
-Ratcliff, R. (1993). Methods for dealing with reaction time outliers. Psychological bulletin, 114(3), 510.
+Ratcliff, R. (1993). Methods for dealing with reaction time outliers. *Psychological Bulletin, 114*(3), 510-532.
 
-Van Zandt, T. (2000). How to fit a response time distribution. Psychonomic bulletin & review, 7(3), 424-465.
+Van Zandt, T. (2000). How to fit a response time distribution. *Psychonomic Bulletin & Review, 7*(3), 424-465.
 
-Van Zandt, T. (2002). Analysis of response time distributions. Stevens’ handbook of experimental psychology, 4, 461-516.
+Van Zandt, T. (2002). Analysis of response time distributions. *Stevens’ Handbook of Experimental Psychology, 4*, 461-516.
