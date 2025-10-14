@@ -4,6 +4,7 @@ output:
   pdf_document:
     fig_caption: yes
     keep_tex: yes
+    toc: true
 header-includes:
   - \usepackage{threeparttablex}
   - \usepackage{booktabs}
@@ -36,8 +37,8 @@ FIT_BAYES = FALSE
 paper <- suppressMessages(knitr::purl(here("paper","paper.Rmd"), documentation = 0))
 suppressMessages(source(paper))
 ```
-
-# Dataset Description
+\newpage
+# S1. Dataset Description
 
 Figure \ref{fig:dataset} gives the age distribution of unique participants for each separate dataset at different ages. Note that for some datasets, there are multiple administrations (i.e., experimental test sessions) for each participant.
 
@@ -91,13 +92,15 @@ ggplot(filter(d_sub_long, admin_num > 1),
 
 \FloatBarrier
 
-# Reaction Time Computation
+# S2. Reaction Times
+
+## S2.1. Reaction Time Computation
 
 Eye-tracking data are stored in Peekbank as a time series of fixations to specific areas of interest (in particular, the target and distractor on each trial). Other fixations can be to areas not in the target or distractor as well to off-screen areas. This time series has a uniform sample rate of 25ms/sample, based on resampling of the data in Peekbank to 40 Hz during preprocessing (Zettersten et al. 2023). Reaction times are computed by filtering trials to only those on which the child is fixating the distractor at the point of disambiguation ($t=0$) and then finding those trials on which the first non-missing fixation is to the target (hence excluding trials without a shift and trials on which a shift is to an off-screen location). The reaction time is then the total time from $t=0$ to the first timestep during which the child fixates the target. Consistent with standard practice in the literature following Fernald et al. (2008), RTs that are shorter than 367 ms are excluded as they are too short to be considered a response to the stimulus.
 
 \FloatBarrier
 
-# Comparison of Reaction Times for Correct and Incorrect Trials: Re-analysis of Creel (2024)
+## S2.2. Comparison of Reaction Times for Correct and Incorrect Trials: Re-analysis of Creel (2024)
 
 ```{r, eval=F}
 #load data using Creel (2024) analysis scripts
@@ -160,7 +163,7 @@ ggplot(filter(subj_rt_acc,n_correct_trials>1&n_trials>1),aes(mean_rt,mean_rt_cor
 
 \FloatBarrier
 
-# Checks on data distributional assumptions 
+# S3. Checks on Data Distributional Assumptions 
 
 Here, we check whether the distributional forms that are assumed for the distributions of RT and accuracy are a reasonable empirical fit to the data, and compare against other commonly used distributional forms. 
 
@@ -217,7 +220,7 @@ rt_fits <- rt_fitting |>
   mutate(min_bic = BIC == min(BIC))
 ```
 
-## Reaction Time
+## S3.1. Reaction Time
 
 The literature focuses on the use of the Exponential-Gaussian (ex-Gaussian) distribution as well as Wald, Weibull, gamma, and log normal distributions (see for example Luce, 1986; Ratcliff, 1993; Van Zandt, 2002). All of these are 2- or 3-parameter distributions meaning that there is no necessary relationship between mean and variance. 
 
@@ -273,7 +276,7 @@ ggplot(rt_hist_data,
   theme_few()
 ```
 
-## Accuracy
+## S3.2. Accuracy
 
 ```{r}
 
@@ -298,7 +301,7 @@ Individual trial-level accuracies are not binomial because they are an average p
 
 These distributions seem well fit by standard gaussians, but they are in principle bounded and so we asked whether this made a difference, using a Beta distribution (a two-parameter continuous distribution bounded at 0 and 1) for fitting. Surprisingly, across all data, the BIC values for the two distributions were very similar (`r round(norm_acc_bic) |> as.character()` for normal versus `r round(beta_acc_bic)` for Beta), though the normal distribution was slightly favored. Across age groups, there was heterogeneity with some groups better fit by a gaussian and others better fit by a Beta (Figure \ref{fig:acc-fits}).
 
-Again, we feel that this result generally vitiates our approach of modeling accuracies via standard linear mixed effects models: their distributional form is quite close to normal. 
+Again, we feel that this result generally vitiates our approach of modeling accuracies via standard linear mixed-effects models: their distributional form is quite close to normal. 
 
 ```{r acc-hist, fig.cap="\\label{fig:acc-hist} Goodness of fit for different distributional models of accuracy, split by age.", fig.pos="h!", fig.width=8, fig.height=5}
 acc_hist_data <- d_sub |>
@@ -358,7 +361,7 @@ ggplot(acc_fits,
 
 \FloatBarrier
 
-# Test-Retest Reliability
+# S4. Test-Retest Reliability
 
 ```{r reliability}
 MONTH_CUTOFF <- 3
@@ -405,7 +408,7 @@ global_reliabilities <- d_reliability |>
 We examined test-retest reliability for our primary variables of interest by calculating Pearson correlations between pairs of administrations given no more than three months apart. Test-retest correlations were significant but relatively modest: $\rho_{long window acc} = `r round(global_reliabilities[2], 3)`$, $\rho_{short window acc} = `r round(global_reliabilities[3], 3)`$, $\rho_{rt} =  `r round(global_reliabilities[1],3)`$. These reliabilities were biased downwards by three factors, however. First, longitudinal assessments sometimes use variable items between testing sessions, leading to item-related variance in measurement. Second, even three months can lead to substantial change in some children's language abilities, thus correlations are attenuated by true change as well as measurement error. Third, longitudinal data in the dataset come primarily from the youngest children and hence are likely to show overall higher measurement error due to variability in children's behavior and an overall lower number of trials.
 
 \FloatBarrier
-# Correlations
+# S5. Pairwise Correlations of Main Measures
 
 Table \ref{tab:corrs} shows pairwise correlations between the primary variables of interest in the dataset.
 
@@ -416,7 +419,7 @@ Table \ref{tab:corrs} shows pairwise correlations between the primary variables 
 \begin{threeparttable}
 \begin{tabular}{llllllllll}
 \toprule
-& \multicolumn{1}{l}{age} & \multicolumn{1}{l}{log age} & \multicolumn{1}{l}{RT} & \multicolumn{1}{l}{log RT} & \multicolumn{1}{l}{long acc} & \multicolumn{1}{l}{short acc } & \multicolumn{1}{l}{prod} & \multicolumn{1}{l}{comp}\\
+& \multicolumn{1}{l}{age} & \multicolumn{1}{l}{log age} & \multicolumn{1}{l}{rt} & \multicolumn{1}{l}{log rt} & \multicolumn{1}{l}{long acc} & \multicolumn{1}{l}{short acc } & \multicolumn{1}{l}{prod} & \multicolumn{1}{l}{comp}\\
 \midrule
 age &  1.00 &  &  &  &  &  &  & \\
 log age  & 0.98 & 1.00 &  &  &  &  &  &\\
@@ -446,7 +449,7 @@ cor(dplyr::select(d_sub, age, log_age, rt, log_rt,
 
 \FloatBarrier
 
-# Functional Form Model Comparison
+# S6. Functional Form Model Comparison
 
 Table \ref{tab:accmods} shows model comparison measures between for different models of the functional form of the relationship between accuracy and age and Table \ref{tab:rtmods} shows the same for reaction time. Age gradients are estimated substantially better with long window accuracies. Note that there are a greater number of observations for short window accuracies due to less missing data. We speculate that, on average, more participants looked away from the screen towards the end of trials, leading to a greater number of exclusions of long window trials based on the 50% criterion. Note that the total percentage of trials excluded is still small for both measures: `r round(mean(is.na(d_trial$long_window_accuracy)), 3)*100`% for long window accuracy and `r round(mean(is.na(d_trial$short_window_accuracy)), 3)*100`% for short window accuracy.
 
@@ -474,7 +477,7 @@ kable(digits=3, caption="Model comparison metrics for different functional forms
 
 \FloatBarrier
 
-# Power Law Fits
+# S7. Power Law Fits
 
 In the literature on the "law of practice", although the log-log relationship we observed is commonly present in the aggregate across individuals, the situation is substantially more complex when relationships are measured within individuals. The best fitting curves for individuals are often exponentials or delayed exponentials (Evans et al., 2018; Heathcote, Brown, & Mewhort, 2000). 
 
@@ -530,9 +533,9 @@ summary(log_log_plus)$coef |> as_tibble(rownames="Term") |>
 
 \FloatBarrier
 
-# Mixed effects model specifications
+# S8. Mixed-effects model specifications
 
-Here we provide specifications for the lmer mixed effects models used in the main text. These models are used to estimate the relationship between age and the primary variables of interest, controlling for dataset and subject-level variability.
+Here we provide specifications for the lmer mixed-effects models used in the main text. These models are used to estimate the relationship between age and the primary variables of interest, controlling for dataset and subject-level variability.
 
 For accuracy, 4 models were run, crossing long and short windows as the dependent variable with age or log age as the predictor. 
 
@@ -560,7 +563,7 @@ log_rt_var ~ log_age_s + (log_age_s | dataset_name) + (1 | subject_id)
 
 \end{verbatim}
 
-In the growth curve analysis, fit a mixed effects model predicting growth in vocabulary as a quadratic function of age, RT at
+In the growth curve analysis, fit a mixed-effects model predicting growth in vocabulary as a quadratic function of age, RT at
 study initiation (t0), and their interaction, using the formula below
 
 \begin{verbatim}
@@ -569,7 +572,7 @@ prod ~ poly(age_15,2) *rt_t0 + (age  | subject_id) + (1 | dataset_name)
           
 \FloatBarrier
 
-# Factor Analysis
+# S9. Factor Analysis
 
 Figure 3 shows the result of a parallel analysis supporting the presence of three factors in the exploratory factor analysis. Table \ref{tab:loadings} shows the factor loadings for the exploratory three-factor solution using varimax rotation. The first factor is primarily driven by vocabulary measures, the second by reaction time, and the third by accuracy measures.
 
@@ -661,7 +664,7 @@ vocab_slope ~~ NA*vocab_slope
 
 \FloatBarrier
 
-# Factor Analysis: First Administrations
+# S10. Factor Analysis on First Administrations
 
 As a robustness check, we tested our best factor analytic models using only cross-sectional data (filtering to the first test session in longitudinal datasets; N=1963 instead of N=3553). A comparison of all 4 models is shown in Table \ref{tab:factor-first}. For the three-factor CFA, the first administration model shows increased CFI (.992 instead of .972) and decreased RMSEA (.030 instead of .065). The same is true for the age-regressed three-factor CFA, which shows very good statistics on both first administrations and longitudinal data (CFI = .999 and .991, respectively and RMSEA = .009 and .037 respectively). 
 
@@ -717,7 +720,7 @@ kable(output, digits=3, caption="Comparison of confirmatory factor analysis mode
 ```
 
 \FloatBarrier
-# Alternative Factor Structures
+# S11. Alternative Factor Structures
 
 In this section, we provide comparisons between the three-factor model we report in the main text and several alternative models, including:
 
@@ -780,7 +783,7 @@ One-factor & 9 & 46535.49 & 46645.84 & 286.76 & 1.39 & 0.01 & 1 & 0.24 \\
 ```
 
 \FloatBarrier
-# Non-linear Growth Models
+# S12. Non-linear Growth Models
 
 ```{r, eval=FIT_BAYES}
 library(brms)
@@ -948,11 +951,11 @@ Interpretation of growth in both this model and the linear growth model in the m
 
 
 \FloatBarrier
-# SEM Longitudinal Missingness
+# S13. SEM Longitudinal Missingness
 
 The SEM model was fit to the entire dataset, including the large mass of cross-sectional data (to anchor the estimates of t0 coefficients) and the sparse longitudinal data for each time point. We have 3%-12% of the total t0 datapoints for any given time point (see Table \ref{tab:sem-missing}), given the sparsity of longitudinal sampling (only 6/24 of the datasets are longitudinal). 
 
-Our data are MAR (missing at random) rather than MCAR (missing completely at random). This is because their missingness is due to which dataset they are part of – if they are from a cross-sectional dataset, they are by definition missing all longitudinal observations. For our analyses to be appropriate given this structure, we have to assume that the general developmental patterns we are studying are replicated across datasets. We believe that they are, and we show this statistically using our mixed effects and non-linear mixed effects models, which control for dataset-related variation. (We also show dataset-level effects in a number of our visualizations for this same reason). The same degree of random effect specification that we can do in the mixed effects models is not possible in the SEM model, however, purely for technical reasons. Again, this point highlights the importance of convergence across analyses. 
+Our data are MAR (missing at random) rather than MCAR (missing completely at random). This is because their missingness is due to which dataset they are part of – if they are from a cross-sectional dataset, they are by definition missing all longitudinal observations. For our analyses to be appropriate given this structure, we have to assume that the general developmental patterns we are studying are replicated across datasets. We believe that they are, and we show this statistically using our mixed-effects and non-linear mixed-effects models, which control for dataset-related variation. (We also show dataset-level effects in a number of our visualizations for this same reason). The same degree of random effect specification that we can do in the mixed-effects models is not possible in the SEM model, however, purely for technical reasons. Again, this point highlights the importance of convergence across analyses. 
 
 
 ```{r}
