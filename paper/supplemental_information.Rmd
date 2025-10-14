@@ -246,7 +246,7 @@ ggplot(rt_fits,
 
 ```
 
-```{r rt-hist, fig.cap="\\label{fig:rt-hist} Distribution of RT overlaid with log normal distribution, split by age.", fig.pos="h!", fig.width=8, fig.height=5}
+```{r rt-hist, fig.cap="\\label{fig:rt-hist} Distribution of RT overlaid with a log normal distribution, split by age.", fig.pos="h!", fig.width=8, fig.height=5}
 
 rt_hist_data <- d_sub |>
   mutate(
@@ -451,7 +451,7 @@ cor(dplyr::select(d_sub, age, log_age, rt, log_rt,
 
 # S6. Functional Form Model Comparison
 
-Table \ref{tab:accmods} shows model comparison measures between for different models of the functional form of the relationship between accuracy and age and Table \ref{tab:rtmods} shows the same for reaction time. Age gradients are estimated substantially better with long window accuracies. Note that there are a greater number of observations for short window accuracies due to less missing data. We speculate that, on average, more participants looked away from the screen towards the end of trials, leading to a greater number of exclusions of long window trials based on the 50% criterion. Note that the total percentage of trials excluded is still small for both measures: `r round(mean(is.na(d_trial$long_window_accuracy)), 3)*100`% for long window accuracy and `r round(mean(is.na(d_trial$short_window_accuracy)), 3)*100`% for short window accuracy.
+Table \ref{tab:accmods} shows model comparison measures for different models of the functional form of the relationship between accuracy and age and Table \ref{tab:rtmods} shows the same for reaction time. Age gradients are estimated substantially better with long window accuracies. Note that there are a greater number of observations for short window accuracies due to less missing data. We speculate that, on average, more participants looked away from the screen towards the end of trials, leading to a greater number of exclusions of long window trials based on the 50% criterion. Note that the total percentage of trials excluded is still small for both measures: `r round(mean(is.na(d_trial$long_window_accuracy)), 3)*100`% for long window accuracy and `r round(mean(is.na(d_trial$short_window_accuracy)), 3)*100`% for short window accuracy.
 
 ```{r}
 acc_mods_lmer_summary |>
@@ -481,7 +481,7 @@ kable(digits=3, caption="Model comparison metrics for different functional forms
 
 In the literature on the "law of practice", although the log-log relationship we observed is commonly present in the aggregate across individuals, the situation is substantially more complex when relationships are measured within individuals. The best fitting curves for individuals are often exponentials or delayed exponentials (Evans et al., 2018; Heathcote, Brown, & Mewhort, 2000). 
 
-With our current dataset we cannot specifically determine whether within-individual patterns of change conform to linear, power law, or exponential developmental patterns unfortunately, because we have insufficient data about individuals' improvement across time. Thus, our current results apply to the form of the age gradient as opposed to the form of any individual's pattern of developmental change.
+With our current dataset, we unfortunately cannot specifically determine whether within-individual patterns of change conform to linear, power law, or exponential developmental patterns, because we have insufficient data about individuals' improvement across time. Thus, our current results apply to the form of the age gradient as opposed to the form of any individual's pattern of developmental change.
 
 We believe that, unlike the skills being studied in the prior adult literature (e.g., Anderson, 1982; Heathcote, Brown, & Mewhort, 2000; Logan, 1988), language processing is being learned over the course of a child’s lifetime. Thus, we do not expect to see within-paradigm changes in learning in what is a narrow period of time compared to the duration over which language processing skills are refined. 
 
@@ -540,7 +540,7 @@ Here we provide specifications for the lmer mixed-effects models used in the mai
 For accuracy, 4 models were run, crossing long and short windows as the dependent variable with age or log age as the predictor. 
 
 \begin{verbatim}
-long_window_accuracy ~ log_age_s + (log_age_s | dataset_name) + (1 | subject_id)
+long_window_accuracy ~ age_s + (age_s | dataset_name) + (1 | subject_id)
 long_window_accuracy ~ log_age_s + (log_age_s | dataset_name) + (1 | subject_id)
 short_window_accuracy ~ age_s  + (age_s | dataset_name) + (1 | subject_id)
 short_window_accuracy ~ log_age_s + (log_age_s | dataset_name) + (1 | subject_id)
