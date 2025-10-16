@@ -194,7 +194,7 @@ suppressPackageStartupMessages(library(cowplot))
 
 source(here("helper","common.R"))
 
-source(here("helper/modified_sem_plot.R"))
+source(here("helper","modified_sem_plot.R"))
 
 #load d_aoi for timecourse plot
 d_aoi <- readRDS(here("cached_intermediates","0_d_aoi.Rds"))

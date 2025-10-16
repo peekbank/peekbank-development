@@ -28,9 +28,14 @@ library(here)
 source(here("helper","common.R"))
 #library(kableExtra)
 library(papaja)
+# library(fitdistrplus)
+# library(statmod)
+# library(gamlss.dist)
+# library(semoutput)
+
 
 #set to TRUE to fit the Bayesian models
-FIT_BAYES = FALSE
+FIT_BAYES = TRUE
 ```
 
 ```{r, echo=FALSE, cache=FALSE, message=FALSE, warning=FALSE, include=F}
