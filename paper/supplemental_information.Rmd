@@ -35,7 +35,7 @@ library(papaja)
 
 
 #set to TRUE to fit the Bayesian models
-FIT_BAYES = TRUE
+FIT_BAYES = FALSE
 ```
 
 ```{r, echo=FALSE, cache=FALSE, message=FALSE, warning=FALSE, include=F}
