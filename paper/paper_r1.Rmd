@@ -482,7 +482,9 @@ cowplot::plot_grid(c,d)
 
 ## Speed and accuracy relate to vocabulary size {.unnumbered}
 
-We were next interested in whether the various aspects of word recognition -- including speed, accuracy, and the variability of each of these -- were related to other aspects of early language ability. Of the studies in our database, `r sum(dataset_characteristics$CDIs == "x")` gathered parent reports about children's early vocabulary using the MacArthur-Bates Communicative Development Inventory (CDI), a popular survey instrument that provides a reliable and valid estimate of children's early vocabulary [@marchman2023;@frank2021]. Different forms of the CDI can be used to measure either receptive and expressive vocabulary (for children up to 18 months) or expressive vocabulary only (for children 16 -- 30 months). 
+We were next interested in whether the various aspects of word recognition -- including speed, accuracy, and the variability of each of these -- were related to other aspects of early language ability. In our prior analyses, chronological age acts as a proxy for greater language experience and larger vocabulary as well as a host of other correlated developmental changes in cognition. Now we explicitly explore relations to vocabulary growth and the triadic relationship between age, word recognition, and vocabulary. 
+
+Of the studies in our database, `r sum(dataset_characteristics$CDIs == "x")` gathered parent reports about children's early vocabulary using the MacArthur-Bates Communicative Development Inventory (CDI), a popular survey instrument that provides a reliable and valid estimate of children's early vocabulary [@marchman2023;@frank2021]. Different forms of the CDI can be used to measure either receptive and expressive vocabulary (for children up to 18 months) or expressive vocabulary only (for children 16 -- 30 months). 
 
 ```{r efa}
 d_sub_mat <- d_sub |>
