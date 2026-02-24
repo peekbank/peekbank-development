@@ -95,6 +95,127 @@ ggplot(filter(d_sub_long, admin_num > 1),
   ylab("Number of administrations")
 ```
 
+TODO table heading
+```{r}
+d_aoi <- readRDS(file = here("cached_intermediates", "0_d_aoi.Rds"))
+
+d_rle <- d_aoi |>
+  filter(any(t_norm == 0), # must have data at 0
+         t_norm >= 0) |> # only pass data after 0
+  group_by(administration_id, trial_id, trial_order) |>
+  reframe(lengths = rle(aoi)$lengths, 
+            values = rle(aoi)$values) 
+
+d_rt <- d_rle %>%
+  group_by(administration_id, trial_id, trial_order) %>%
+  nest() %>%
+  mutate(data = lapply(data, get_rt)) %>%
+  unnest(cols = c(data))
+
+d_inclusion <- d_aoi |>
+  mutate(short_window = t_norm > 200 & t_norm <= 2000,
+         long_window = t_norm > 200 & t_norm <= 4000) |>
+  group_by(dataset_name, dataset_id, administration_id, subject_id,
+           trial_id, age, target_label, distractor_label) |>
+  summarise(short_window_accuracy = mean(correct[short_window], na.rm=TRUE),
+            long_window_accuracy = mean(correct[long_window], na.rm=TRUE),
+            short_window_prop_data = sum(!is.na(correct[short_window]), na.rm = TRUE) /
+              length(correct[short_window]),
+            long_window_prop_data = sum(!is.na(correct[long_window]), na.rm = TRUE) / 
+              length(correct[long_window]),
+            short_window_target = sum(correct[short_window], na.rm=TRUE),
+            long_window_target = sum(correct[long_window], na.rm=TRUE),
+            short_window_distractor = sum(!correct[short_window], na.rm=TRUE),
+            long_window_distractor = sum(!correct[long_window], na.rm=TRUE)) |> 
+  left_join(d_rt) |>
+  filter(age >= 12) |> 
+  mutate(raw_rt = rt,
+         rt = ifelse(shift_type == "D-T", rt, NA),
+         log_rt = log(rt)) |> 
+  mutate(valid_long_window=!is.na(long_window_prop_data)&(long_window_prop_data>=.5),
+         valid_short_window=!is.na(short_window_prop_data)&(short_window_prop_data>=.5),
+         valid_rt=valid_short_window&!is.na(rt)&rt>=367)
+   
+
+```
+
+```{r}
+d_inclusion_rate <- d_inclusion |> group_by(dataset_name) |> 
+  summarize(valid_long_window_rate=round(mean(valid_long_window)*100, 1),
+            valid_short_window_rate=round(mean(valid_short_window)*100, 1), 
+            valid_rt_rate=round(mean(valid_rt)*100, 1))
+```
+
+
+```{r dataset-table}
+dataset_characteristics <- d_sub |>
+  group_by(dataset_name) |>
+  summarise(`N subjects` = length(unique(subject_id)),
+            `N admins` = n(), 
+            `Mean Age` = mean(age), 
+            `Min Age` = min(age), 
+            `Max Age` = max(age), 
+            `Avg Trials` = mean(n_trials[!is.na(long_window_accuracy)]),
+            `Avg RT Trials` = mean(n_trials_rt[!is.na(rt)]),
+            `CDIs` = ifelse(!is.na(any(prod)), "x", ""), 
+            `longitudinal` = ifelse(any(duplicated(subject_id)), "x", "")) |>
+  arrange(desc(`N subjects`)) 
+
+dataset_pcts <- d_sub |>
+  group_by(dataset_name) |>
+  summarise(total_trial_acc=sum(n_trials[!is.na(long_window_accuracy)]),
+            total_trial_rt=sum(n_trials_rt[!is.na(rt)])) |>
+  ungroup() |> 
+  mutate(pct_trials_acc=round(total_trial_acc/sum(total_trial_acc)*100, 1),
+         pct_trials_rt=round(total_trial_rt/sum(total_trial_rt)*100,1)
+)
+
+clean_names <- tribble(
+  ~dataset_name, ~`Dataset Name`,
+  "reflook_v4", "Yurovsky et al. (2017)", 
+  "yurovsky_2017", "Yurovsky et al. (2017b)", 
+  "weaver_zettersten_2024", "Weaver & Zettersten (2024)",
+  "fernald_marchman_2012", "Fernald & Marchman (2012)",
+  "sander-montant_2022", "Sander-Montant et al. (2023)", 
+  "frank_tablet_2016", "Frank et al. (2016)", 
+  "baumgartner_2014", "Baumgartner (2014)",  
+  "fmw_2013", "Fernald et al. (2013)", 
+  "adams_marchman_2018", "Adams et al. (2018)" ,
+  "potter_canine", "Potter & Lew Williams (n.d.)",
+  "fernald_totlot", "Fernald et al. (2006)",
+"pomper_prime", "Pomper & Saffran (n.d.)",
+"pomper_saffran_2016", "Pomper & Saffran (2016)", 
+"swingley_aslin_2002", "Swingley & Aslin (2002)",
+"pomper_salientme", "Pomper & Saffran (2019)", 
+"perry_cowpig", "Perry & Saffan (2017)", 
+"ronfard_2021", "Ronfard, Wei, & Rowe (2022)",
+"bacon_gendercues", "Bacon & Saffran (2022)",
+"garrison_bergelson_2020", "Garrison & Bergelson (2020)",
+"pomper_yumme", "Pomper & Saffran (n.d.)", 
+"mahr_coartic", "Mahr et al. (2015)", 
+"ferguson_eyetrackingr", "Ferguson, Graf, & Waxman (2014)", 
+"potter_remix", "Potter et al. (2019)",
+"newman_genderdistractor", "Newman & Morini (2017)")
+
+
+dataset_characteristics |> left_join(clean_names) |> left_join(dataset_pcts) |>
+  left_join(d_inclusion_rate) |> arrange(desc(pct_trials_acc)) |> 
+  mutate(`Pct Acc Trials`=str_c(sprintf(fmt = "%01.1f", pct_trials_acc ), "%"),
+         `Pct RT Trials`=str_c(sprintf(fmt = "%01.1f", pct_trials_rt ), "%"),
+          `Include rate (LW)`=str_c(sprintf(fmt = "%01.1f", valid_long_window_rate ), "%"),
+          `Include rate (SW)`=str_c(sprintf(fmt = "%01.1f", valid_short_window_rate ), "%"),
+          `Include rate (RT)`=str_c(sprintf(fmt = "%01.1f", valid_rt_rate ), "%"),
+
+
+         ` `=row_number() |> as.character())|> select(` `, `Dataset Name`, `Pct Acc Trials`, `Pct RT Trials`, `Total Acc Trials`=total_trial_acc,  `Total RT Trials`=total_trial_rt, `Include rate (LW)`,
+`Include rate (SW)`,`Include rate (RT)`,
+                                                      `N subjects`, `N admins`, everything()) |> View()
+  
+  
+  # kable(caption='Characteristics of included datasets from Peekbank. "Admins" denotes separate experimental sessions. \"CDIs\" refers to whether the dataset contains parent report vocabulary data from the MacArthur-Bates Communicative Development Inventory. \\label{tab:datasets}', align="rlrrrrrrrrr", digits=2, booktabs=T, linesep="") |> 
+  # kable_styling(latex_options="scale_down") |> row_spec(24, hline_after=T)
+```
+
 \FloatBarrier
 
 # S2. Reaction Times
