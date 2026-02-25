@@ -113,15 +113,14 @@ Also, let's get rid of trials with very limited amounts of data. Classically we 
 
 We are also going to NA-out RTs if we have less than 50% data in the short window, just because we think that's going to mess up the computation. 
 
-Finally, it will make life easier for now if we filter kids >= 12months. We can revisit this. 
+Finally, it will make life easier for now if we filter kids >= 12months. We can revisit this. (Note: in new data version this was moved into initial data filter)
 
 Let's also remove RTs < 367 ms. These are unlikely to be real. 
 
 ```{r}
 d_trial <- d_trial_rt_unfiltered |>
   filter(!(is.na(short_window_prop_data) & is.na(long_window_prop_data)), 
-         !(short_window_prop_data < .5 & long_window_prop_data < .5), 
-         age >= 12) |>
+         !(short_window_prop_data < .5 & long_window_prop_data < .5)) |>
   mutate(across(contains("window"), ~ ifelse(is.na(.x), NA, .x))) |>
   mutate(short_window_accuracy = ifelse(short_window_prop_data >= .5, 
                                         short_window_accuracy, NA),
