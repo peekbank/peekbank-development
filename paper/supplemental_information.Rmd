@@ -39,7 +39,7 @@ FIT_BAYES = FALSE
 ```
 
 ```{r, echo=FALSE, cache=FALSE, message=FALSE, warning=FALSE, include=F}
-paper <- suppressMessages(knitr::purl(here("paper","paper.Rmd"), documentation = 0))
+paper <- suppressMessages(knitr::purl(here("paper","paper_r1.Rmd"), documentation = 0))
 suppressMessages(source(paper))
 ```
 \newpage
