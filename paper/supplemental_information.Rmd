@@ -26,6 +26,8 @@ header-includes:
 knitr::opts_chunk$set(echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE)
 library(here)
 source(here("helper","common.R"))
+source(here("helper","rt_helper.R"))
+
 #library(kableExtra)
 library(papaja)
 # library(fitdistrplus)
@@ -195,8 +197,17 @@ clean_names <- tribble(
 "mahr_coartic", "Mahr et al. (2015)", 
 "ferguson_eyetrackingr", "Ferguson, Graf, & Waxman (2014)", 
 "potter_remix", "Potter et al. (2019)",
-"newman_genderdistractor", "Newman & Morini (2017)")
-
+"newman_genderdistractor", "Newman & Morini (2017)",
+"reflook_socword", "Yurovsky et al. (2013)",
+"yoon_simpimp_2015","Yoon et al. (2015)",
+"borovsky_2019", "Borovsky & Peters (2019)",
+"pomper_dimy", "Pomper & Saffran (n.d.)",
+"weaver_saffran_2026", "Weaver & Saffran (2026)",
+"bergelson_swingley_2012", "Bergelson & Swingley (2012)",
+"kremin_2021", "Kremin et al. (2023)",
+"moore_bergelson_2022_verb", "Moore & Bergelson (2022)",
+"byers-heinlein_2017", "Byers-Heinlein et al. (2017)"
+)
 
 dataset_characteristics |> left_join(clean_names) |> left_join(dataset_pcts) |>
   left_join(d_inclusion_rate) |> arrange(desc(pct_trials_acc)) |> 
