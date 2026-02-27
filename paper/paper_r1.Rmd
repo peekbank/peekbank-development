@@ -103,21 +103,23 @@ nocite: |
   @yurovsky2017,
   @potter2019,
   @yurovksky_2017,
-
-  @sander-montant2023,
-  @frank2016,
-  @baumgartner2014,
-  @PotterLewWilliamsUnpub,
-  @pomper2016,
-  @Swingley2002,
-  @pomper2019,
-  @perry2017,
-  @ronfard2022,
-  @bacon2022,
-  @Garrison2020,
   @Mahr2015,
-  @ferguson2014,
-  @newman2017
+  @Garrison2020,
+  @ronfard2022,
+  @perry2017,
+  @bacon2022,
+  @Swingley2002,
+  @frank2016,
+  @pomper2016,
+  @pomper2019,
+  @PotterLewWilliamsUnpub,
+  @bergelson2012,
+  @moore2022,
+  @yoon2015,
+  @weaver2026,
+  borovsky2019,
+  @yurovsky2013
+
 ---
 
 Children acquiring a language are learning a body of knowledge -- a set of words and the ways they are combined -- but they are also learning to deploy this knowledge in the myriad complex, noisy, and fast-moving environments in which language is used. As children enter their second year, language explodes onto the scene; both vocabulary and grammatical abilities grow rapidly and in tandem [@bates1994developmental;@frank2021]. This growth in knowledge is also accompanied by changes in language processing efficiency: children become quicker and more accurate in recognizing words and matching them with their referents [@fernald1998;@peter2019;@bergelson2020comprehension].
@@ -228,7 +230,6 @@ clean_names <- tribble(
   "yurovsky_2017", "Yurovsky et al. (2017b)", 
   "weaver_zettersten_2024", "Weaver & Zettersten (2024)",
   "fernald_marchman_2012", "Fernald & Marchman (2012)",
-  "sander-montant_2022", "Sander-Montant et al. (2023)", 
   "frank_tablet_2016", "Frank et al. (2016)", 
   "baumgartner_2014", "Baumgartner (2014)",  
   "fmw_2013", "Fernald et al. (2013)", 
@@ -254,9 +255,7 @@ clean_names <- tribble(
 "pomper_dimy", "Pomper & Saffran (n.d.)",
 "weaver_saffran_2026", "Weaver & Saffran (2026)",
 "bergelson_swingley_2012", "Bergelson & Swingley (2012)",
-"kremin_2021", "Kremin et al. (2023)",
 "moore_bergelson_2022_verb", "Moore & Bergelson (2022)",
-"byers-heinlein_2017", "Byers-Heinlein et al. (2017)"
 )
 dataset_characteristics |> left_join(clean_names) |> left_join(dataset_pcts) |> arrange(desc(pct_trials)) |> 
   mutate(`Pct Trials`=str_c(sprintf(fmt = "%01.1f", pct_trials ), "%"),
@@ -272,7 +271,7 @@ dataset_characteristics |> left_join(clean_names) |> left_join(dataset_pcts) |> 
                        `Avg RT Trials` = mean(dataset_characteristics$`Avg RT Trials`),
                        `CDIs` = as.character(sum(dataset_characteristics$CDIs != "")),
                        `longitudinal` = as.character(sum(dataset_characteristics$longitudinal != "")))) |> kable(caption='Characteristics of included datasets from Peekbank. "Admins" denotes separate experimental sessions. \"CDIs\" refers to whether the dataset contains parent report vocabulary data from the MacArthur-Bates Communicative Development Inventory. \\label{tab:datasets}', align="rlrrrrrrrrr", digits=2, booktabs=T, linesep="") |> 
-  kable_styling(latex_options="scale_down") |> row_spec(30, hline_after=T)
+  kable_styling(latex_options="scale_down") |> row_spec(27, hline_after=T)
 ```
 
 

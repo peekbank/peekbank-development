@@ -178,7 +178,6 @@ clean_names <- tribble(
   "yurovsky_2017", "Yurovsky et al. (2017b)", 
   "weaver_zettersten_2024", "Weaver & Zettersten (2024)",
   "fernald_marchman_2012", "Fernald & Marchman (2012)",
-  "sander-montant_2022", "Sander-Montant et al. (2023)", 
   "frank_tablet_2016", "Frank et al. (2016)", 
   "baumgartner_2014", "Baumgartner (2014)",  
   "fmw_2013", "Fernald et al. (2013)", 
@@ -204,9 +203,7 @@ clean_names <- tribble(
 "pomper_dimy", "Pomper & Saffran (n.d.)",
 "weaver_saffran_2026", "Weaver & Saffran (2026)",
 "bergelson_swingley_2012", "Bergelson & Swingley (2012)",
-"kremin_2021", "Kremin et al. (2023)",
 "moore_bergelson_2022_verb", "Moore & Bergelson (2022)",
-"byers-heinlein_2017", "Byers-Heinlein et al. (2017)"
 )
 
 dataset_characteristics |> left_join(clean_names) |> left_join(dataset_pcts) |>
