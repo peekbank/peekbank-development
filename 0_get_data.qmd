@@ -46,7 +46,7 @@ In the interest of smaller RAM footprints, we pre-filter for age (12-60 mo), lan
 all_aoi_timepoints <- readRDS(here("cached_intermediates", "raw_aois.rds"))
 aoi_data_joined <- all_aoi_timepoints |> 
   inner_join(all_administrations |> select(dataset_name, dataset_id, subject_id, administration_id, age) |> filter(age>=12, age<=60)) |>
-  right_join(all_trials |> select(dataset_name, dataset_id, trial_id, trial_type_id, trial_order)) |>
+  inner_join(all_trials |> select(dataset_name, dataset_id, trial_id, trial_type_id, trial_order)) |>
   inner_join(all_trial_types |> select(dataset_name, dataset_id, trial_type_id, target_id, distractor_id, target_side, vanilla_trial, full_phrase_language) |> filter(vanilla_trial==T, full_phrase_language=="eng")) |>
   mutate(stimulus_id = target_id) |>
   left_join(all_stimuli |> select(dataset_name, dataset_id, stimulus_id, english_stimulus_label)) |>
@@ -84,6 +84,10 @@ unique(aoi_data_joined$dataset_name)
 Take only English familiar word data. 
 ```{r}
 d_joined <- aoi_data_joined |>
+  #remove datasets with bilingual kids
+  filter(dataset_name!="sander-montant_2022",
+         dataset_name!="kremin_2021",
+         dataset_name!="byers-heinlein_2017") |> 
   select(
     dataset_name, subject_id, administration_id, trial_id, trial_order,
     dataset_id, target_id, t_norm, age, aoi, target_label, distractor_label, target_side
@@ -184,6 +188,11 @@ d_aoi <- d_aoi |>
   filter(t_norm >= -4000, t_norm <= 4000)
 
 saveRDS(d_aoi, file = here("cached_intermediates", "0_d_aoi.Rds"))
+```
+
+
+```{r}
+d_aoi |> distinct(dataset_name)
 ```
 
 ## CDI data

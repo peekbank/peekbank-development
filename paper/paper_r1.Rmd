@@ -95,17 +95,19 @@ header-includes:
   - \setcounter{totalnumber}{6}  
 
 nocite: |
-  @yurovsky2017,
-  @yurovksky_2017,
-  @weaver2024,
+  @Adams2018,
   @fernald2012,
+  @weaver2024,
+  @fernald2013,
+  @fernald2006,
+  @yurovsky2017,
+  @potter2019,
+  @yurovksky_2017,
+
   @sander-montant2023,
   @frank2016,
   @baumgartner2014,
-  @fernald2013,
-  @Adams2018,
   @PotterLewWilliamsUnpub,
-  @fernald2006,
   @pomper2016,
   @Swingley2002,
   @pomper2019,
@@ -115,7 +117,6 @@ nocite: |
   @Garrison2020,
   @Mahr2015,
   @ferguson2014,
-  @potter2019,
   @newman2017
 ---
 
