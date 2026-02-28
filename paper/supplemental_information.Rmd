@@ -149,7 +149,7 @@ d_inclusion_rate <- d_inclusion |> group_by(dataset_name) |>
 ```
 
 
-```{r dataset-table}
+```{r dataset-table-supp}
 dataset_characteristics <- d_sub |>
   group_by(dataset_name) |>
   summarise(`N subjects` = length(unique(subject_id)),
