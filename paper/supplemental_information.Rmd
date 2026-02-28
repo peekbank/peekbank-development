@@ -22,7 +22,6 @@ header-includes:
   - \setcounter{topnumber}{5}
   - \setcounter{bottomnumber}{5}
   - \setcounter{totalnumber}{6} 
-  - \floatplacement{table}{t} 
 
 ---
 
@@ -153,7 +152,7 @@ d_inclusion_rate <- d_inclusion |> group_by(dataset_name) |>
 
 Table \ref{tab:dataset-table-supp} has additional information on how many trials each dataset contributed and per-dataset exclusion rates for trials.
 
-```{r dataset-table-supp, cache=F}
+```{r dataset-table-supp}
 dataset_characteristics <- d_sub |>
   group_by(dataset_name) |>
   summarise(`N subjects` = length(unique(subject_id)),
@@ -220,10 +219,10 @@ dataset_characteristics |> left_join(clean_names) |> left_join(dataset_pcts) |>
 
 
          ` `=row_number() |> as.character())|> dplyr::select(` `, `Dataset Name`, `Pct Acc Trials`, `Pct RT Trials`, `Total Acc Trials`=total_trial_acc,  `Total RT Trials`=total_trial_rt, `Include rate (LW)`,
-`Include rate (SW)`,`Include rate (RT)`,`N subjects`, `N admins`) |>
+`Include rate (SW)`,`Include rate (RT)`) |>
   
-  knitr::kable(caption='Characteristics of included datasets from Peekbank.', align="rlrrrrrrrr", digits=2, booktabs=T, linesep="") |>
-  kableExtra::kable_styling(latex_options="scale_down")|> row_spec(27, hline_after=T)
+  knitr::kable(format="latex", booktabs=T, linesep="", longtable=F, digits=2, caption='Characteristics of included datasets from Peekbank.', align="rlrrrrrr") |>
+  kableExtra::kable_styling(latex_options="scale_down")
 ```
 
 \FloatBarrier
