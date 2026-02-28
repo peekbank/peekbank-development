@@ -9,6 +9,9 @@ header-includes:
   - \usepackage{threeparttablex}
   - \usepackage{booktabs}
   - \usepackage{placeins}
+  - \usepackage{lscape}
+  - \usepackage{multirow}	
+  - \usepackage{tabularx}
   - \renewcommand{\thefigure}{S\arabic{figure}}
   - \renewcommand{\thetable}{S\arabic{table}}
   - \usepackage{float}
@@ -18,7 +21,8 @@ header-includes:
   - \renewcommand{\floatpagefraction}{1}
   - \setcounter{topnumber}{5}
   - \setcounter{bottomnumber}{5}
-  - \setcounter{totalnumber}{6}  
+  - \setcounter{totalnumber}{6} 
+  - \floatplacement{table}{t} 
 
 ---
 
@@ -40,7 +44,7 @@ library(papaja)
 FIT_BAYES = FALSE
 ```
 
-```{r, echo=FALSE, cache=FALSE, message=FALSE, warning=FALSE, include=F}
+```{r, echo=FALSE, cache=F, message=FALSE, warning=FALSE, include=F}
 paper <- suppressMessages(knitr::purl(here("paper","paper_r1.Rmd"), documentation = 0))
 suppressMessages(source(paper))
 ```
@@ -93,11 +97,11 @@ ggplot(filter(d_sub_long, admin_num > 1),
   scale_fill_solarized(name = "Dataset") +
   theme(legend.position = "bottom") + 
   # facet_wrap(~dataset_name) + 
+  guides(fill=guide_legend(nrow=2))+
   xlab("Months since first test administration") + 
   ylab("Number of administrations")
 ```
 
-TODO table heading
 ```{r}
 d_aoi <- readRDS(file = here("cached_intermediates", "0_d_aoi.Rds"))
 
@@ -130,7 +134,6 @@ d_inclusion <- d_aoi |>
             short_window_distractor = sum(!correct[short_window], na.rm=TRUE),
             long_window_distractor = sum(!correct[long_window], na.rm=TRUE)) |> 
   left_join(d_rt) |>
-  filter(age >= 12) |> 
   mutate(raw_rt = rt,
          rt = ifelse(shift_type == "D-T", rt, NA),
          log_rt = log(rt)) |> 
@@ -148,8 +151,9 @@ d_inclusion_rate <- d_inclusion |> group_by(dataset_name) |>
             valid_rt_rate=round(mean(valid_rt)*100, 1))
 ```
 
+Table \ref{tab:dataset-table-supp} has additional information on how many trials each dataset contributed and per-dataset exclusion rates for trials.
 
-```{r dataset-table-supp}
+```{r dataset-table-supp, cache=F}
 dataset_characteristics <- d_sub |>
   group_by(dataset_name) |>
   summarise(`N subjects` = length(unique(subject_id)),
@@ -215,13 +219,11 @@ dataset_characteristics |> left_join(clean_names) |> left_join(dataset_pcts) |>
           `Include rate (RT)`=str_c(sprintf(fmt = "%01.1f", valid_rt_rate ), "%"),
 
 
-         ` `=row_number() |> as.character())|> select(` `, `Dataset Name`, `Pct Acc Trials`, `Pct RT Trials`, `Total Acc Trials`=total_trial_acc,  `Total RT Trials`=total_trial_rt, `Include rate (LW)`,
-`Include rate (SW)`,`Include rate (RT)`,
-                                                      `N subjects`, `N admins`, everything()) |> View()
+         ` `=row_number() |> as.character())|> dplyr::select(` `, `Dataset Name`, `Pct Acc Trials`, `Pct RT Trials`, `Total Acc Trials`=total_trial_acc,  `Total RT Trials`=total_trial_rt, `Include rate (LW)`,
+`Include rate (SW)`,`Include rate (RT)`,`N subjects`, `N admins`) |>
   
-  
-  # kable(caption='Characteristics of included datasets from Peekbank. "Admins" denotes separate experimental sessions. \"CDIs\" refers to whether the dataset contains parent report vocabulary data from the MacArthur-Bates Communicative Development Inventory. \\label{tab:datasets}', align="rlrrrrrrrrr", digits=2, booktabs=T, linesep="") |> 
-  # kable_styling(latex_options="scale_down") |> row_spec(24, hline_after=T)
+  knitr::kable(caption='Characteristics of included datasets from Peekbank.', align="rlrrrrrrrr", digits=2, booktabs=T, linesep="") |>
+  kableExtra::kable_styling(latex_options="scale_down")|> row_spec(27, hline_after=T)
 ```
 
 \FloatBarrier
