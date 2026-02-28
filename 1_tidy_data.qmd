@@ -75,7 +75,10 @@ Join this back into the main data frame. We keep raw RTs with all shifts, but `r
 d_trial_rt_unfiltered <- d_trial |>
   left_join(d_rt) |>
   mutate(raw_rt = rt,
-         rt = ifelse(shift_type == "D-T", rt, NA),
+         rt = case_when(
+           dataset_name=="borovsky_2019" ~ NA, #this dataset used a gaze_contingent paradigm so RTs aren't the same & we don't have data from before 300ms
+           shift_type == "D-T"~rt,
+           T ~NA),
          log_rt = log(rt)) 
 ```
 

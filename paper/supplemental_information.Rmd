@@ -82,6 +82,8 @@ ggplot(d_sub_admin_by_age, aes(x = age_bin,y=n_subj))+
 
 Figure \ref{fig:longitudinal_descriptives} shows the distribution of measurement intervals for longitudinal studies within the dataset.
 
+
+
 ```{r longitudinal_descriptives, fig.cap="\\label{fig:longitudinal_descriptives} Distribution of retest administrations across datasets with repeated measurements, colored by dataset. Each count indicates a retest administration (initial administrations are excluded). Administrations listed with a retest interval of 0 indicate retests within a month of the initial administration.", fig.pos="h!"}
 
 d_sub_long <- d_sub |>
@@ -134,25 +136,29 @@ d_inclusion <- d_aoi |>
             long_window_distractor = sum(!correct[long_window], na.rm=TRUE)) |> 
   left_join(d_rt) |>
   mutate(raw_rt = rt,
-         rt = ifelse(shift_type == "D-T", rt, NA),
-         log_rt = log(rt)) |> 
+          rt = case_when(
+           dataset_name=="borovsky_2019" ~ NA, #this dataset used a gaze_contingent paradigm so RTs aren't the same & we don't have data from before 300ms
+           shift_type == "D-T"~rt,
+           T ~NA),
+         log_rt = log(rt)) |>
+  #if there's no data in either window, we shouldn't count it
+  filter(!(is.na(short_window_prop_data) & is.na(long_window_prop_data))) |> 
   mutate(valid_long_window=!is.na(long_window_prop_data)&(long_window_prop_data>=.5),
          valid_short_window=!is.na(short_window_prop_data)&(short_window_prop_data>=.5),
          valid_rt=valid_short_window&!is.na(rt)&rt>=367)
    
 
-```
 
-```{r}
 d_inclusion_rate <- d_inclusion |> group_by(dataset_name) |> 
   summarize(valid_long_window_rate=round(mean(valid_long_window)*100, 1),
             valid_short_window_rate=round(mean(valid_short_window)*100, 1), 
-            valid_rt_rate=round(mean(valid_rt)*100, 1))
+            valid_rt_rate=round(mean(valid_rt)*100, 1)) |> 
+  mutate(valid_rt_rate=ifelse(is.na(valid_rt_rate), 0, valid_rt_rate))
 ```
 
-Table \ref{tab:dataset-table-supp} has additional information on how many trials each dataset contributed and per-dataset exclusion rates for trials.
+Table \ref{tab:dataset-table-supp} has additional information on how many trials each dataset contributed and what percent of the dataset's trials were included. 
 
-```{r dataset-table-supp}
+```{r dataset-table-supp, cache=F}
 dataset_characteristics <- d_sub |>
   group_by(dataset_name) |>
   summarise(`N subjects` = length(unique(subject_id)),
@@ -211,17 +217,17 @@ clean_names <- tribble(
 
 dataset_characteristics |> left_join(clean_names) |> left_join(dataset_pcts) |>
   left_join(d_inclusion_rate) |> arrange(desc(pct_trials_acc)) |> 
-  mutate(`Pct Acc Trials`=str_c(sprintf(fmt = "%01.1f", pct_trials_acc ), "%"),
-         `Pct RT Trials`=str_c(sprintf(fmt = "%01.1f", pct_trials_rt ), "%"),
-          `Include rate (LW)`=str_c(sprintf(fmt = "%01.1f", valid_long_window_rate ), "%"),
-          `Include rate (SW)`=str_c(sprintf(fmt = "%01.1f", valid_short_window_rate ), "%"),
-          `Include rate (RT)`=str_c(sprintf(fmt = "%01.1f", valid_rt_rate ), "%"),
+  mutate(`Pct Trials (LW)`=str_c(sprintf(fmt = "%01.1f", pct_trials_acc ), "%"),
+         `Pct Trials (RT)`=str_c(sprintf(fmt = "%01.1f", pct_trials_rt ), "%"),
+          `Included (LW)`=str_c(sprintf(fmt = "%01.1f", valid_long_window_rate ), "%"),
+          `Included (SW)`=str_c(sprintf(fmt = "%01.1f", valid_short_window_rate ), "%"),
+          `Included (RT)`=str_c(sprintf(fmt = "%01.1f", valid_rt_rate ), "%"),
 
 
-         ` `=row_number() |> as.character())|> dplyr::select(` `, `Dataset Name`, `Pct Acc Trials`, `Pct RT Trials`, `Total Acc Trials`=total_trial_acc,  `Total RT Trials`=total_trial_rt, `Include rate (LW)`,
-`Include rate (SW)`,`Include rate (RT)`) |>
+         ` `=row_number() |> as.character())|> dplyr::select(` `, `Dataset Name`, `Pct Trials (LW)`, `Pct Trials (RT)`, `Total Trials (LW)`=total_trial_acc,  `Total Trials (RT)`=total_trial_rt, `Included (LW)`,
+`Included (SW)`,`Included (RT)`) |>
   
-  knitr::kable(format="latex", booktabs=T, linesep="", longtable=F, digits=2, caption='Characteristics of included datasets from Peekbank.', align="rlrrrrrr") |>
+  knitr::kable(format="latex", booktabs=T, linesep="", longtable=F, digits=2, caption='Characteristics of included datasets from Peekbank, sorted by what percent of the data the data they represent. Percent trials refers to what percent of the trials used came from that dataset; total is the number of trials used from that dataset; and included is what percent of all trials had data that was included (based on criteria about missingness, distractor to target transition, minimum RT).  LW = long-window accuracy, SW = short-window accuracy, and RT = reaction time.', align="rlrrrrr") |>
   kableExtra::kable_styling(latex_options="scale_down")
 ```
 
