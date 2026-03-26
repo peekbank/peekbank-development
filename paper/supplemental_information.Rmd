@@ -1021,7 +1021,7 @@ To test for the differentiation of vocabulary growth based on initial reaction t
 
 Age and initial reaction time were both mean-centered. 
 
-```{r nlme-residual, fig.cap="\\label{fig:nlme-resid} Growth curves from a logistic growth model showing predicted vocabulary growth for children based on their age-residualized initial reaction times. Predictions are shown for children with initial reaction times one SD faster than the mean for their age (blue), at the mean  for their age (red), and one SD slower than the mean for their age (green). Individual longitudinal trajectories are shown in light gray. Solid lines show global model estimates and colored regions indicate 95% credible intervals.", fig.env="figure", fig.height = 4}
+```{r nlme-residual, fig.cap="\\label{fig:nlme-resid} Growth curves from a logistic growth model showing predicted productive vocabulary growth for children based on their age-residualized initial reaction times. Predictions are shown for children with initial reaction times one SD faster than the mean for their age (blue), at the mean  for their age (red), and one SD slower than the mean for their age (green). Individual longitudinal trajectories are shown in light gray. Solid lines show global model estimates and colored regions indicate 95% credible intervals.", fig.env="figure", fig.height = 4}
 
 d_sub_prod$age_c <- d_sub_prod$age - mean(d_sub_prod$age, na.rm = TRUE)
 d_sub_prod$log_rt_0_c <- d_sub_prod$log_rt_0 - mean(d_sub_prod$log_rt_0, na.rm = TRUE)
@@ -1045,9 +1045,9 @@ ggplot(new_data_resid, aes(x = age_c, y = fit, col = as.factor(resid_log_rt_0_c)
   geom_line(linewidth = 2) +
   geom_ribbon(aes(ymin = lower, ymax = upper, fill = as.factor(resid_log_rt_0_c), group = as.factor(resid_log_rt_0_c)), 
               alpha = 0.3) +
-  labs(x = "Centered Age", y = "Predicted prod (fixed effects only)") +
+  labs(x = "Centered Age (in months)", y = "Predicted productive vocabulary\n(fixed effects only)") +
   theme_minimal() + 
-  scale_color_solarized(name = "residualized log RT at t0 (SD)") + 
+  scale_color_solarized(name = "residualized log RT\nat t0 (SD)") + 
   scale_fill_solarized(guide = FALSE)
 
 ```

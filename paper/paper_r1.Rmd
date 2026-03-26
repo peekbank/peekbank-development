@@ -705,7 +705,7 @@ saveRDS(fitted_vals, "brms1_fitted.rds")
 ```
 
 
-```{r growth, fig.cap="Growth curves from a logistic growth model showing predicted vocabulary growth for children with initial reaction times one SD faster than the mean (blue), at the mean (red), and one SD slower than the mean (green). Individual longitudinal trajectories are shown in light gray. Solid lines show global model estimates and colored regions indicate 95% credible intervals.", fig.env="figure", fig.height = 4, include=TRUE}
+```{r growth, fig.cap="Growth curves from a logistic growth model showing predicted productive vocabulary growth for children with initial reaction times one SD faster than the mean (blue), at the mean (red), and one SD slower than the mean (green). Individual longitudinal trajectories are shown in light gray. Solid lines show global model estimates and colored regions indicate 95% credible intervals.", fig.env="figure", fig.height = 4, include=TRUE}
 
 
 fitted_vals <- readRDS("brms1_fitted.rds")
@@ -725,9 +725,9 @@ ggplot(new_data, aes(x = age_c, y = fit, col = as.factor(log_rt_0_c))) +
   geom_line(linewidth = 2) +
   geom_ribbon(aes(ymin = lower, ymax = upper, fill = as.factor(log_rt_0_c), group = as.factor(log_rt_0_c)), 
               alpha = 0.3) +
-  labs(x = "Centered Age", y = "Predicted prod (fixed effects only)") +
+  labs(x = "Centered Age (in months)", y = "Predicted productive vocabulary\n(fixed effects only)") +
   theme_minimal() + 
-  scale_color_solarized(name = "log RT at t0 (SD)") + 
+  scale_color_solarized(name = "log RT\nat t0 (SD)") + 
   scale_fill_solarized(guide = FALSE)
 
 

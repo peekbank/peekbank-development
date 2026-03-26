@@ -76,3 +76,12 @@ brms1_fitted.rds
 brms2.rds
 brms2_coef.rds
 brms2_fitted.rds
+/paper/paper_r1_files
+paper/paper_r1.log
+paper/paper_r1.tex
+paper/supplemental_information.log
+supplemental_data/creel_2024/TminusC2002000.csv
+supplemental_data/creel_2024/TminusC2002000_cellskept(mintrialsplus).csv
+supplemental_data/creel_2024/TminusC2002000_trialskept(nonbadlooks).csv
+paper/paper_r1.pdf
+paper_r1.R
