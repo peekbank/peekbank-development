@@ -87,7 +87,8 @@ d_joined <- aoi_data_joined |>
   #remove datasets with bilingual kids
   filter(dataset_name!="sander-montant_2022",
          dataset_name!="kremin_2021",
-         dataset_name!="byers-heinlein_2017") |> 
+         dataset_name!="byers-heinlein_2017",
+         dataset_name!="potter_remix") |> 
   select(
     dataset_name, subject_id, administration_id, trial_id, trial_order,
     dataset_id, target_id, t_norm, age, aoi, target_label, distractor_label, target_side
