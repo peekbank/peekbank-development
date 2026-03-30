@@ -40,7 +40,7 @@ library(papaja)
 
 
 #set to TRUE to fit the Bayesian models
-FIT_BAYES = FALSE
+FIT_BAYES = TRUE
 ```
 
 ```{r, echo=FALSE, cache=F, message=FALSE, warning=FALSE, include=F}
@@ -51,6 +51,8 @@ suppressMessages(source(paper))
 # S1. Dataset Description
 
 Figure \ref{fig:dataset} gives the age distribution of unique participants for each separate dataset at different ages. Note that for some datasets, there are multiple administrations (i.e., experimental test sessions) for each participant.
+Figure \ref{fig:longitudinal_descriptives} shows the distribution of measurement intervals for longitudinal studies within the dataset.
+Table \ref{tab:dataset-table-supp} has additional information on how many trials each dataset contributed and what percent of the dataset's trials were included. 
 
 ```{r dataset, fig.cap="\\label{fig:dataset} Age distribution of unique participants for each dataset, using three-month bins.", fig.pos="h!"}
 
@@ -76,13 +78,9 @@ ggplot(d_sub_admin_by_age, aes(x = age_bin,y=n_subj))+
   facet_wrap(~dataset_name, scale = "free_y") +
   xlab("Age (months)") + 
   ylab("Number of participants")+
-  theme(strip.text.x = element_text(size = 5))
+  theme(strip.text.x = element_text(size = 4))
 
 ```
-
-Figure \ref{fig:longitudinal_descriptives} shows the distribution of measurement intervals for longitudinal studies within the dataset.
-
-
 
 ```{r longitudinal_descriptives, fig.cap="\\label{fig:longitudinal_descriptives} Distribution of retest administrations across datasets with repeated measurements, colored by dataset. Each count indicates a retest administration (initial administrations are excluded). Administrations listed with a retest interval of 0 indicate retests within a month of the initial administration.", fig.pos="h!"}
 
@@ -156,7 +154,7 @@ d_inclusion_rate <- d_inclusion |> group_by(dataset_name) |>
   mutate(valid_rt_rate=ifelse(is.na(valid_rt_rate), 0, valid_rt_rate))
 ```
 
-Table \ref{tab:dataset-table-supp} has additional information on how many trials each dataset contributed and what percent of the dataset's trials were included. 
+
 
 ```{r dataset-table-supp, cache=F}
 dataset_characteristics <- d_sub |>
@@ -190,7 +188,7 @@ clean_names <- tribble(
   "frank_tablet_2016", "Frank et al. (2016)", 
   "fmw_2013", "Fernald et al. (2013)", 
   "adams_marchman_2018", "Adams et al. (2018)" ,
-  "potter_canine", "Potter & Lew Williams (2023)",
+  "potter_canine", "Potter & Lew Williams (2024)",
   "fernald_totlot", "Fernald et al. (2006)",
 "pomper_prime", "Pomper & Saffran (2015)",
 "pomper_saffran_2016", "Pomper & Saffran (2016)", 
@@ -304,7 +302,6 @@ ggplot(filter(subj_rt_acc,n_correct_trials>1&n_trials>1),aes(mean_rt,mean_rt_cor
 # S3. Checks on Data Distributional Assumptions 
 
 Here, we check whether the distributional forms that are assumed for the distributions of RT and accuracy are a reasonable empirical fit to the data, and compare against other commonly used distributional forms. 
-
 We confirm that, across the age range, the choice to use a log-normal distribution for RT and a normal distribution for accuracy is justified. 
 
 ```{r}
@@ -365,7 +362,6 @@ The literature focuses on the use of the Exponential-Gaussian (ex-Gaussian) dist
 The problem of fitting RT distributions is complex and a substantial literature exists (e.g., Ratcliff, 1979; Luce, 1986; Van Zandt, 2000; Baayen & Milin, 2010). One of the big challenges in our dataset as well as elsewhere is that distributions are conditional on factors such as participant and task, so it is challenging to draw inferences about the underlying distribution when looking at average data. 
 
 That said, we find that overall the data are best fit by either an ex-Gaussian or a log normal distribution, again consistent with prior literature, giving us confidence in this conclusion. Across the full dataset, the BIC values for ex-Gaussian (`r round(exgaus_bic)|> as.character()`) and log normal (`r round(lnorm_bic)|> as.character()`) are quite close to one another, and better than the Wald (`r round(wald_bic)|> as.character()`) and normal (`r round(norm_bic)|> as.character()`) fits. When binned by age (Fig \ref{fig:rt-fits}), younger children seem better fit for a log normal distribution and older children seem better fit by ex-Gaussian (models with lowest BICs are shown in red since significant differences can be obscured by the large scale). Figure \ref{fig:rt-hist} shows the RT data distribution overlaid with the corresponding log-normal distributions. 
-
 Overall, we think this result generally vitiates our decision to use log-transformed RTs as our primary dependent measure. 
 
 
@@ -438,7 +434,6 @@ beta_acc_bic <- BIC(beta_acc)
 Individual trial-level accuracies are not binomial because they are an average probability of fixation over a viewing window. They are bounded at 0 and 1, but in general they tend towards the range .5 - .8 in most studies of this population. Figure \ref{fig:acc-hist} shows the data binned by age group with fitted gaussian distributions.
 
 These distributions seem well fit by standard gaussians, but they are in principle bounded and so we asked whether this made a difference, using a Beta distribution (a two-parameter continuous distribution bounded at 0 and 1) for fitting. Surprisingly, across all data, the BIC values for the two distributions were very similar (`r round(norm_acc_bic) |> as.character()` for normal versus `r round(beta_acc_bic)` for Beta), though the normal distribution was slightly favored. Across age groups, there was heterogeneity with some groups better fit by a gaussian and others better fit by a Beta (Figure \ref{fig:acc-fits}).
-
 Again, we feel that this result generally vitiates our approach of modeling accuracies via standard linear mixed-effects models: their distributional form is quite close to normal. 
 
 ```{r acc-hist, fig.cap="\\label{fig:acc-hist} Goodness of fit for different distributional models of accuracy, split by age.", fig.pos="h!", fig.width=8, fig.height=5}
@@ -701,7 +696,7 @@ log_rt_var ~ log_age_s + (log_age_s | dataset_name) + (1 | subject_id)
 
 \end{verbatim}
 
-In the growth curve analysis, fit a mixed-effects model predicting growth in vocabulary as a quadratic function of age, RT at
+In the growth curve analysis, we fit a mixed-effects model predicting growth in vocabulary as a quadratic function of age, RT at
 study initiation (t0), and their interaction, using the formula below
 
 \begin{verbatim}
@@ -1017,9 +1012,7 @@ readRDS("brms2_coef.rds") |> as_tibble(rownames="type") |>
 
 ```
 
-To test for the differentiation of vocabulary growth based on initial reaction time, we used the package `brms` to fit a (Bayesian) logistic growth model to the production data. This model has two parameters for the logistic curve, a scale and an intercept. Both were allowed to interact with initial reaction time. We also included random effects of logistic intercept and scale by participant and a grouping term across datasets. This model showed a significant effect of initial reaction time on the intercept of the logistic growth curve, but not on its scale (see Table \ref{tab:nlme}).
-
-Age and initial reaction time were both mean-centered. 
+To test for the differentiation of vocabulary growth based on initial reaction time, we used the package `brms` to fit a (Bayesian) logistic growth model to the production data. This model has two parameters for the logistic curve, a scale and an intercept. Both were allowed to interact with initial reaction time. We also included random effects of logistic intercept and scale by participant and a grouping term across datasets. Age and initial reaction time were both mean-centered. This model showed a significant effect of initial reaction time on the intercept of the logistic growth curve, but not on its scale (see Table \ref{tab:nlme}).
 
 ```{r nlme-residual, fig.cap="\\label{fig:nlme-resid} Growth curves from a logistic growth model showing predicted productive vocabulary growth for children based on their age-residualized initial reaction times. Predictions are shown for children with initial reaction times one SD faster than the mean for their age (blue), at the mean  for their age (red), and one SD slower than the mean for their age (green). Individual longitudinal trajectories are shown in light gray. Solid lines show global model estimates and colored regions indicate 95% credible intervals.", fig.env="figure", fig.height = 4}
 
@@ -1051,6 +1044,8 @@ ggplot(new_data_resid, aes(x = age_c, y = fit, col = as.factor(resid_log_rt_0_c)
   scale_fill_solarized(guide = FALSE)
 
 ```
+
+\newpage
 
 The formula specification was
 \begin{verbatim}

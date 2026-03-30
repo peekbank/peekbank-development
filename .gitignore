@@ -67,7 +67,6 @@ paper/paper.log
 paper/paper_files/figure-latex/timecourse-1.pdf
 paper/supplemental_information_files/*
 paper/supplemental_information.tex
-paper/supplemental_information.pdf
 supplemental_data/creel_2024/allfamiliars.csv
 supplemental_data/creel_2024/allnovels.csv
 brms1.rds
@@ -83,5 +82,4 @@ paper/supplemental_information.log
 supplemental_data/creel_2024/TminusC2002000.csv
 supplemental_data/creel_2024/TminusC2002000_cellskept(mintrialsplus).csv
 supplemental_data/creel_2024/TminusC2002000_trialskept(nonbadlooks).csv
-paper/paper_r1.pdf
 paper_r1.R

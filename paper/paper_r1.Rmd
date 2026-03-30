@@ -101,7 +101,6 @@ nocite: |
   @fmw2013,
   @fernald2006,
   @yurovsky2017,
-  @potter2019,
   @yurovsky_2017,
   @Mahr2015,
   @Garrison2020,
@@ -204,7 +203,7 @@ d_sub_firstadmin <- d_sub |>
 knitr::opts_chunk$set(echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE)
 
 #set to TRUE the first time running the document to ensure all cached elements are created (FALSE thereafter)
-FIRST_TIME = FALSE
+FIRST_TIME = TRUE
 ```
 
 
@@ -239,7 +238,7 @@ clean_names <- tribble(
   "frank_tablet_2016", "Frank et al. (2016)", 
   "fmw_2013", "Fernald et al. (2013)", 
   "adams_marchman_2018", "Adams et al. (2018)" ,
-  "potter_canine", "Potter & Lew Williams (2023)",
+  "potter_canine", "Potter & Lew Williams (2024)",
   "fernald_totlot", "Fernald et al. (2006)",
 "pomper_prime", "Pomper & Saffran (2015)",
 "pomper_saffran_2016", "Pomper & Saffran (2016)", 
@@ -250,8 +249,7 @@ clean_names <- tribble(
 "bacon_gendercues", "Bacon & Saffran (2022)",
 "garrison_bergelson_2020", "Garrison et al. (2020)",
 "pomper_yumme", "Pomper & Saffran (2018)", 
-"mahr_coartic", "Mahr et al. (2015)", 
-"potter_remix", "Potter et al. (2019)",
+"mahr_coartic", "Mahr et al. (2015)",
 "reflook_socword", "Yurovsky et al. (2013)",
 "yoon_simpimp_2015","Yoon et al. (2015)",
 "borovsky_2019", "Borovsky & Peters (2019)",
@@ -274,20 +272,20 @@ dataset_characteristics |> left_join(clean_names) |> left_join(dataset_pcts) |> 
                        `Avg RT Trials` = mean(dataset_characteristics$`Avg RT Trials`),
                        `CDIs` = as.character(sum(dataset_characteristics$CDIs != "")),
                        `longitudinal` = as.character(sum(dataset_characteristics$longitudinal != "")))) |> kable(caption='Characteristics of included datasets from Peekbank. "Admins" denotes separate experimental sessions. \"CDIs\" refers to whether the dataset contains parent report vocabulary data from the MacArthur-Bates Communicative Development Inventory. \\label{tab:datasets}', align="rlrrrrrrrrr", digits=2, booktabs=T, linesep="") |> 
-  kable_styling(latex_options="scale_down") |> row_spec(27, hline_after=T)
+  kable_styling(latex_options="scale_down") |> row_spec(26, hline_after=T)
 ```
 
 
 # Results {.unnumbered}
 
-We retrieved data from Peekbank, focusing on data from English-speaking children ages 6 months -- 6 years and on simple word recognition trials in which children were shown two pictures of concrete objects and heard a label for an object (typically embedded in a simple carrier phrase such as "Look at the ..."). While other experimental manipulations and languages are included in the database, we narrowed our sample to English-speaking children because they are well-represented across our age range and excluded manipulations which aimed to capture phenomena other than simple concrete noun reference (e.g., adjective comprehension or novel word learning). These criteria yielded `r length(unique(d_sub$dataset_name))` datasets, including `r length(unique(d_sub$subject_id))` children and `r length(unique(d_sub$administration_id))` administrations of the LWL procedure (some datasets were longitudinal or involved multiple closely-spaced testing sessions). 
+We retrieved data from Peekbank, focusing on data from monolingual English-speaking children ages 6 months -- 6 years and on simple word recognition trials in which children were shown two pictures of concrete objects and heard a label for an object (typically embedded in a simple carrier phrase such as "Look at the ..."). While other experimental manipulations and languages are included in the database, we narrowed our sample to English-speaking children because they are well-represented across our age range and excluded manipulations which aimed to capture phenomena other than simple concrete noun reference (e.g., adjective comprehension or novel word learning). These criteria yielded `r length(unique(d_sub$dataset_name))` datasets, including `r length(unique(d_sub$subject_id))` children and `r length(unique(d_sub$administration_id))` administrations of the LWL procedure (some datasets were longitudinal or involved multiple closely-spaced testing sessions). 
 
 Table \ref{tab:datasets} shows the characteristics of individual datasets (see also S1 Dataset Description in the Supplementary Information). The size of the combined dataset, the unified data processing pipeline, and the fact that individual studies used very similar implementations of the LWL experimental paradigm all allowed us to make a more detailed study of the development of word recognition than has previously been possible. While our analyses are exploratory in nature, they are guided by the two hypotheses outlined above: the presence of 1) signatures of skill learning in word recognition, and 2) linkages between word recognition and vocabulary.
 
 
 ## Speed and accuracy of word recognition increase {.unnumbered}
 
-```{r timecourse, fig.cap="Timecourse of word recognition at different ages. The x-axis shows time (in ms) from the onset of the target label (vertical solid line). Colored lines show the average increase in proportion target looking post label onset at each age bin (in months). Age bins are larger for older children due to decreased data density. The dashed horizontal line represents chance looking. Error bands represent standard errors of the mean. Grey backgrounds highlight the short and long time windows used in subsequent analyses.", fig.env="figure", fig.height = 4, include=TRUE}
+```{r timecourse, fig.cap="Timecourse of word recognition at different ages. The x-axis shows time (in ms) from the onset of the target label (vertical solid line). Colored lines show the average increase in proportion target looking post label onset at each age bin (in months). Age bins are larger for older children due to decreased data density. The dashed horizontal line represents chance looking. Error bands represent standard errors of the mean. Grey backgrounds highlight the short and long time windows used in subsequent analyses. The data within the figure is filtered such that at (a) participants are required to contribute at least 5 observations and (b) there must be at least 50 participants contributing to each time bin within an age group.", fig.env="figure", fig.height = 4, include=TRUE}
 
 #summarize by subject
 d_timecourse_by_dataset_age_subj <- d_aoi |>
@@ -309,14 +307,14 @@ d_timecourse_by_dataset_age_subj <- d_aoi |>
 #by age bin, not representing dataset structure
 d_timecourse_by_age_overall <- d_timecourse_by_dataset_age_subj |>
   group_by(age_bin,t_norm) |>
-  filter(n>5) |> 
+  filter(n>=5) |> 
   summarize(
     n_subj=sum(!is.na(accuracy)),
     proportion_target_looking = mean(accuracy,na.rm=TRUE),
     sem = sd(accuracy,na.rm=TRUE)/sqrt(n_subj)
   ) |> 
   rename(accuracy=proportion_target_looking) |> 
-  filter(n_subj>50)
+  filter(n_subj>=50)
 
 #overall plot
 d_timecourse_by_age_overall |> 
@@ -528,7 +526,7 @@ We fit a series of factor analytic models to explore the dimensionality of the p
 Initial exploratory factor analysis using parallel analysis to select the number of factors suggested that three factors explained substantial variance in the data (see S9 Factor Analysis). To better accommodate missing data under the assumption of data missing at random (e.g., missingness due to the age sampling schemes of the various datasets), we used confirmatory factor analysis with full information maximum likelihood to find the best set of loadings. The best fitting model was a three-factor model with factors for speed (RT and RT variability), accuracy (proportion looking to target on each trial and associated variability of this measure), and vocabulary (comprehension and production from the CDI). Fit statistics for this model were generally good (Confirmatory fit index: `r round(fit_stats$fit["cfi"], 3)`, RMSE: `r round(fit_stats$fit["rmsea"], 3)`); see S11 Alternative Factor Structures). 
 
 
-```{r age-regression, fig.env="figure", fig.cap="Structural equation model showing the three-factor factor analysis with a regression of each latent variable on the logarithm of age. Observed variables are notated as squares and latent variables are notated as circles Factor loadings and regression coefficients are shown with straight, solid lines; covariances are shown with dashed lines; residual variances are shown as solid circular connections. Stars show conventional levels of statistical significance, e.g. * indicates p < .05, ** indicates p < .01, and *** indicates p < .001. Covariances reflect age-residualized correlations between variables.", fig.height = 3}
+```{r age-regression, fig.env="figure", fig.cap="Structural equation model showing the three-factor factor analysis with a regression of each latent variable on the logarithm of age. Observed variables are notated as squares and latent variables are notated as circles. Factor loadings and regression coefficients are shown with straight, solid lines; covariances are shown with dashed lines; residual variances are shown as solid circular connections. Stars show conventional levels of statistical significance, e.g., * indicates p < .05, ** indicates p < .01, and *** indicates p < .001. Covariances reflect age-residualized correlations between variables.", fig.height = 3}
 
 d_sub_mat_s_renamed <- d_sub_mat_s |>
   rename(acc = long_window_accuracy, 
@@ -949,7 +947,7 @@ More broadly, our results here suggest the continued importance of the looking-w
 
 ## Data {.unnumbered}
 
-We included information from `r length(unique(d_sub$subject_id))` unique participants across `r length(unique(d_sub$dataset_name))` datasets. Dataset information is given in Table \ref{tab:datasets}. Although experiments in Peekbank include a variety of different experimental manipulations, we analyzed only data from standard, simple word recognition trials; these trials were sometimes the main focus of the original studies and sometimes constituted control conditions for experiments with more complex manipulations. Requirements for being considered a standard word recognition trial included that (a) the target word was familiar (also no part-words); (b) the target word was the first point of disambiguation; (c) the target word was embedded in a well-formed, grammatical carrier phrase; (d) there was no informative language presented prenominally (e.g. semantically informative verbs, adjectives); (e) there were no nonsense words presented anywhere during the trial (including the carrier phrase); (f) there was no language-, speaker-, or accent-switching within trial; (g) the distractor image was unrelated to both the target label and the target image; and (h) there was no phonological overlap between the distractor label and target label. We focus here on English purely for practical reasons -- the Peekbank dataset at present contains limited data from other languages.
+We included information from `r length(unique(d_sub$subject_id))` unique participants across `r length(unique(d_sub$dataset_name))` datasets. Dataset information is given in Table \ref{tab:datasets}. Although experiments in Peekbank include a variety of different experimental manipulations, we analyzed only data from standard, simple word recognition trials ("vanilla" trials); these trials were sometimes the main focus of the original studies and sometimes constituted control conditions for experiments with more complex manipulations. Requirements for being considered a standard word recognition trial included that (a) the target word was familiar (also no part-words); (b) the target word was the first point of disambiguation and appeared only once; (c) the target word was embedded in a well-formed, grammatical carrier phrase; (d) there was no informative language presented prenominally (e.g. semantically informative verbs, adjectives); (e) there were no nonsense words presented anywhere during the trial (including the carrier phrase); (f) there was no language-, speaker-, or accent-switching within trial; (g) the auditory stimulus included no intentional background noise or audio filtering; (h) both target and distractor items were familiar objects; (i) no novel visual stimuli (i.e., experimenter-created artificial items or items selected to be entirely unfamiliar) were visible; and (j) the target referent was the focal object in the target image and there were no additional focal objects competing for attention within the target image (e.g., if the target word was "orange" and the image depicted an orange on a plate, this was considered a standard trial; if however, the image depicted both an apple and an orange on a plate, this was not considered standard). We focus here on English purely for practical reasons -- the Peekbank dataset at present contains limited data from other languages.
 
 We excluded trials entirely if they were missing data on more than 50% of timepoints, and excluded RTs if they were based on fewer than 50% of timepoints in the short analytic window (200 -- 2000 ms). We also removed RTs shorter than 367 ms, as these were unlikely to be generated based on the specific linguistic stimulus. We then excluded participants from the analysis if they contributed fewer than four accuracy measurements or fewer than two reaction time measurements. At the participant level, these steps together led to `r round(mean(is.na(d_sub$rt)), 3)*100`% missingness for RTs and `r round(mean(is.na(d_sub$long_window_accuracy)), 3)*100`% missingness for long window accuracies.
 
