@@ -222,7 +222,7 @@ dataset_characteristics |> left_join(clean_names) |> left_join(dataset_pcts) |>
          ` `=row_number() |> as.character())|> dplyr::select(` `, `Dataset Name`, `Pct Trials (LW)`, `Pct Trials (RT)`, `Total Trials (LW)`=total_trial_acc,  `Total Trials (RT)`=total_trial_rt, `Included (LW)`,
 `Included (SW)`,`Included (RT)`) |>
   
-  knitr::kable(format="latex", booktabs=T, linesep="", longtable=F, digits=2, caption='Characteristics of included datasets from Peekbank, sorted by what percent of the data the data they represent. Percent trials refers to what percent of the trials used came from that dataset; total is the number of trials used from that dataset; and included is what percent of all trials had data that was included (based on criteria about missingness, distractor to target transition, minimum RT).  LW = long-window accuracy, SW = short-window accuracy, and RT = reaction time.', align="rlrrrrr") |>
+  knitr::kable(format="latex", booktabs=T, linesep="", longtable=F, digits=2, caption='Characteristics of included datasets from Peekbank, sorted by what percent of the data the data they represent. Percent trials refers to what percent of the trials used came from that dataset; total is the number of trials used from that dataset; and included is what percent of all trials had data that was included (based on criteria about missingness, distractor to target transition, minimum RT).  LW = long-window accuracy, SW = short-window accuracy, and RT = reaction time.', align="rlrrrrrrr") |>
   kableExtra::kable_styling(latex_options="scale_down")
 ```
 
