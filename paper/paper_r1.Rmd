@@ -419,7 +419,7 @@ a <- ggplot(d_sub,
   scale_x_log10(breaks = c(12,24,36,48,60)) +
   scale_color_manual(values=mycolors, guide = FALSE) + 
   ylab("Proportion Target Looking") + 
-  xlab("Age (months)")
+  xlab("Age (months; log scale)")
 
 b <- ggplot(d_sub,
             aes(x = age, y = rt)) + 
@@ -434,7 +434,7 @@ b <- ggplot(d_sub,
   scale_color_manual(values=mycolors, guide = FALSE) + 
   theme(legend.position = "bottom") + 
   ylab("Reaction Time (log)") + 
-  xlab("Age (months)")
+  xlab("Age (months; log scale)")
 
 cowplot::plot_grid(a,b)
 ```
@@ -469,7 +469,7 @@ c <- ggplot(d_sub,
   scale_x_log10(breaks = c(12,24,36,48,60)) +
   scale_color_manual(values=mycolors, guide = FALSE) + 
   ylab("SD of Prop Target Looking") + 
-  xlab("Age (months)")
+  xlab("Age (months; log scale)")
 
 d <- ggplot(d_sub,
        aes(x = age, y = log_rt_var)) + 
@@ -483,7 +483,7 @@ d <- ggplot(d_sub,
   scale_color_manual(values=mycolors, guide = FALSE) + 
   theme(legend.position = "bottom") + 
   ylab("SD of log RT") + 
-  xlab("Age (months)")
+  xlab("Age (months; log scale)")
 
 cowplot::plot_grid(c,d)
 ```
