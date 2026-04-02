@@ -704,7 +704,7 @@ saveRDS(fitted_vals, "brms1_fitted.rds")
 ```
 
 
-```{r growth, fig.cap="Growth curves from a logistic growth model showing predicted productive vocabulary growth for children with initial reaction times one SD faster than the mean (blue), at the mean (red), and one SD slower than the mean (green). Individual longitudinal trajectories are shown in light gray. Solid lines show global model estimates and colored regions indicate 95% credible intervals.", fig.env="figure", fig.height = 4, include=TRUE}
+```{r growth, fig.cap="Growth curves from a logistic growth model showing predicted productive vocabulary growth for children with initial reaction times one SD faster than the mean (blue), at the mean (red), and one SD slower than the mean (green). Individual longitudinal trajectories are shown in light gray. Solid lines show global model estimates and colored regions indicate 95% credible intervals.", fig.env="figure", fig.height = 4, include=TRUE, warning=FALSE,message=FALSE}
 
 
 fitted_vals <- readRDS("brms1_fitted.rds")
