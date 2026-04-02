@@ -614,7 +614,7 @@ d_growth <- d_sub |>
 d_growth$age_15 <- d_growth$age - 15
 
 # note that it's singular to add an age by dataset random effect
-growth_mod <- lmer(prod ~ poly(age_15,2) *rt_t0 + (age  | subject_id) + (1 | dataset_name), 
+growth_mod <- lmer(prod ~ poly(age_15,2) *rt_t0 + (age  | subject_id) + (age | dataset_name), 
      data = d_growth, 
      control = lmerControl(optimizer = "bobyqa"))
 
