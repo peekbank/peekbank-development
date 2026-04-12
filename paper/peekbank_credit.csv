@@ -1,0 +1,15 @@
+Name,Last name,Department,University,Approve resubmission,Approve submission,Conceptualization,Data curation,Formal analysis,Funding acquisition,Investigation,Methodology,Project administration,Software,Resources,Supervision,Validation,Visualization,Writing – original draft,Writing – review & editing
+Michael C. Frank,Frank,Psycholgy,Stanford University,TRUE,TRUE,X,X,X,X,X,X,X,X,,X,,X,X,X
+Virginia A. Marchman,Marchman,Psychology,Stanford University,TRUE,TRUE,X,X,,,X,X,,,,,,,,X
+Claire Augusta Bergey,Bergey,Linguistics,Stanford University,TRUE,TRUE,X,X,,,X,X,,X,,,,,,X
+Veronica Boyce,Boyce,Psychology,Stanford University,TRUE,TRUE,,X,,,,,,X,,,,X,,X
+Mika Braginsky,Braginsky,Psychology,Stanford University,TRUE,TRUE,,,,,,,,X,,,,,,
+George Kachergis ,Kachergis,Psychology ,Stanford University ,TRUE,TRUE,,X,,,X,,,X,,,X,,,X
+Jess Mankewitz,Mankewitz,Psychology,"University of Wisconsin, Madison",TRUE,TRUE,,X,,,,,,X,,,X,,,
+Stephan Meylan,Meylan,Linguistics,UC Berkeley,TRUE,TRUE,X,X,,,,X,,X,,,,,,X
+Ben Prystawski,Prystawski,Psychology,Stanford University,TRUE,TRUE,,X,,,,,,X,,,,,,
+Nilam Ram,Ram,Communication and Psychology,Stanford University,TRUE,TRUE,,,X,,,,,,,,,X,,X
+Robert Z. Sparks,Sparks,Psychology,Stanford University,TRUE,TRUE,,X,,,,,,,,,X,,,X
+Adrian Steffan,Steffan,Psychology,Ludwig Maximilian University Munich,TRUE,TRUE,,X,,,,,,X,,,,,,
+Alvin Wei Ming Tan,Tan,Psychology,Stanford University,TRUE,TRUE,,X,,,,,,X,,,,,,X
+Martin Zettersten,Zettersten,Cognitive Science,"University of California, San Diego",TRUE,TRUE,X,X,X,X,X,X,X,X,,X,X,X,,X

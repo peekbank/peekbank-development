@@ -3,66 +3,65 @@ title: Continuous developmental changes in word recognition support language lea
 
 shorttitle: Continuous developmental changes
 # Use letters for affiliations, numbers to show equal authorship (if applicable) and to indicate the corresponding author
+
 author:
   - name: Michael C. Frank
-    affiliation: a, 1
+    affiliation: "1"
+    corresponding: yes
+    email: "mcfrank@stanford.edu"
   - name: Virginia A. Marchman
-    affiliation: a
+    affiliation: "1"
   - name: Claire Augusta Bergey
-    affiliation: b
+    affiliation: "2"
   - name: Veronica Boyce
-    affiliation: a
+    affiliation: "1"
   - name: Mika Braginsky
-    affiliation: a
+    affiliation: "1"
   - name: George Kachergis
-    affiliation: a
+    affiliation: "1"
   - name: Jess Mankewitz
-    affiliation: c
+    affiliation: "3"
   - name: Stephan Meylan
-    affiliation: d
+    affiliation: "4"
   - name: Ben Prystawski
-    affiliation: a
+    affiliation: "1"
   - name: Nilam Ram
-    affiliation: a, e
+    affiliation: "1,5"
   - name: Robert Z. Sparks
-    affiliation: a
+    affiliation: "1"
   - name: Adrian Steffan
-    affiliation: f
+    affiliation: "6"
   - name: Alvin Wei Ming Tan
-    affiliation: a
+    affiliation: "1"
   - name: Martin Zettersten
-    affiliation: g
-address:
-  - code: a
-    address: Department of Psychology, Stanford University, Stanford, CA, USA
-  - code: b
-    address: Department of Linguistics, Stanford University, Stanford, CA, USA
-  - code: c
-    address: Department of Psychology, University of Wisconsin, Madison, WI, USA
-  - code: d
-    address: Department of Linguistics, University of California, Berkeley, CA, USA
-  - code: e
-    address: Department of Communication, Stanford University, Stanford, CA, USA
-  - code: f
-    address: Department of Psychology, Ludwig Maximilian University, Munich, Germany
-  - code: g
-    address: Department of Cognitive Science, University of California, San Diego, CA, USA
-
-corresponding_author:
-  code: 1
-  text: "To whom correspondence should be addressed. E-mail: mcfrank@stanford.edu"
+    affiliation: "7"
+affiliation:
+  - id: "1"
+    institution: Department of Psychology, Stanford University
+  - id: "2"
+    institution: Department of Linguistics, Stanford University
+  - id: "3"
+    institution: Department of Psychology, University of Wisconsin
+  - id: "4"
+    institution: Department of Linguistics, University of California
+  - id: "5"
+    institution: Department of Communication, Stanford University
+  - id: "6"
+    institution: Department of Psychology, Ludwig Maximilian University
+  - id: "7"
+    institution: Department of Cognitive Science, University of California
 
 # For footer text
 lead_author_surname: Frank
 
 author_contributions: |
-  Please provide details of author contributions here.
+  MCF contributed to conceptualization, data curation, formal analysis, funding acquisition, investigation, methodology, project administration, software, supervision, visualization, writing – original draft, and writing – review & editing. VAM contributed to conceptualization, data curation, investigation, methodology, and writing – review & editing. CAB contributed to conceptualization, data curation, investigation, methodology, software, and writing – review & editing. VB contributed to data curation, software, visualization, and writing – review & editing. MB contributed to software. GK contributed to data curation, investigation, software, validation, and writing – review & editing. JM contributed to data curation, software, and validation. SM contributed to conceptualization, data curation, methodology, software, and writing – review & editing. BP contributed to data curation and software. NR contributed to formal analysis, visualization, and writing – review & editing. RZS contributed to data curation, validation, and writing – review & editing. AS contributed to data curation and software. AWMT contributed to data curation, software, and writing – review & editing. MZ contributed to conceptualization, data curation, formal analysis, funding acquisition, investigation, methodology, project administration, software, supervision, validation, visualization, and writing – review & editing.
 
 abstract: |
   Being a fluent language user involves recognizing words as they unfold in time. How does this skill develop over the course of early childhood?  And how does facility in word recognition relate to the growth of vocabulary knowledge?  We address these questions using data from Peekbank, an open database of experiments measuring children's eye movements during early word recognition. In an observational study of 26 datasets from over 2,500 children ages 6 months -- 6 years, we show that word recognition becomes faster, more accurate, and less variable across development, consistent with a process of skill learning. Factor analysis reveals covariation of word recognition speed and accuracy with children's vocabulary size in cross-sectional analysis. Further, across a range of longitudinal models, speed, accuracy, and vocabulary were coupled. Children with overall faster word recognition tended to show faster vocabulary growth, though developmental growth in word recognition skill was not specifically associated with growth in vocabulary. Together, these findings support the view that word recognition is a skill that develops gradually across early childhood and that this skill is deeply intertwined with early language learning. 
 
 acknowledgements: |
-  This work was supported by a grant from the Jacobs Foundation. 
+  This work was supported by a grant from the Jacobs Foundation Creating Impact Science Program (CRISP). 
 
 keywords:
   - language development
@@ -70,9 +69,6 @@ keywords:
   - developmental change
   - skill acquisition
   - eye-tracking
-
-## must be one of: pnasresearcharticle (usual two-column layout), pnasmathematics (one column layout), or pnasinvited (invited submissions only)
-pnas_type: pnasresearcharticle
 
 bibliography: peekbank.bib
 csl: pnas.csl
@@ -128,7 +124,7 @@ Children acquiring a language are learning a body of knowledge -- a set of words
 
 Yet unlike language production, which is manifest via overt behavior, evidence for word recognition -- the linking of a word form to its meaning during language comprehension -- is often more subtle. Very young children may not be able to point to the correct referent of a word, but they may still have some representation of word meaning [@bergelson2012]. Eye tracking has thus emerged as a key method that allows the measurement of language comprehension with high temporal resolution: both adults and children reliably fixate the referent of a word soon after it is used [@tanenhaus1995integration;@altmann1999incremental;@fernald1998;@fernald2008;@macdonald2018]. This procedure measures the general construct of word recognition by operationalizing knowledge of a meaning as visual attention to a specific named referent. The relative timecourse of fixation then can provide an index of an individual comprehender's ability or be used to measure the difference between two stimulus conditions. 
 
-The version of this method that is used with children goes by many names, including the "intermodal preferential looking" paradigm and the "looking while listening" paradigm (LWL, the name we adopt here) [@hirsh1996intermodal;@reznick1990visual;@fernald2008]. In LWL experiments, children are typically shown two images displayed side by side and asked to find one of them. For example, a ball and a book might be shown, and the child might hear "Look at the ball! Can you find it?". Accuracy is then computed as the proportion of time their eyes fixate the correct image within a fixed window after the onset of the noun ("ball" in this case). Reaction time is (typically) computed only on trials in which the child is fixating the distractor image (the book) at word onset; in these cases, the average time it takes for the child to shift fixation from the distractor to the target image is used as an index of processing speed. Early work using this method showed that both children's speed and accuracy increase rapidly across the second year [@fernald1998;@reznick1990visual]. Related methods have provided a window into how children process phonological [@mani2011], morphological [@meylan2025], lexical [@Swingley2002], syntactic [@trueswell1999kindergarten], and semantic [@mani2010;@bergelson2017] information. 
+The version of this method that is used with children goes by many names, including the "intermodal preferential looking" paradigm and the "looking while listening" paradigm (LWL, the name we adopt here) [@hirsh1996intermodal;@reznick1990visual;@fernald2008]. In LWL experiments, children are typically shown two images displayed side by side and asked to find one of them. For example, a ball and a shoe might be shown, and the child might hear "Look at the ball! Can you find it?". Accuracy is then computed as the proportion of time their eyes fixate the correct image within a fixed window after the onset of the noun ("ball" in this case). Reaction time is (typically) computed only on trials in which the child is fixating the distractor image (the shoe) at word onset; in these cases, the average time it takes for the child to shift fixation from the distractor to the target image is used as an index of processing speed. Early work using this method showed that both children's speed and accuracy increase rapidly across the second year [@fernald1998;@reznick1990visual]. Related methods have provided a window into how children process phonological [@mani2011], morphological [@meylan2025], lexical [@Swingley2002], syntactic [@trueswell1999kindergarten], and semantic [@mani2010;@bergelson2017] information. 
 
 Familiar word recognition -- as measured by LWL -- is hypothesized to play a key role in language learning [@fernald2006]. The idea, in a nutshell, is that the faster and more accurately a child can process incoming words, the more opportunities they have for learning. Consider a child hearing the utterance "Can you put the ball in the crate?" The better the child can recognize the word "ball", the better they can use this evidence to help infer the speaker's intended meaning, allowing possible inferences about the meaning of the less familiar word, "crate" [@frank2009using]. 
 
@@ -792,7 +788,7 @@ slopes_long_summary <- suppressMessages(summary(slopes_long, fit.measures=TRUE, 
 
 On the other hand, it is possible that differences in predicted growth trajectories are due to coupling between vocabulary size and language processing across the entire developmental period, rather than a predictive relationship specifically between $t_0$ RT and vocabulary growth (i.e., the "virtuous cycle" model). To test this relationship, we used longitudinal structural equation models. We separated the longitudinal speed, accuracy, and vocabulary data into two-month bins spanning up to 10 months from the initial measurement (i.e., $t_0, ..., t_4$) and fit individual growth across each of these variables. We used full-information maximum likelihood to handle the substantial missing data caused by the different longitudinal sampling schemes of studies in our dataset (see S13 SEM Longitudinal Missingness). The fitted longitudinal model is shown in Figure \ref{fig:longitudinal}. Overall fit statistics were generally acceptable (Confirmatory fit index: `r round(slopes_long_summary$fit["cfi"], 3)`, RMSE: `r round(slopes_long_summary$fit["rmsea"], 3)`, RMSE $p$-value: `r slopes_long_summary$fit["rmsea.pvalue"] |>  apa_p()`). 
 
-Our key question of interest concerned coupling among the (latent) intercepts and slopes of these growth models. Consistent with our earlier analysis showing that faster processing is related to vocabulary growth, we saw significant coupling between processing speed intercepts and vocabulary growth slopes ($\beta=$ `r round(slopes_long_summary$pe[63,"est"],3)`, SE = `r round(slopes_long_summary$pe[63,"se"],3)`, $p$ `r slopes_long_summary$pe[63,"pvalue"] |> apa_p(add_equals=T)`) as well as a variety of other couplings. On the other hand, there was not significant coupling between *growth* in speed and *growth* in vocabulary ($\beta=$ `r round(slopes_long_summary$pe[65,"est"],3)`, SE = `r round(slopes_long_summary$pe[65,"se"],3)`, $p$ `r slopes_long_summary$pe[65,"pvalue"] |> apa_p(add_equals=T)`). This null effect could be interpreted as being consistent with these abilities growing independently, but there are other possibilities. First, the longitudinal data we had might not have allowed sufficiently precise estimates of growth slopes, or second, since vocabulary growth is non-linear, the linear model we used here might not have captured coupling among nonlinear aspects of developmental change. 
+Our key question of interest concerned coupling among the (latent) intercepts and slopes of these growth models. Consistent with our earlier analysis showing that faster processing is related to vocabulary growth, we saw significant between-person coupling between processing speed intercepts and vocabulary growth slopes ($\beta=$ `r round(slopes_long_summary$pe[63,"est"],3)`, SE = `r round(slopes_long_summary$pe[63,"se"],3)`, $p$ `r slopes_long_summary$pe[63,"pvalue"] |> apa_p(add_equals=T)`) as well as a variety of other between-person couplings. On the other hand, there was not significant coupling between *growth* in speed and *growth* in vocabulary ($\beta=$ `r round(slopes_long_summary$pe[65,"est"],3)`, SE = `r round(slopes_long_summary$pe[65,"se"],3)`, $p$ `r slopes_long_summary$pe[65,"pvalue"] |> apa_p(add_equals=T)`). This null effect could be interpreted as being consistent with these abilities growing independently, but there are other possibilities. First, the longitudinal data we had might not have allowed sufficiently precise estimates of growth slopes, or second, since vocabulary growth is non-linear, the linear model we used here might not have captured coupling among nonlinear aspects of developmental change. 
 
 In sum, these findings provide evidence consistent with the claim that differences in processing speed are related to differences in the rate of age-related change in vocabulary [@fernald2006;@Weisleder2013]. Children with greater skill in word recognition learn words faster. However, we did not find evidence for the stronger version of this claim: in neither the non-linear growth model nor the linear SEM did we find evidence that increases in speed were related to increases in vocabulary size. Thus, our findings do not support a "virtuous cycle" model in which increases in recognition specifically lead to increases in vocabulary size. 
 
@@ -940,7 +936,7 @@ By aggregating data from many pre-existing studies, we were able to overcome the
 
 Our approach is both observational and exploratory. Thus, we cannot untangle the range of different causal models that explain the variation we observed. First, early word recognition skill could lead to faster word learning, but faster children could also be faster due to their larger vocabulary and stronger lexical representations. These two causal directions could also interact reciprocally, leading to a "rich get richer" process in which children with larger vocabularies process faster, and their faster processing helps them increase their vocabulary size more rapidly. Finally, a third shared factor -- perhaps general cognitive ability -- could underpin both processes. Our cross-sectional data cannot distinguish these hypotheses even in principle [@vanderweele2023dimensional], and our longitudinal data are likely too sparse to distinguish such complex causal models. Future work must also explore how the functional forms we observed here between individuals reflect processes of within-person change. Although the Peekbank dataset includes a variety of longitudinal data, most reflect a small number of measurements; denser longitudinal data collection is required to better estimate within-person growth models. 
 
-The consistency of the trends we observed across datasets suggests that our qualitative conclusions are robust to some significant cross-laboratory and cross-sociodemographic variation. Nevertheless, these findings are still limited in their generalizability by the convenience samples that were used in most of the studies aggregated in Peekbank. These studies typically (but not always) represent children from well-educated parents living in university-adjacent communities. We would not expect that specific numerical parameters estimated in our aggregate convenience sample would generalize to other samples. 
+The relationships we report are derived from models that account for variation across datasets, suggesting that our qualitative conclusions are robust to cross-laboratory variation. Nevertheless, these findings are still limited in their generalizability by the convenience samples that were used in most of the studies aggregated in Peekbank. These studies typically (but not always) represent children from well-educated parents living in university-adjacent communities. We would not expect that specific numerical parameters estimated in our aggregate convenience sample would generalize to other samples. 
 
 More broadly, our results here suggest the continued importance of the looking-while-listening paradigm as an index of children's language processing abilities. If language learning is, at least in part, a process of skill learning, then measurement of this skill in larger samples provides a critical window into understanding the remarkable process of language learning.
 
