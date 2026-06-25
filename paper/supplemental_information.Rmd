@@ -222,7 +222,7 @@ dataset_characteristics |> left_join(clean_names) |> left_join(dataset_pcts) |>
          ` `=row_number() |> as.character())|> dplyr::select(` `, `Dataset Name`, `Pct Trials (LW)`, `Pct Trials (RT)`, `Total Trials (LW)`=total_trial_acc,  `Total Trials (RT)`=total_trial_rt, `Included (LW)`,
 `Included (SW)`,`Included (RT)`) |>
   
-  knitr::kable(format="latex", booktabs=T, linesep="", longtable=F, digits=2, caption='Characteristics of included datasets from Peekbank, sorted by what percent of the data the data they represent. Percent trials refers to what percent of the trials used came from that dataset; total is the number of trials used from that dataset; and included is what percent of all trials had data that was included (based on criteria about missingness, distractor to target transition, minimum RT).  LW = long-window accuracy, SW = short-window accuracy, and RT = reaction time.', align="rlrrrrrrr") |>
+  knitr::kable(format="latex", booktabs=T, linesep="", longtable=F, digits=2, caption='Characteristics of included datasets from Peekbank, sorted by what percent of the data they represent. Percent trials refers to what percent of the trials used came from that dataset; total is the number of trials used from that dataset; and included is what percent of all trials had data that was included (based on criteria about missingness, distractor to target transition, minimum RT).  LW = long-window accuracy, SW = short-window accuracy, and RT = reaction time.', align="rlrrrrrrr") |>
   kableExtra::kable_styling(latex_options="scale_down")
 ```
 
@@ -362,7 +362,7 @@ The literature focuses on the use of the Exponential-Gaussian (ex-Gaussian) dist
 The problem of fitting RT distributions is complex and a substantial literature exists (e.g., Ratcliff, 1979; Luce, 1986; Van Zandt, 2000; Baayen & Milin, 2010). One of the big challenges in our dataset as well as elsewhere is that distributions are conditional on factors such as participant and task, so it is challenging to draw inferences about the underlying distribution when looking at average data. 
 
 That said, we find that overall the data are best fit by either an ex-Gaussian or a log normal distribution, again consistent with prior literature, giving us confidence in this conclusion. Across the full dataset, the BIC values for ex-Gaussian (`r round(exgaus_bic)|> as.character()`) and log normal (`r round(lnorm_bic)|> as.character()`) are quite close to one another, and better than the Wald (`r round(wald_bic)|> as.character()`) and normal (`r round(norm_bic)|> as.character()`) fits. When binned by age (Fig \ref{fig:rt-fits}), younger children seem better fit for a log normal distribution and older children seem better fit by ex-Gaussian (models with lowest BICs are shown in red since significant differences can be obscured by the large scale). Figure \ref{fig:rt-hist} shows the RT data distribution overlaid with the corresponding log-normal distributions. 
-Overall, we think this result generally vitiates our decision to use log-transformed RTs as our primary dependent measure. 
+Overall, we think this result generally supports our decision to use log-transformed RTs as our primary dependent measure. 
 
 
 
@@ -434,7 +434,7 @@ beta_acc_bic <- BIC(beta_acc)
 Individual trial-level accuracies are not binomial because they are an average probability of fixation over a viewing window. They are bounded at 0 and 1, but in general they tend towards the range .5 - .8 in most studies of this population. Figure \ref{fig:acc-hist} shows the data binned by age group with fitted gaussian distributions.
 
 These distributions seem well fit by standard gaussians, but they are in principle bounded and so we asked whether this made a difference, using a Beta distribution (a two-parameter continuous distribution bounded at 0 and 1) for fitting. Surprisingly, across all data, the BIC values for the two distributions were very similar (`r round(norm_acc_bic) |> as.character()` for normal versus `r round(beta_acc_bic)` for Beta), though the normal distribution was slightly favored. Across age groups, there was heterogeneity with some groups better fit by a gaussian and others better fit by a Beta (Figure \ref{fig:acc-fits}).
-Again, we feel that this result generally vitiates our approach of modeling accuracies via standard linear mixed-effects models: their distributional form is quite close to normal. 
+Again, we feel that this result generally supports our approach of modeling accuracies via standard linear mixed-effects models: their distributional form is quite close to normal. 
 
 ```{r acc-hist, fig.cap="\\label{fig:acc-hist} Goodness of fit for different distributional models of accuracy, split by age.", fig.pos="h!", fig.width=8, fig.height=5}
 acc_hist_data <- d_sub |>
@@ -618,9 +618,9 @@ With our current dataset, we unfortunately cannot specifically determine whether
 
 We believe that, unlike the skills being studied in the prior adult literature (e.g., Anderson, 1982; Heathcote, Brown, & Mewhort, 2000; Logan, 1988), language processing is being learned over the course of a child’s lifetime. Thus, we do not expect to see within-paradigm changes in learning in what is a narrow period of time compared to the duration over which language processing skills are refined. 
 
-Nevertheless, here we test for other forms of the aggregate relationship between age and reaction time. In particular, we consider 1) a log~log relationship between RT and age (presented in the main text), 2) using both a log age and a linear age to predict log RT, 3) a quadratic relationship between age and RT, and 4) a cubic relationship between age and RT. As shown in Table \ref{tab:age-rt}, the model with a linear age term in addition to a log age term has the best fit, although the linear age term coefficient is only marginally significant (coefficients in Table \ref{tab:loglin}). 
+Nevertheless, here we test for other forms of the aggregate relationship between age and reaction time. In particular, we consider 1) a log~log relationship between RT and age (presented in the main text), 2) using both a log age and a linear age to predict log RT, 3) a quadratic relationship between age and RT, and 4) a cubic relationship between age and RT. As shown in Table \ref{tab:age-rt}, the model with a linear age term in addition to a log age term has the best fit, although the linear age term coefficient is not significant (coefficients in Table \ref{tab:loglin}). 
 
-These models reveal a small but significant additional linear age term over and above log age, but – because individual participant-level fits are not possible – this term can’t really be used to weigh in on the debate about the precise nature of the learning pattern. 
+These models reveal a small and non-significant additional linear age term over and above log age, but – because individual participant-level fits are not possible – this term can’t really be used to weigh in on the debate about the precise nature of the learning pattern. 
 
 
 ```{r rt_more_mods}
@@ -799,7 +799,7 @@ vocab_slope ~~ NA*vocab_slope
 
 # S10. Factor Analysis on First Administrations
 
-As a robustness check, we tested our best factor analytic models using only cross-sectional data (filtering to the first test session in longitudinal datasets; N=1963 instead of N=3553). A comparison of all 4 models is shown in Table \ref{tab:factor-first}. For the three-factor CFA, the first administration model shows increased CFI (.992 instead of .972) and decreased RMSEA (.030 instead of .065). The same is true for the age-regressed three-factor CFA, which shows very good statistics on both first administrations and longitudinal data (CFI = .999 and .991, respectively and RMSEA = .009 and .037 respectively). 
+As a robustness check, we tested our best factor analytic models using only cross-sectional data (filtering to the first test session in longitudinal datasets; N=1963 instead of N=3553). A comparison of all 4 models is shown in Table \ref{tab:factor-first}. For the three-factor CFA, the first administration model shows increased CFI (.992 instead of .980) and decreased RMSEA (.033 instead of .058). The same is true for the age-regressed three-factor CFA, which shows very good statistics on both first administrations and longitudinal data (CFI = .997 and .993, respectively, and RMSEA = .021 and .033 respectively). 
 
 ```{r}
 d_sub_mat_firstadmin <- d_sub_firstadmin |>
@@ -918,7 +918,7 @@ One-factor & 9 & 46535.49 & 46645.84 & 286.76 & 1.39 & 0.01 & 1 & 0.24 \\
 \FloatBarrier
 # S12. Non-linear Growth Models
 
-```{r, eval=FIT_BAYES}
+```{r, eval=FIT_BAYES, message = F, warning = F}
 library(brms)
 library(tidybayes)
 
@@ -993,7 +993,7 @@ readRDS("brms1_coef.rds") |> as_tibble(rownames="type") |>
   mutate(Type=case_when(
     type=="xmid_Intercept" ~ "Constant component of growth intercept",
     type=="xmid_log_rt_0_c" ~ "Effect of $t_0$ RT on growth intercept",
-    type=="logscale_Intercept" ~ "Constant compontent of growth scale",
+    type=="logscale_Intercept" ~ "Constant component of growth scale",
     type=="logscale_log_rt_0_c" ~ "Effect of $t_0$ RT on growth scale"
   )) |> 
   dplyr::select(Type, Estimate, `Est.Error`, `l-95\\% CI`=`l-95% CI`, `u-95\\% CI`=`u-95% CI`) |> kable(digits=3, caption="Fixed effects estimates from logistic growth model. \\label{tab:nlme}", format="latex", escape=F, booktabs=T, latex_options = "HOLD_position") |>   kableExtra::kable_styling(full_width = F)
@@ -1086,7 +1086,7 @@ Interpretation of growth in both this model and the linear growth model in the m
 \FloatBarrier
 # S13. SEM Longitudinal Missingness
 
-The SEM model was fit to the entire dataset, including the large mass of cross-sectional data (to anchor the estimates of t0 coefficients) and the sparse longitudinal data for each time point. We have 3%-12% of the total t0 datapoints for any given time point (see Table \ref{tab:sem-missing}), given the sparsity of longitudinal sampling (only 6/24 of the datasets are longitudinal). 
+The SEM model was fit to the entire dataset, including the large mass of cross-sectional data (to anchor the estimates of t0 coefficients) and the sparse longitudinal data for each time point. We have 3-12% of the total t0 datapoints for any given time point (see Table \ref{tab:sem-missing}), given the sparsity of longitudinal sampling (only 5/26 of the datasets are longitudinal). 
 
 Our data are MAR (missing at random) rather than MCAR (missing completely at random). This is because their missingness is due to which dataset they are part of – if they are from a cross-sectional dataset, they are by definition missing all longitudinal observations. For our analyses to be appropriate given this structure, we have to assume that the general developmental patterns we are studying are replicated across datasets. We believe that they are, and we show this statistically using our mixed-effects and non-linear mixed-effects models, which control for dataset-related variation. We also show dataset-level effects in a number of our visualizations for this same reason. The same degree of random effect specification that we can do in the mixed-effects models is not possible in the SEM model, however, purely for technical reasons. Again, this point highlights the importance of convergence across analyses. 
 

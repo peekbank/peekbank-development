@@ -83,3 +83,6 @@ supplemental_data/creel_2024/TminusC2002000.csv
 supplemental_data/creel_2024/TminusC2002000_cellskept(mintrialsplus).csv
 supplemental_data/creel_2024/TminusC2002000_trialskept(nonbadlooks).csv
 paper_r1.R
+.positai
+cached_intermediates/0_aoi_data_joined.Rds
+cached_intermediates/raw_aois.rds
